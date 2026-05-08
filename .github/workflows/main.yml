@@ -76,6 +76,16 @@ jobs:
           MANIFEST: ${{ env.latest_manifest_url }}
           DOWNLOAD: ${{ env.release_module_url }}
 
+      - name: Set Module Manifest Version From Release Tag
+        if: github.event_name == 'release'
+        run: |
+          tmp_module="$(mktemp)"
+          jq --arg version "${VERSION}" '.version = $version' module.json > "${tmp_module}"
+          mv "${tmp_module}" module.json
+          jq empty module.json
+        env:
+          VERSION: ${{steps.get_version.outputs.version-without-v}}
+
       - name: Create Module Archive
         if: github.event_name == 'release'
         run: |
