@@ -64,7 +64,7 @@ function onRenderCharacterSheet(sheet, html) {
   if (canOpenCreationWizard(actor)) {
     const createTitle = getCreationButtonTitle(actor);
     const createBtn = $(`
-      <a class="pf2e-leveler-create-btn header-control" data-tooltip="${createTitle}" data-tooltip="${createTitle}" role="button">
+      <a class="pf2e-leveler-create-btn header-control" data-tooltip="${createTitle}" role="button">
         <i class="fas fa-wand-magic-sparkles"></i>
       </a>
     `);
@@ -80,7 +80,7 @@ function onRenderCharacterSheet(sheet, html) {
   if (isSupportedClass(actor)) {
     const planTitle = localize('UI.OPEN_PLANNER');
     const planBtn = $(`
-      <a class="pf2e-leveler-plan-btn header-control" data-tooltip="${planTitle}" data-tooltip="${planTitle}" role="button">
+      <a class="pf2e-leveler-plan-btn header-control" data-tooltip="${planTitle}" role="button">
         <i class="fas fa-arrow-up-right-dots"></i>
       </a>
     `);
@@ -115,10 +115,12 @@ function getActorSheetElementId(actor) {
 
 function isActorCharacterSheetApplication(appElement, actor) {
   const element = getElement(appElement);
-  if (!element || isPF2eHudElement(element) || isPF2eAttackPopoutElement(element)) return false;
+  if (!element || isPF2eAttackPopoutElement(element)) return false;
 
   const expectedId = getActorSheetElementId(actor);
   if (expectedId && element.id === expectedId) return true;
+
+  if (isPF2eHudElement(element)) return false;
 
   return (element.classList.contains('window-app') || element.classList.contains('application'))
     && element.classList.contains('sheet')
@@ -132,9 +134,10 @@ function getElement(elementLike) {
 }
 
 function isPF2eHudElement(element) {
-  return Boolean(element.closest?.(
-    '[id*="pf2e-hud"], [class*="pf2e-hud"], [id*="pf2e-token-hud"], [class*="pf2e-token-hud"]',
-  ));
+  return Boolean(
+    element.matches?.('[class*="pf2e-hud"], [class*="pf2e-token-hud"]')
+    || element.closest?.('[id*="pf2e-hud"], [id*="pf2e-token-hud"]'),
+  );
 }
 
 function isPF2eAttackPopoutElement(element) {

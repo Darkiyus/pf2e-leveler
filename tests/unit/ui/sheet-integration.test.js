@@ -126,6 +126,21 @@ describe('character sheet application detection', () => {
     expect(isActorCharacterSheetApplication(asJQuery(app), actor)).toBe(false);
   });
 
+  test('accepts character sheets mounted under PF2e HUD-marked interface containers', () => {
+    const actor = createMockActor({ id: 'abc123' });
+    const interfaceElement = document.createElement('div');
+    interfaceElement.id = 'interface';
+    interfaceElement.className = 'pf2e-hud-tracker';
+
+    const app = document.createElement('section');
+    app.id = 'CharacterSheetPF2e-Actor-abc123';
+    app.className = 'application sheet actor character';
+    interfaceElement.append(app);
+    document.body.append(interfaceElement);
+
+    expect(isActorCharacterSheetApplication(app, actor)).toBe(true);
+  });
+
   test('rejects PF2e strike attack popouts', () => {
     const actor = createMockActor({ id: 'abc123' });
     const app = document.createElement('div');
@@ -164,6 +179,45 @@ describe('character sheet render integration', () => {
 
       expect(header.querySelector('.pf2e-leveler-create-btn')).not.toBeNull();
       expect(header.querySelector('.pf2e-leveler-plan-btn')).not.toBeNull();
+    } finally {
+      restoreJQuery();
+    }
+  });
+
+  test('adds compact anchor header controls that avoid themed button chrome', () => {
+    const restoreJQuery = useDomJQuery();
+    try {
+      const actor = createMockActor({ id: 'abc123' });
+      const app = document.createElement('section');
+      app.id = 'CharacterSheetPF2e-Actor-abc123';
+      app.className = 'application sheet actor character';
+      app.dataset.theme = 'bg3';
+      app.dataset.dorakoUiScope = 'limited';
+
+      const header = document.createElement('header');
+      header.className = 'window-header';
+      const closeButton = document.createElement('button');
+      closeButton.className = 'close header-control';
+      header.append(closeButton);
+
+      const content = document.createElement('div');
+      content.className = 'sheet-content';
+      app.append(header, content);
+      document.body.append(app);
+
+      registerSheetIntegration();
+      const renderHandler = Hooks.on.mock.calls.find(
+        ([hook]) => hook === 'renderCharacterSheetPF2e',
+      )[1];
+      renderHandler({ actor }, content);
+
+      const createButton = header.querySelector('.pf2e-leveler-create-btn');
+      const planButton = header.querySelector('.pf2e-leveler-plan-btn');
+
+      expect(createButton).toBeInstanceOf(HTMLAnchorElement);
+      expect(planButton).toBeInstanceOf(HTMLAnchorElement);
+      expect(createButton.getAttribute('role')).toBe('button');
+      expect(planButton.getAttribute('role')).toBe('button');
     } finally {
       restoreJQuery();
     }

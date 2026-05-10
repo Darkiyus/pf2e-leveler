@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.4.7
+
+### Compatibility
+
+- **Foundry v13 character sheets show Leveler header buttons again with HUD modules active** - Sheet integration now accepts Foundry's ApplicationV2 sheet element shape and avoids treating real actor sheets as PF2e HUD windows when HUD modules mark global interface containers, restoring the creation wizard and planner icons while still excluding PF2e HUD and attack popout windows
+
 ## 3.4.6
 
 ### Compatibility
