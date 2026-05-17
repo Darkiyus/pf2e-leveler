@@ -12,6 +12,7 @@ import {
 import { checkPrerequisites } from '../prerequisites/prerequisite-checker.js';
 import { parseAllPrerequisiteNodes } from '../prerequisites/parsers.js';
 import { isMythicEnabled } from '../utils/pf2e-api.js';
+import { getBuildStateAncestryFeatTraits } from '../utils/ancestry-feat-traits.js';
 import { getActiveSkillConfigEntry, getActiveSkillSlugs } from '../utils/skill-slugs.js';
 import { ClassRegistry } from '../classes/registry.js';
 import { annotateGuidance, filterDisallowedForCurrentUser } from '../access/content-guidance.js';
@@ -1161,10 +1162,7 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _getFeatTypes(feat) {
     const traits = (feat.system?.traits?.value ?? []).map((trait) => String(trait).toLowerCase());
-    const ancestryTraits =
-      this.buildState?.ancestryTraits instanceof Set
-        ? [...this.buildState.ancestryTraits].map((trait) => String(trait).toLowerCase())
-        : [];
+    const ancestryTraits = getBuildStateAncestryFeatTraits(this.buildState);
     const classSlug = String(
       this.buildState?.class?.slug ?? this.actor?.class?.slug ?? '',
     ).toLowerCase();

@@ -646,6 +646,26 @@ describe('computeBuildState', () => {
     expect(state.ancestryTraits.has('undead')).toBe(true);
   });
 
+  test('keeps ancestry feat access traits separate from creature traits', () => {
+    mockActor.ancestry = {
+      slug: 'leshy',
+      name: 'Leshy',
+      system: {
+        traits: {
+          value: ['leshy', 'plant'],
+        },
+      },
+    };
+    mockActor.system.details.ancestry = { trait: 'leshy' };
+    mockActor.system.traits = { value: ['plant'] };
+
+    const state = computeBuildState(mockActor, plan, 1);
+
+    expect(state.ancestryTraits.has('plant')).toBe(true);
+    expect(state.ancestryFeatTraits.has('leshy')).toBe(true);
+    expect(state.ancestryFeatTraits.has('plant')).toBe(false);
+  });
+
   test('includes focus-pool in feats when actor has focus pool', () => {
     mockActor.system.resources = { focus: { max: 1, value: 1 } };
     const state = computeBuildState(mockActor, plan, 2);

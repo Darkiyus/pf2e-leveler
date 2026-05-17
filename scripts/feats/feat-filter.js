@@ -1,3 +1,5 @@
+import { getBuildStateAncestryFeatTraits } from '../utils/ancestry-feat-traits.js';
+
 export function filterFeatsByCategory(feats, category, searchQuery, targetLevel, options = {}) {
   const normalizedQuery = normalizeQuery(searchQuery);
   const existingFeatNames = new Set();
@@ -264,9 +266,10 @@ function buildCategoryQuery(category, actor, buildState) {
     case 'dualClass':
       return buildState?.class?.slug || actor?.class?.slug || '';
     case 'ancestry': {
-      if (buildState?.ancestryTraits instanceof Set && buildState.ancestryTraits.size > 0) {
-        return [...buildState.ancestryTraits];
-      }
+      const ancestryFeatTraits = getBuildStateAncestryFeatTraits(buildState);
+      if (ancestryFeatTraits.length > 0) return ancestryFeatTraits;
+      if (Object.prototype.hasOwnProperty.call(Object(buildState ?? {}), 'ancestryFeatTraits'))
+        return [];
       const queries = [actor?.ancestry?.slug ?? ''];
       const heritageSlug = actor?.heritage?.slug ?? null;
       if (heritageSlug) queries.push(heritageSlug);

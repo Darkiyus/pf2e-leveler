@@ -1176,6 +1176,41 @@ describe('FeatPicker prerequisite enforcement', () => {
     expect(picker._applyFilters().map((feat) => feat.name)).toEqual(['Combat Grab']);
   });
 
+  test('locked ancestry type filter ignores creature traits when access traits are provided', () => {
+    const leshyFeat = createFeat({
+      name: 'Leshy Lore',
+      uuid: 'leshy-lore',
+      slug: 'leshy-lore',
+    });
+    leshyFeat.system.level.value = 1;
+    leshyFeat.system.traits.value = ['leshy'];
+
+    const impulseFeat = createFeat({
+      name: 'Timber Sentinel',
+      uuid: 'timber-sentinel',
+      slug: 'timber-sentinel',
+    });
+    impulseFeat.system.level.value = 1;
+    impulseFeat.system.traits.value = ['impulse', 'kineticist', 'plant', 'primal', 'wood'];
+
+    const picker = new FeatPicker(
+      createActor(),
+      'ancestry',
+      1,
+      createBuildState({
+        ancestryTraits: new Set(['leshy', 'plant']),
+        ancestryFeatTraits: new Set(['leshy']),
+      }),
+      jest.fn(),
+    );
+    picker.allFeats = [leshyFeat, impulseFeat];
+    picker.selectedFeatTypes = new Set(['ancestry']);
+    picker.selectedRarities = new Set(['common']);
+    picker.maxLevel = '1';
+
+    expect(picker._applyFilters().map((feat) => feat.name)).toEqual(['Leshy Lore']);
+  });
+
   test('can filter feats by a min and max level range', () => {
     const lowFeat = createFeat({
       name: 'Low Feat',

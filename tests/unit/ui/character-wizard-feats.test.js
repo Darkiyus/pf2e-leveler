@@ -1550,6 +1550,24 @@ describe('CharacterWizard feat step ancestry filtering', () => {
     expect(buildState.ancestryTraits.has('beast-folk')).toBe(true);
   });
 
+  it('keeps generic creature traits out of creation ancestry feat access traits', async () => {
+    game.settings.get = jest.fn(() => false);
+    const wizard = new CharacterWizard(createMockActor());
+    wizard.data.ancestry = {
+      uuid: 'Item.leshy',
+      slug: 'leshy',
+      name: 'Leshy',
+      traits: ['leshy', 'plant'],
+    };
+    wizard.data.class = { uuid: 'class-fighter', slug: 'fighter', name: 'Fighter' };
+
+    const buildState = await wizard._buildCreationFeatBuildState();
+
+    expect(buildState.ancestryTraits.has('plant')).toBe(true);
+    expect(buildState.ancestryFeatTraits.has('leshy')).toBe(true);
+    expect(buildState.ancestryFeatTraits.has('plant')).toBe(false);
+  });
+
   it('includes heritage items granted by selected feats in the creation feat build state', async () => {
     game.settings.get = jest.fn(() => false);
     const wizard = new CharacterWizard(createMockActor());

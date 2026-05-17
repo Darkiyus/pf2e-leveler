@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.4.10
+
+### Character Wizard
+
+- **Ancestry feat pickers no longer include unrelated creature-trait feats** - Character creation now separates ancestry feat access traits from broader creature traits, so Leshy characters keep `plant` for prerequisite checks without surfacing unrelated feats such as Timber Sentinel in ancestry feat slots
+
 ## 3.4.9
 
 ### Level Planner

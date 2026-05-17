@@ -52,6 +52,8 @@ export function computeBuildState(actor, plan, atLevel) {
     { classDef, slug: plan.classSlug },
     { classDef: dualClassDef, slug: dualClassSlug },
   ]);
+  const ancestryTraits = computeAncestryTraits(actor, plan, atLevel);
+  const ancestryFeatTraits = computeAncestryFeatTraits(actor, plan, atLevel);
 
   return {
     level: atLevel,
@@ -63,7 +65,8 @@ export function computeBuildState(actor, plan, atLevel) {
     ancestrySlug: actor?.ancestry?.slug ?? null,
     heritageSlug: actor?.heritage?.slug ?? null,
     heritageAliases: computeHeritageAliases(actor, plan, atLevel),
-    ancestryTraits: computeAncestryTraits(actor, plan, atLevel),
+    ancestryTraits,
+    ancestryFeatTraits,
     backgroundSlug: actor?.background?.slug ?? null,
     attributes: computeAttributes(actor, plan, atLevel),
     rawAttributes: computeAttributes(actor, plan, atLevel, { raw: true }),
@@ -337,6 +340,54 @@ function computeAncestryTraits(actor, plan, atLevel) {
     if (featSlug !== 'adopted-ancestry') continue;
     const selected = feat?.choices?.adoptedAncestry ?? feat?.adoptedAncestry ?? null;
     addAncestryTraitAliases(traits, selected);
+  }
+
+  return traits;
+}
+
+function computeAncestryFeatTraits(actor, plan, atLevel) {
+  const traits = new Set();
+
+  addAncestryTraitAliases(traits, actor?.system?.details?.ancestry?.trait ?? null);
+  addAncestryFeatIdentity(traits, actor?.ancestry ?? null);
+  addAncestryFeatIdentity(
+    traits,
+    getOwnedItems(actor).find((item) => item?.type === 'ancestry') ?? null,
+  );
+
+  for (const heritage of getEffectiveHeritageItems(actor, plan, atLevel)) {
+    addAncestryFeatIdentity(traits, heritage);
+  }
+
+  const mixedAncestrySelection =
+    actor?.heritage?.flags?.pf2e?.rulesSelections?.[MIXED_ANCESTRY_CHOICE_FLAG] ??
+    actor?.heritage?.flags?.['pf2e-leveler']?.mixedAncestrySelection ??
+    null;
+  if (actor?.heritage?.uuid === MIXED_ANCESTRY_UUID || actor?.heritage?.slug === 'mixed-ancestry') {
+    addAncestryTraitAliases(traits, mixedAncestrySelection);
+  }
+
+  for (const item of getEffectiveActorFeats(actor, plan, atLevel)) {
+    const featSlug = slugify(item?.slug ?? item?.name ?? '');
+    if (featSlug !== 'adopted-ancestry') continue;
+    const selected =
+      item?.flags?.pf2e?.rulesSelections?.adoptedAncestry ??
+      item?.flags?.pf2e?.rulesSelections?.ancestry ??
+      null;
+    addAncestryTraitAliases(traits, selected);
+  }
+
+  for (const feat of getEffectivePlannedFeats(plan, atLevel)) {
+    const featSlug = slugify(feat?.slug ?? feat?.name ?? '');
+    if (featSlug !== 'adopted-ancestry') continue;
+    const selected = feat?.choices?.adoptedAncestry ?? feat?.adoptedAncestry ?? null;
+    addAncestryTraitAliases(traits, selected);
+  }
+
+  if (traits.size === 0) {
+    for (const trait of actor?.system?.traits?.value ?? []) {
+      addAncestryTraitAliases(traits, trait);
+    }
   }
 
   return traits;
@@ -2067,6 +2118,21 @@ function addAncestryItemTraits(target, item) {
   const traits = Array.isArray(item?.traits) ? item.traits : item?.system?.traits?.value;
   if (!Array.isArray(traits)) return;
   for (const trait of traits) addAncestryTraitAliases(target, trait);
+}
+
+function addAncestryFeatIdentity(target, item) {
+  if (!item) return;
+  if (typeof item === 'string') {
+    addAncestryTraitAliases(target, item);
+    return;
+  }
+
+  const normalizedSlug = slugify(normalizeEquipmentValue(item?.slug) ?? '');
+  addAncestryTraitAliases(target, item?.slug ?? null);
+  addAncestryTraitAliases(target, item?.name ?? null);
+
+  if (normalizedSlug) return;
+  addAncestryItemTraits(target, item);
 }
 
 function addHeritageAlias(target, value) {

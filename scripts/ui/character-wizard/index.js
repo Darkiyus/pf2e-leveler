@@ -55,6 +55,7 @@ import {
 import { applyCreation } from '../../creation/apply-creation.js';
 import { localize } from '../../utils/i18n.js';
 import { evaluatePredicate } from '../../utils/predicate.js';
+import { getBuildStateAncestryFeatTraits } from '../../utils/ancestry-feat-traits.js';
 import { registerHandlebarsHelpers } from '../../hooks/lifecycle.js';
 import { getClassHandler } from '../../creation/class-handlers/registry.js';
 import { isAncestralParagonEnabled, isDualClassEnabled, slugify } from '../../utils/pf2e-api.js';
@@ -1173,8 +1174,7 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
     const classSlug = String(
       (target === 'dualClass' ? this.data.dualClass?.slug : this.data.class?.slug) ?? '',
     ).toLowerCase();
-    const ancestryTraits =
-      buildState.ancestryTraits instanceof Set ? [...buildState.ancestryTraits] : [];
+    const ancestryTraits = getBuildStateAncestryFeatTraits(buildState);
     const presets = {
       ancestry: {
         selectedFeatTypes: ['ancestry'],
@@ -1380,9 +1380,19 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
     ];
     const featGrantedHeritageTraits = collectGrantedHeritageTraitsFromFeats(featEntries);
     const heritageAliases = collectHeritageAliasesForCreation(this.data.heritage, featEntries);
-    const ancestryTraits = [
+    const baseAncestryTraits = collectAncestryTraitTokens(this.data.ancestry, this.data.heritage);
+    const ancestryFeatTraits = [
       ...new Set([
         ...collectAncestryFeatTraits(this.data.ancestry, this.data.heritage),
+        ...adoptedAncestryTraits,
+        ...mixedAncestryTraits,
+        ...heritageGrantedTraits,
+        ...featGrantedHeritageTraits,
+      ]),
+    ];
+    const ancestryTraits = [
+      ...new Set([
+        ...baseAncestryTraits,
         ...adoptedAncestryTraits,
         ...mixedAncestryTraits,
         ...heritageGrantedTraits,
@@ -1451,6 +1461,7 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
       feats: featState.feats,
       featAliasSources: featState.featAliasSources,
       ancestryTraits: new Set(ancestryTraits),
+      ancestryFeatTraits: new Set(ancestryFeatTraits),
       heritageAliases: new Set(heritageAliases),
       senses,
       attributes,
@@ -1615,10 +1626,7 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
       .filter((types) => types.size > 0);
     const lockedFeatTypes = intersectStringSets(featTypeSets);
 
-    const ancestryTraits =
-      buildState?.ancestryTraits instanceof Set
-        ? [...buildState.ancestryTraits].map((trait) => String(trait).toLowerCase())
-        : [];
+    const ancestryTraits = getBuildStateAncestryFeatTraits(buildState);
     const classSlug = String(buildState?.class?.slug ?? '').toLowerCase();
     const commonTraits = intersectStringSets(
       options.map(
@@ -3702,6 +3710,15 @@ function localizeTradition(tradition) {
 function collectAncestryFeatTraits(ancestrySlug, heritageSlug) {
   const traits = new Set();
 
+  addAncestryFeatAccessTraitTokens(traits, ancestrySlug);
+  addAncestryFeatAccessTraitTokens(traits, heritageSlug);
+
+  return [...traits];
+}
+
+function collectAncestryTraitTokens(ancestrySlug, heritageSlug) {
+  const traits = new Set();
+
   addAncestryFeatTraitTokens(traits, ancestrySlug);
   addAncestryFeatTraitTokens(traits, heritageSlug);
 
@@ -3752,6 +3769,22 @@ function addAncestryFeatTraitTokens(target, value) {
   ]) {
     addAncestryFeatTraitAliases(target, candidate);
   }
+}
+
+function addAncestryFeatAccessTraitTokens(target, value) {
+  if (!value) return;
+  if (typeof value === 'string') {
+    addAncestryFeatTraitAliases(target, value);
+    return;
+  }
+
+  const normalizedSlug = slugify(String(value.slug ?? '').toLowerCase());
+  addAncestryFeatTraitAliases(target, value.slug ?? null);
+  addAncestryFeatTraitAliases(target, value.name ?? null);
+
+  if (normalizedSlug) return;
+  const traits = Array.isArray(value.traits) ? value.traits : (value.system?.traits?.value ?? []);
+  for (const trait of traits) addAncestryFeatTraitAliases(target, trait);
 }
 
 function addHeritageAliasTokens(target, value) {
@@ -3909,10 +3942,7 @@ function dedupeLores(lores) {
 
 function inferFeatChoiceTypes(option, buildState) {
   const traits = (option?.traits ?? []).map((trait) => String(trait).toLowerCase());
-  const ancestryTraits =
-    buildState?.ancestryTraits instanceof Set
-      ? [...buildState.ancestryTraits].map((trait) => String(trait).toLowerCase())
-      : [];
+  const ancestryTraits = getBuildStateAncestryFeatTraits(buildState);
   const classSlug = String(buildState?.class?.slug ?? '').toLowerCase();
   const types = new Set();
 

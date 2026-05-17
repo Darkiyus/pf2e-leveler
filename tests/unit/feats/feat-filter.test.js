@@ -452,6 +452,24 @@ describe('filterFeatsByCategory', () => {
     ]));
   });
 
+  test('ancestry feat filtering ignores non-access creature traits when access traits are provided', () => {
+    const feats = [
+      makeFeat('Leshy Lore', 1, ['leshy']),
+      makeFeat('Timber Sentinel', 1, ['impulse', 'kineticist', 'plant', 'primal', 'wood']),
+    ];
+
+    const result = getFeatsForSelection(feats, 'ancestry', { ancestry: { slug: 'leshy' }, heritage: null }, 1, {
+      buildState: {
+        ancestryTraits: new Set(['leshy', 'plant']),
+        ancestryFeatTraits: new Set(['leshy']),
+      },
+    });
+
+    expect(result).toEqual([
+      expect.objectContaining({ name: 'Leshy Lore' }),
+    ]);
+  });
+
   test('ancestry feat filtering supports custom ancestry traits derived from ancestry names when no slug exists', () => {
     const feats = [
       makeFeat('Hidden Mind', 1, ['intelligent-weapon', 'fortune']),
