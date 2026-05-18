@@ -7,10 +7,7 @@ import { getSpellbookBonusCantripSelectionCount } from './spellbook-feats.js';
 import { getFeatGrantCompletion } from './feat-grants.js';
 import { getMaxSkillRank } from '../utils/pf2e-api.js';
 import { collectArchetypeSpellcastingConfigs } from '../utils/spellcasting-support.js';
-import {
-  doesFeatMatchRequiredSecondLevelClassFeat,
-  getRequiredSecondLevelClassFeatForActor,
-} from '../classes/class-archetype-requirements.js';
+import { doesFeatMatchRequiredSecondLevelClassFeat, getRequiredSecondLevelClassFeatForActor } from '../classes/class-archetype-requirements.js';
 
 export function validatePlan(plan, options = {}, actor = null) {
   const classDef = ClassRegistry.get(plan.classSlug);
@@ -107,16 +104,7 @@ function validateFeatGrantChoices(levelData) {
 
 function collectLevelGrantRequirements(levelData) {
   const requirements = [];
-  const featKeys = [
-    'classFeats',
-    'skillFeats',
-    'generalFeats',
-    'ancestryFeats',
-    'archetypeFeats',
-    'mythicFeats',
-    'dualClassFeats',
-    'customFeats',
-  ];
+  const featKeys = ['classFeats', 'skillFeats', 'generalFeats', 'ancestryFeats', 'archetypeFeats', 'mythicFeats', 'dualClassFeats', 'customFeats'];
 
   for (const key of featKeys) {
     for (const feat of levelData?.[key] ?? []) {
@@ -145,10 +133,7 @@ function humanizeGrantKind(kind) {
 }
 
 function validateRetrains(levelData, level, plan, actor) {
-  return [
-    ...validateFeatRetrains(levelData, actor),
-    ...validateSkillRetrains(levelData, level, plan),
-  ];
+  return [...validateFeatRetrains(levelData, actor), ...validateSkillRetrains(levelData, level, plan)];
 }
 
 function validateFeatRetrains(levelData, actor) {
@@ -173,12 +158,7 @@ function validateFeatRetrains(levelData, actor) {
 
 function findActorFeat(actor, original) {
   const items = actor?.items?.filter?.((item) => item?.type === 'feat') ?? [];
-  return items.find((item) => (
-    (original.actorItemId && [item.id, item._id].includes(original.actorItemId)) ||
-    (original.uuid && item.uuid === original.uuid) ||
-    (original.sourceId && (item.sourceId === original.sourceId || item.flags?.core?.sourceId === original.sourceId)) ||
-    (original.slug && item.slug === original.slug)
-  )) ?? null;
+  return items.find((item) => (original.actorItemId && [item.id, item._id].includes(original.actorItemId)) || (original.uuid && item.uuid === original.uuid) || (original.sourceId && (item.sourceId === original.sourceId || item.flags?.core?.sourceId === original.sourceId)) || (original.slug && item.slug === original.slug)) ?? null;
 }
 
 function validateSkillRetrains(levelData, level, plan) {
@@ -223,16 +203,19 @@ function validateSkillRetrains(levelData, level, plan) {
 
 function findPlannedSkillIncrease(plan, level, original) {
   if (!Number.isFinite(level) || !original?.skill) return null;
-  const increases = [
-    ...(plan?.levels?.[level]?.skillIncreases ?? []),
-    ...(plan?.levels?.[level]?.customSkillIncreases ?? []),
-  ];
-  const skill = String(original.skill ?? '').trim().toLowerCase();
+  const increases = [...(plan?.levels?.[level]?.skillIncreases ?? []), ...(plan?.levels?.[level]?.customSkillIncreases ?? [])];
+  const skill = String(original.skill ?? '')
+    .trim()
+    .toLowerCase();
   const toRank = Number(original.toRank);
-  return increases.find((increase) => (
-    String(increase?.skill ?? '').trim().toLowerCase() === skill &&
-    Number(increase?.toRank) === toRank
-  )) ?? null;
+  return (
+    increases.find(
+      (increase) =>
+        String(increase?.skill ?? '')
+          .trim()
+          .toLowerCase() === skill && Number(increase?.toRank) === toRank,
+    ) ?? null
+  );
 }
 
 function humanizeSkillSlug(skill) {
@@ -383,10 +366,16 @@ function validateSpells(levelData, level, classDef, actor, plan) {
     const plannedCantrips = primaryPlanned.filter((spell) => spell?.isCantrip === true || spell?.rank === 0).length;
 
     if (plannedRankSelections < 2) {
-      return { severity: 'error', message: `${2 - plannedRankSelections} spellbook spell(s) not yet selected` };
+      return {
+        severity: 'error',
+        message: `${2 - plannedRankSelections} spellbook spell(s) not yet selected`,
+      };
     }
     if (plannedCantrips < bonusCantripSelections) {
-      return { severity: 'error', message: `${bonusCantripSelections - plannedCantrips} spellbook cantrip(s) not yet selected` };
+      return {
+        severity: 'error',
+        message: `${bonusCantripSelections - plannedCantrips} spellbook cantrip(s) not yet selected`,
+      };
     }
     const dedicationIssue = validateDedicationSpellSelections(plan, level, planned);
     if (dedicationIssue) return dedicationIssue;
@@ -405,14 +394,12 @@ function validateSpells(levelData, level, classDef, actor, plan) {
   for (const [rank, counts] of Object.entries(currentSlots)) {
     const total = Array.isArray(counts) ? counts[0] + counts[1] : counts;
     const prevVal = prevSlots?.[rank];
-    const prevTotal = prevVal == null ? 0 : (Array.isArray(prevVal) ? prevVal[0] + prevVal[1] : prevVal);
+    const prevTotal = prevVal == null ? 0 : Array.isArray(prevVal) ? prevVal[0] + prevVal[1] : prevVal;
     const gainedSlots = Math.max(0, total - prevTotal);
     if (gainedSlots === 0) continue;
 
     const rankNum = Number(rank);
-    const grantedCount = Number.isFinite(rankNum)
-      ? getGrantedSpellCount(subclassItem?.slug, subclassChoices, rankNum)
-      : 0;
+    const grantedCount = Number.isFinite(rankNum) ? getGrantedSpellCount(subclassItem?.slug, subclassChoices, rankNum) : 0;
 
     totalNewSlots += Math.max(0, gainedSlots - grantedCount);
   }
@@ -433,7 +420,10 @@ function validateDedicationSpellSelections(plan, level, plannedSpells) {
     const sectionSpells = plannedSpells.filter((spell) => spell.entryType === config.entryType);
     const plannedCantrips = sectionSpells.filter((spell) => spell?.isCantrip === true || spell?.rank === 0).length;
     if (plannedCantrips < config.cantripSelectionCount) {
-      return { severity: 'error', message: `${config.cantripSelectionCount - plannedCantrips} ${config.name} cantrip(s) not yet selected` };
+      return {
+        severity: 'error',
+        message: `${config.cantripSelectionCount - plannedCantrips} ${config.name} cantrip(s) not yet selected`,
+      };
     }
 
     for (const [rawRank, rawCount] of Object.entries(config.rankSelectionCounts ?? {})) {
@@ -441,7 +431,10 @@ function validateDedicationSpellSelections(plan, level, plannedSpells) {
       const requiredCount = Number(rawCount ?? 0);
       const plannedAtRank = sectionSpells.filter((spell) => Number(spell?.rank ?? spell?.baseRank ?? -1) === rank).length;
       if (plannedAtRank < requiredCount) {
-        return { severity: 'error', message: `${requiredCount - plannedAtRank} ${config.name} ${ordinal(rank)}-rank spell(s) not yet selected` };
+        return {
+          severity: 'error',
+          message: `${requiredCount - plannedAtRank} ${config.name} ${ordinal(rank)}-rank spell(s) not yet selected`,
+        };
       }
     }
   }
@@ -456,7 +449,7 @@ function collectDedicationSpellcastingConfigs(plan, level) {
     const levelData = plan.levels[currentLevel];
     if (!levelData) continue;
     for (const key of featKeys) {
-      feats.push(...((levelData[key] ?? []).map((feat) => ({ ...feat, level: feat?.level ?? currentLevel }))));
+      feats.push(...(levelData[key] ?? []).map((feat) => ({ ...feat, level: feat?.level ?? currentLevel })));
     }
   }
   return collectArchetypeSpellcastingConfigs(feats, level);
@@ -470,13 +463,14 @@ function ordinal(rank) {
 function getSubclassItem(actor, classDef) {
   const subclassTag = SUBCLASS_TAGS[classDef?.slug];
   if (!actor || !subclassTag) return null;
-  return actor.items?.find?.((item) =>
-    item.type === 'feat' && item.system?.traits?.otherTags?.includes?.(subclassTag),
-  ) ?? null;
+  return actor.items?.find?.((item) => item.type === 'feat' && item.system?.traits?.otherTags?.includes?.(subclassTag)) ?? null;
 }
 
 function getSubclassChoices(subclassItem) {
-  const rawChoices = subclassItem?.flags?.pf2e?.rulesSelections ?? {};
+  const rawChoices = {
+    ...(subclassItem?.flags?.pf2e?.rulesSelections ?? {}),
+    ...(subclassItem?.flags?.system?.rulesSelections ?? {}),
+  };
   return rawChoices && typeof rawChoices === 'object' ? rawChoices : {};
 }
 

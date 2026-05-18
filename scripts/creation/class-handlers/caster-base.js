@@ -69,7 +69,7 @@ export class CasterBaseHandler extends BaseClassHandler {
     const curriculum = data.subclass?.curriculum;
     if (!curriculum) return;
 
-    for (const uuid of (curriculum[0] ?? [])) {
+    for (const uuid of curriculum[0] ?? []) {
       if (seen.has(uuid)) continue;
       seen.add(uuid);
       const spell = await fromUuid(uuid).catch(() => null);
@@ -77,7 +77,7 @@ export class CasterBaseHandler extends BaseClassHandler {
         cantrips.push({ uuid: spell.uuid, name: spell.name, img: spell.img, source: 'Curriculum' });
       }
     }
-    for (const uuid of (curriculum[1] ?? [])) {
+    for (const uuid of curriculum[1] ?? []) {
       if (seen.has(uuid)) continue;
       seen.add(uuid);
       const spell = await fromUuid(uuid).catch(() => null);
@@ -137,8 +137,8 @@ export class CasterBaseHandler extends BaseClassHandler {
 
     const curriculum = data.subclass?.curriculum;
     if (curriculum) {
-      for (const uuid of (curriculum[0] ?? [])) grantedUuids.add(uuid);
-      for (const uuid of (curriculum[1] ?? [])) grantedUuids.add(uuid);
+      for (const uuid of curriculum[0] ?? []) grantedUuids.add(uuid);
+      for (const uuid of curriculum[1] ?? []) grantedUuids.add(uuid);
     }
 
     const subSlug = data.subclass?.slug;
@@ -172,16 +172,18 @@ export class CasterBaseHandler extends BaseClassHandler {
     }
 
     if (!entry && classDef?.spellcasting) {
-      const created = await actor.createEmbeddedDocuments('Item', [{
-        name: entryName,
-        type: 'spellcastingEntry',
-        system: {
-          tradition: { value: tradition },
-          prepared: { value: prepared },
-          ability: { value: ability },
-          proficiency: { value: 1 },
+      const created = await actor.createEmbeddedDocuments('Item', [
+        {
+          name: entryName,
+          type: 'spellcastingEntry',
+          system: {
+            tradition: { value: tradition },
+            prepared: { value: prepared },
+            ability: { value: ability },
+            proficiency: { value: 1 },
+          },
         },
-      }]);
+      ]);
       entry = created[0];
     }
 
@@ -226,9 +228,7 @@ export class CasterBaseHandler extends BaseClassHandler {
     if (focusSpells.length === 0) return;
 
     const classDef = data.class?.slug ? ClassRegistry.get(data.class.slug) : null;
-    const tradition = classDef?.spellcasting
-      ? this._resolveTradition(classDef.spellcasting.tradition, data.subclass)
-      : 'arcane';
+    const tradition = classDef?.spellcasting ? this._resolveTradition(classDef.spellcasting.tradition, data.subclass) : 'arcane';
     const ability = classDef?.keyAbility?.length === 1 ? classDef.keyAbility[0] : 'cha';
     const focusEntryName = `${capitalize(data.class?.name ?? 'Focus')} Focus Spells`;
 
@@ -238,16 +238,18 @@ export class CasterBaseHandler extends BaseClassHandler {
       tradition,
     });
     if (!focusEntry) {
-      const created = await actor.createEmbeddedDocuments('Item', [{
-        name: focusEntryName,
-        type: 'spellcastingEntry',
-        system: {
-          tradition: { value: tradition },
-          prepared: { value: 'focus' },
-          ability: { value: ability },
-          proficiency: { value: 1 },
+      const created = await actor.createEmbeddedDocuments('Item', [
+        {
+          name: focusEntryName,
+          type: 'spellcastingEntry',
+          system: {
+            tradition: { value: tradition },
+            prepared: { value: 'focus' },
+            ability: { value: ability },
+            proficiency: { value: 1 },
+          },
         },
-      }]);
+      ]);
       focusEntry = created[0];
     }
 
@@ -268,21 +270,31 @@ export class CasterBaseHandler extends BaseClassHandler {
   }
 
   _resolveTradition(tradition, subclass) {
-    if (['bloodline', 'patron'].includes(tradition)) {
+    if (['bloodline', 'patron', 'connection', 'paradox'].includes(tradition)) {
       return subclass?.tradition ?? 'arcane';
     }
     return tradition;
   }
 
   _findSpellcastingEntry(actor, { name, prepared = null, tradition = null }) {
-    const normalizedName = String(name ?? '').trim().toLowerCase();
-    return actor.items?.find((item) => {
-      if (item?.type !== 'spellcastingEntry') return false;
-      if (prepared && item.system?.prepared?.value !== prepared) return false;
-      if (tradition && item.system?.tradition?.value !== tradition) return false;
-      if (normalizedName && String(item.name ?? '').trim().toLowerCase() !== normalizedName) return false;
-      return true;
-    }) ?? null;
+    const normalizedName = String(name ?? '')
+      .trim()
+      .toLowerCase();
+    return (
+      actor.items?.find((item) => {
+        if (item?.type !== 'spellcastingEntry') return false;
+        if (prepared && item.system?.prepared?.value !== prepared) return false;
+        if (tradition && item.system?.tradition?.value !== tradition) return false;
+        if (
+          normalizedName &&
+          String(item.name ?? '')
+            .trim()
+            .toLowerCase() !== normalizedName
+        )
+          return false;
+        return true;
+      }) ?? null
+    );
   }
 
   async _resolveFocusFromDescription(data, focusSpells, seen) {
@@ -312,9 +324,7 @@ export class CasterBaseHandler extends BaseClassHandler {
     }
 
     for (const [rank, counts] of Object.entries(slots)) {
-      const max = Array.isArray(counts)
-        ? (classDef?.slug === 'magus' ? counts[0] : counts[0] + counts[1])
-        : counts;
+      const max = Array.isArray(counts) ? (classDef?.slug === 'magus' ? counts[0] : counts[0] + counts[1]) : counts;
       if (rank === 'cantrips') {
         update['system.slots.slot0.max'] = max;
         update['system.slots.slot0.value'] = max;
@@ -348,21 +358,23 @@ export class CasterBaseHandler extends BaseClassHandler {
     let entry = existing;
 
     if (!entry) {
-      const created = await actor.createEmbeddedDocuments('Item', [{
-        name: 'Magus Studious Spells',
-        type: 'spellcastingEntry',
-        flags: {
-          'pf2e-leveler': {
-            [MAGUS_STUDIOUS_ENTRY_FLAG]: true,
+      const created = await actor.createEmbeddedDocuments('Item', [
+        {
+          name: 'Magus Studious Spells',
+          type: 'spellcastingEntry',
+          flags: {
+            'pf2e-leveler': {
+              [MAGUS_STUDIOUS_ENTRY_FLAG]: true,
+            },
+          },
+          system: {
+            tradition: { value: tradition },
+            prepared: { value: classDef.spellcasting.type },
+            ability: { value: ability },
+            proficiency: { value: 1 },
           },
         },
-        system: {
-          tradition: { value: tradition },
-          prepared: { value: classDef.spellcasting.type },
-          ability: { value: ability },
-          proficiency: { value: 1 },
-        },
-      }]);
+      ]);
       entry = created[0];
     }
 
@@ -379,7 +391,9 @@ export class CasterBaseHandler extends BaseClassHandler {
   _isMagusStudiousEntry(item) {
     if (item?.type !== 'spellcastingEntry') return false;
     if (item.flags?.['pf2e-leveler']?.[MAGUS_STUDIOUS_ENTRY_FLAG] === true) return true;
-    return String(item?.name ?? '').toLowerCase().includes('studious');
+    return String(item?.name ?? '')
+      .toLowerCase()
+      .includes('studious');
   }
 }
 

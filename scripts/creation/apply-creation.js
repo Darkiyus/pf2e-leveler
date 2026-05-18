@@ -12,10 +12,7 @@ import { applyFeatGrantEntries } from '../apply/apply-feat-grants.js';
 import { getInitialDomainSpell } from '../data/domain-spells.js';
 import { buildFeatGrantRequirements, getAutomaticFeatGrantEntries, mergeFeatGrantEntries } from '../plan/feat-grants.js';
 import { normalizeSkillSlug } from '../utils/skill-slugs.js';
-import {
-  extractCompendiumUuidsByCategory,
-  isCompendiumUuidInCategory,
-} from '../system-support/profiles.js';
+import { extractCompendiumUuidsByCategory, isCompendiumUuidInCategory } from '../system-support/profiles.js';
 
 export async function applyCreation(actor, data, onProgress = null) {
   info(`Applying character creation for ${actor.name}`);
@@ -101,8 +98,7 @@ async function applyCreationFeatGrants(actor, data) {
     classEntries: [data.class, data.dualClass].filter(Boolean),
     level: 1,
   });
-  const automaticGrants = getAutomaticFeatGrantEntries(detectedRequirements)
-    .filter((grant) => sourceUuids.has(grant?.sourceFeatUuid));
+  const automaticGrants = getAutomaticFeatGrantEntries(detectedRequirements).filter((grant) => sourceUuids.has(grant?.sourceFeatUuid));
   const grants = mergeFeatGrantEntries(
     (data.featGrants ?? []).filter((grant) => sourceUuids.has(grant?.sourceFeatUuid)),
     automaticGrants,
@@ -167,11 +163,7 @@ async function applyClassItems(actor, data) {
 function normalizeDualClassHp(classItemData) {
   if (!Array.isArray(classItemData) || classItemData.length < 2) return;
 
-  const highestHp = Math.max(
-    ...classItemData
-      .map((item) => Number(item?.system?.hp))
-      .filter(Number.isFinite),
-  );
+  const highestHp = Math.max(...classItemData.map((item) => Number(item?.system?.hp)).filter(Number.isFinite));
   if (!Number.isFinite(highestHp)) return;
 
   for (const item of classItemData) {
@@ -182,9 +174,7 @@ function normalizeDualClassHp(classItemData) {
 
 async function applyMixedAncestryHeritage(actor, entry, choices = {}) {
   const selectedAncestry = await resolveAncestryFromMixedChoice(choices?.[MIXED_ANCESTRY_CHOICE_FLAG]);
-  const selectedSlug = selectedAncestry?.slug
-    ?? (typeof choices?.[MIXED_ANCESTRY_CHOICE_FLAG] === 'string' ? choices[MIXED_ANCESTRY_CHOICE_FLAG] : null)
-    ?? null;
+  const selectedSlug = selectedAncestry?.slug ?? (typeof choices?.[MIXED_ANCESTRY_CHOICE_FLAG] === 'string' ? choices[MIXED_ANCESTRY_CHOICE_FLAG] : null) ?? null;
   const vision = normalizeMixedAncestryVision(selectedAncestry?.system?.vision ?? null);
   const itemData = {
     name: entry?.name ?? 'Mixed Ancestry',
@@ -193,9 +183,7 @@ async function applyMixedAncestryHeritage(actor, entry, choices = {}) {
     system: {
       slug: 'mixed-ancestry',
       description: {
-        value: selectedAncestry?.name
-          ? `<p>Mixed Ancestry tied to ${selectedAncestry.name}.</p>`
-          : '<p>Mixed Ancestry.</p>',
+        value: selectedAncestry?.name ? `<p>Mixed Ancestry tied to ${selectedAncestry.name}.</p>` : '<p>Mixed Ancestry.</p>',
       },
       traits: {
         value: [],
@@ -281,7 +269,9 @@ async function applyBoosts(actor, data) {
   }
 
   if (freeBoosts.length) {
-    const buildSource = foundry.utils.mergeObject(actor.toObject().system.build ?? {}, { attributes: { boosts: {} } });
+    const buildSource = foundry.utils.mergeObject(actor.toObject().system.build ?? {}, {
+      attributes: { boosts: {} },
+    });
     buildSource.attributes.boosts[1] = freeBoosts;
     await actor.update({ 'system.build': buildSource });
   }
@@ -348,14 +338,14 @@ async function applySelectedItems(actor, data) {
 }
 
 async function applyEquipment(actor, data) {
-  for (const entry of (data.permanentItems ?? [])) {
+  for (const entry of data.permanentItems ?? []) {
     if (!entry) continue;
     const item = await fromUuid(entry.uuid).catch(() => null);
     if (!item) continue;
     const itemData = foundry.utils.deepClone(item.toObject());
     await actor.createEmbeddedDocuments('Item', [itemData]);
   }
-  for (const entry of (data.equipment ?? [])) {
+  for (const entry of data.equipment ?? []) {
     const item = await fromUuid(entry.uuid).catch(() => null);
     if (!item) continue;
     const itemData = foundry.utils.deepClone(item.toObject());
@@ -380,7 +370,7 @@ async function applySelectedSkillChoices(actor, data) {
 }
 
 async function ensureGrantedFeatSectionsApplied(actor, data) {
-  for (const section of (data.grantedFeatSections ?? [])) {
+  for (const section of data.grantedFeatSections ?? []) {
     const uuid = section?.slot;
     if (typeof uuid !== 'string' || uuid.length === 0) continue;
     if (isHandlerManagedFocusSpellChoiceSection(data, section)) continue;
@@ -451,22 +441,25 @@ export function getAdditionalSelectedItems(data) {
   const containers = [
     { choiceSets: data.subclass?.choiceSets ?? [], choices: data.subclass?.choices ?? {} },
     { choiceSets: data.ancestryFeat?.choiceSets ?? [], choices: data.ancestryFeat?.choices ?? {} },
-    { choiceSets: data.ancestryParagonFeat?.choiceSets ?? [], choices: data.ancestryParagonFeat?.choices ?? {} },
+    {
+      choiceSets: data.ancestryParagonFeat?.choiceSets ?? [],
+      choices: data.ancestryParagonFeat?.choices ?? {},
+    },
     { choiceSets: data.classFeat?.choiceSets ?? [], choices: data.classFeat?.choices ?? {} },
     { choiceSets: data.skillFeat?.choiceSets ?? [], choices: data.skillFeat?.choices ?? {} },
-    ...((data.grantedFeatSections ?? [])
+    ...(data.grantedFeatSections ?? [])
       .filter((section) => !isHandlerManagedFocusSpellChoiceSection(data, section))
       .map((section) => ({
         choiceSets: section.choiceSets ?? [],
         choices: getGrantedFeatChoiceValues(data, section.slot),
-      }))),
+      })),
   ];
 
   const seen = new Set();
   const entries = [];
 
   for (const container of containers) {
-    for (const choiceSet of (container.choiceSets ?? [])) {
+    for (const choiceSet of container.choiceSets ?? []) {
       const selectedValue = container.choices?.[choiceSet.flag];
       if (typeof selectedValue !== 'string' || selectedValue.length === 0 || selectedValue === '[object Object]') continue;
       const option = findMatchingChoiceOption(choiceSet.options, selectedValue);
@@ -487,19 +480,22 @@ export function getAdditionalSelectedItems(data) {
 export function getAdditionalSelectedSkills(data) {
   const containers = [
     { choiceSets: data.ancestryFeat?.choiceSets ?? [], choices: data.ancestryFeat?.choices ?? {} },
-    { choiceSets: data.ancestryParagonFeat?.choiceSets ?? [], choices: data.ancestryParagonFeat?.choices ?? {} },
+    {
+      choiceSets: data.ancestryParagonFeat?.choiceSets ?? [],
+      choices: data.ancestryParagonFeat?.choices ?? {},
+    },
     { choiceSets: data.classFeat?.choiceSets ?? [], choices: data.classFeat?.choices ?? {} },
     { choiceSets: data.skillFeat?.choiceSets ?? [], choices: data.skillFeat?.choices ?? {} },
-    ...((data.grantedFeatSections ?? []).map((section) => ({
+    ...(data.grantedFeatSections ?? []).map((section) => ({
       choiceSets: section.choiceSets ?? [],
       choices: getGrantedFeatChoiceValues(data, section.slot),
-    }))),
+    })),
   ];
 
   const skills = new Set();
 
   for (const container of containers) {
-    for (const choiceSet of (container.choiceSets ?? [])) {
+    for (const choiceSet of container.choiceSets ?? []) {
       const selectedValue = container.choices?.[choiceSet.flag];
       if (!choiceSet?.grantsSkillTraining && !isReplacementSkillTrainingChoice(choiceSet, selectedValue)) continue;
       const skill = resolveSelectedSkillChoice(choiceSet, selectedValue);
@@ -534,12 +530,7 @@ function normalizeStoredChoiceValue(itemData, flag, value, choiceSets = []) {
     .map((option) => option?.value ?? option?.label)
     .filter((candidate) => typeof candidate === 'string' && candidate.length > 0);
 
-  for (const candidate of [
-    matchingOption.value,
-    matchingOption.slug,
-    matchingOption.label,
-    matchingOption.name,
-  ]) {
+  for (const candidate of [matchingOption.value, matchingOption.slug, matchingOption.label, matchingOption.name]) {
     if (typeof candidate !== 'string' || candidate.length === 0 || candidate.startsWith('Compendium.')) continue;
     if (ruleValues.some((ruleValue) => normalizeChoiceValue(ruleValue) === normalizeChoiceValue(candidate))) {
       return candidate;
@@ -592,21 +583,27 @@ async function getDirectFeatGrantedSpellEntries(data) {
 export function getAdditionalSelectedFormulas(data) {
   const containers = [
     { choiceSets: data.ancestryFeat?.choiceSets ?? [], choices: data.ancestryFeat?.choices ?? {} },
-    { choiceSets: data.ancestryParagonFeat?.choiceSets ?? [], choices: data.ancestryParagonFeat?.choices ?? {} },
+    {
+      choiceSets: data.ancestryParagonFeat?.choiceSets ?? [],
+      choices: data.ancestryParagonFeat?.choices ?? {},
+    },
     { choiceSets: data.classFeat?.choiceSets ?? [], choices: data.classFeat?.choices ?? {} },
-    { choiceSets: data.dualClassFeat?.choiceSets ?? [], choices: data.dualClassFeat?.choices ?? {} },
+    {
+      choiceSets: data.dualClassFeat?.choiceSets ?? [],
+      choices: data.dualClassFeat?.choices ?? {},
+    },
     { choiceSets: data.skillFeat?.choiceSets ?? [], choices: data.skillFeat?.choices ?? {} },
-    ...((data.grantedFeatSections ?? []).map((section) => ({
+    ...(data.grantedFeatSections ?? []).map((section) => ({
       choiceSets: section.choiceSets ?? [],
       choices: getGrantedFeatChoiceValues(data, section.slot),
-    }))),
+    })),
   ];
 
   const seen = new Set();
   const entries = [];
 
   for (const container of containers) {
-    for (const choiceSet of (container.choiceSets ?? [])) {
+    for (const choiceSet of container.choiceSets ?? []) {
       if (!isFormulaChoiceSet(choiceSet)) continue;
       const selectedValue = container.choices?.[choiceSet.flag];
       if (typeof selectedValue !== 'string' || selectedValue.length === 0 || selectedValue === '[object Object]') continue;
@@ -626,34 +623,12 @@ export function getAdditionalSelectedFormulas(data) {
 }
 
 function getSelectedFeatEntries(data) {
-  return [
-    data.ancestryFeat,
-    data.ancestryParagonFeat,
-    data.classFeat,
-    data.dualClassFeat,
-    data.skillFeat,
-    ...((data.grantedFeatSections ?? [])
-      .map((section) => (section?.slot && section?.featName ? { uuid: section.slot, name: section.featName } : null))
-      .filter(Boolean)),
-  ].filter((entry) => !!entry?.uuid);
+  return [data.ancestryFeat, data.ancestryParagonFeat, data.classFeat, data.dualClassFeat, data.skillFeat, ...(data.grantedFeatSections ?? []).map((section) => (section?.slot && section?.featName ? { uuid: section.slot, name: section.featName } : null)).filter(Boolean)].filter((entry) => !!entry?.uuid);
 }
 
 function getClassSelectionSourceEntries(data, target) {
   const bucket = getClassSelectionData(data, target);
-  return [
-    bucket.implement,
-    bucket.innovationItem,
-    bucket.innovationModification,
-    bucket.secondElement,
-    bucket.subconsciousMind,
-    bucket.thesis,
-    bucket.deity,
-    bucket.devotionSpell,
-    ...(bucket.tactics ?? []),
-    ...(bucket.ikons ?? []),
-    ...(bucket.kineticImpulses ?? []),
-    ...(bucket.apparitions ?? []),
-  ].filter((entry) => !!entry?.uuid);
+  return [bucket.implement, bucket.innovationItem, bucket.innovationModification, bucket.secondElement, bucket.subconsciousMind, bucket.thesis, bucket.deity, bucket.devotionSpell, ...(bucket.tactics ?? []), ...(bucket.ikons ?? []), ...(bucket.kineticImpulses ?? []), ...(bucket.apparitions ?? [])].filter((entry) => !!entry?.uuid);
 }
 
 function getSelectedChoiceSourceEntries(data) {
@@ -661,27 +636,36 @@ function getSelectedChoiceSourceEntries(data) {
     { choiceSets: data.subclass?.choiceSets ?? [], choices: data.subclass?.choices ?? {} },
     { choiceSets: data.dualSubclass?.choiceSets ?? [], choices: data.dualSubclass?.choices ?? {} },
     { choiceSets: data.ancestryFeat?.choiceSets ?? [], choices: data.ancestryFeat?.choices ?? {} },
-    { choiceSets: data.ancestryParagonFeat?.choiceSets ?? [], choices: data.ancestryParagonFeat?.choices ?? {} },
+    {
+      choiceSets: data.ancestryParagonFeat?.choiceSets ?? [],
+      choices: data.ancestryParagonFeat?.choices ?? {},
+    },
     { choiceSets: data.classFeat?.choiceSets ?? [], choices: data.classFeat?.choices ?? {} },
-    { choiceSets: data.dualClassFeat?.choiceSets ?? [], choices: data.dualClassFeat?.choices ?? {} },
+    {
+      choiceSets: data.dualClassFeat?.choiceSets ?? [],
+      choices: data.dualClassFeat?.choices ?? {},
+    },
     { choiceSets: data.skillFeat?.choiceSets ?? [], choices: data.skillFeat?.choices ?? {} },
-    ...((data.grantedFeatSections ?? [])
+    ...(data.grantedFeatSections ?? [])
       .filter((section) => !isHandlerManagedFocusSpellChoiceSection(data, section))
       .map((section) => ({
         choiceSets: section.choiceSets ?? [],
         choices: getGrantedFeatChoiceValues(data, section.slot),
-      }))),
+      })),
   ];
 
   return containers.flatMap((container) =>
-    (container.choiceSets ?? []).map((choiceSet) => {
-      const selectedValue = container.choices?.[choiceSet.flag];
-      if (typeof selectedValue !== 'string' || selectedValue.length === 0 || selectedValue === '[object Object]') return null;
-      const option = findMatchingChoiceOption(choiceSet.options ?? [], selectedValue);
-      const uuid = option?.uuid ?? (selectedValue.startsWith('Compendium.') ? selectedValue : null);
-      if (!uuid) return null;
-      return { uuid, name: option?.label ?? choiceSet.prompt ?? uuid };
-    }).filter(Boolean));
+    (container.choiceSets ?? [])
+      .map((choiceSet) => {
+        const selectedValue = container.choices?.[choiceSet.flag];
+        if (typeof selectedValue !== 'string' || selectedValue.length === 0 || selectedValue === '[object Object]') return null;
+        const option = findMatchingChoiceOption(choiceSet.options ?? [], selectedValue);
+        const uuid = option?.uuid ?? (selectedValue.startsWith('Compendium.') ? selectedValue : null);
+        if (!uuid) return null;
+        return { uuid, name: option?.label ?? choiceSet.prompt ?? uuid };
+      })
+      .filter(Boolean),
+  );
 }
 
 function extractSpellUuidsFromFeat(feat, choices = {}) {
@@ -714,7 +698,9 @@ function extractDomainSpellEntriesFromFeat(feat, choices = {}) {
 }
 
 function isDomainSpellFeat(feat) {
-  const slug = String(feat?.system?.slug ?? feat?.slug ?? '').trim().toLowerCase();
+  const slug = String(feat?.system?.slug ?? feat?.slug ?? '')
+    .trim()
+    .toLowerCase();
   if (['deitys-domain', 'domain-initiate'].includes(slug)) return true;
 
   const text = String(feat?.system?.description?.value ?? '')
@@ -726,7 +712,11 @@ function isDomainSpellFeat(feat) {
 }
 
 function isDomainChoiceFlag(flag) {
-  return ['deitysdomain', 'domaininitiate'].includes(String(flag ?? '').trim().toLowerCase());
+  return ['deitysdomain', 'domaininitiate'].includes(
+    String(flag ?? '')
+      .trim()
+      .toLowerCase(),
+  );
 }
 
 function resolveGrantRuleUuid(uuid, choices) {
@@ -751,9 +741,7 @@ function hasEmbeddedSpellChoiceDescription(html) {
     .toLowerCase();
   if (extractCompendiumUuidsByCategory(html, 'spells').length === 0) return false;
 
-  return (/\b(?:choose|select|pick)\b/.test(text)
-      && (/\bspell(?:book|s)?\b/.test(text) || /\brepertoire\b/.test(text)))
-    || /\bor another\b.{0,120}\b(?:cantrip|spell|focus spell|innate spell)\b/u.test(text);
+  return (/\b(?:choose|select|pick)\b/.test(text) && (/\bspell(?:book|s)?\b/.test(text) || /\brepertoire\b/.test(text))) || /\bor another\b.{0,120}\b(?:cantrip|spell|focus spell|innate spell)\b/u.test(text);
 }
 
 function hasDirectSpellGrantDescription(html) {
@@ -765,8 +753,7 @@ function hasDirectSpellGrantDescription(html) {
     .toLowerCase();
   if (!text) return false;
 
-  return /\b(?:you\s+)?(?:can\s+)?cast\b/.test(text)
-    || /\b(?:gain|gains|grant|grants|learn|add)\b.{0,100}\b(?:cantrip|spell|focus spell|innate spell)\b/u.test(text);
+  return /\b(?:you\s+)?(?:can\s+)?cast\b/.test(text) || /\b(?:gain|gains|grant|grants|learn|add)\b.{0,100}\b(?:cantrip|spell|focus spell|innate spell)\b/u.test(text);
 }
 
 function isApplicableStoredChoice(itemData, flag, value) {
@@ -801,8 +788,7 @@ function getChoiceSetFlag(rule, index = 0) {
 function isSkillChoiceRule(rule) {
   if (!rule || rule.key !== 'ChoiceSet') return false;
   if (rule?.choices?.config === 'skills') return true;
-  return Array.isArray(rule?.choices) && rule.choices.length > 0
-    && rule.choices.every((option) => !!normalizeSkillChoice(option?.value ?? option?.label));
+  return Array.isArray(rule?.choices) && rule.choices.length > 0 && rule.choices.every((option) => !!normalizeSkillChoice(option?.value ?? option?.label));
 }
 
 function getRuleChoiceOptions(rule) {
@@ -817,19 +803,14 @@ function getStoredChoiceSelections(data, uuid) {
   if (data.classFeat?.uuid === uuid) return data.classFeat.choices ?? {};
   if (data.skillFeat?.uuid === uuid) return data.skillFeat.choices ?? {};
   if (uuid === MIXED_ANCESTRY_UUID) {
-    const selected = getMixedAncestrySelectedValue(data.mixedAncestry)
-      ?? getMixedAncestrySelectedValue(getGrantedFeatChoiceValues(data, MIXED_ANCESTRY_UUID));
+    const selected = getMixedAncestrySelectedValue(data.mixedAncestry) ?? getMixedAncestrySelectedValue(getGrantedFeatChoiceValues(data, MIXED_ANCESTRY_UUID));
     return selected ? { [MIXED_ANCESTRY_CHOICE_FLAG]: selected } : {};
   }
   return getGrantedFeatChoiceValues(data, uuid);
 }
 
 function actorHasItemSource(actor, uuid) {
-  const items = Array.isArray(actor?.items)
-    ? actor.items
-    : Array.isArray(actor?.items?.contents)
-      ? actor.items.contents
-      : [];
+  const items = Array.isArray(actor?.items) ? actor.items : Array.isArray(actor?.items?.contents) ? actor.items.contents : [];
 
   return items.some((item) => {
     const sourceId = item?.sourceId ?? item?.flags?.core?.sourceId ?? item?._stats?.compendiumSource ?? null;
@@ -841,7 +822,10 @@ function formatManualGrantedSourceSuffix(data, sourceName) {
   const normalized = String(sourceName ?? '').trim();
   if (!normalized) return '';
 
-  const segments = normalized.split('->').map((part) => part.trim()).filter(Boolean);
+  const segments = normalized
+    .split('->')
+    .map((part) => part.trim())
+    .filter(Boolean);
   if (segments.length === 0) return '';
   const primary = segments[0];
 
@@ -869,9 +853,7 @@ function shouldApplyManualGrantedSection(data, section) {
   if (!sourceSection) return true;
 
   const sourceChoices = getGrantedFeatChoiceValues(data, sourceSection.slot);
-  const sourceChoiceSet = (sourceSection.choiceSets ?? []).find((choiceSet) =>
-    Array.isArray(choiceSet?.options) && choiceSet.options.length > 0 && choiceSet.flag,
-  );
+  const sourceChoiceSet = (sourceSection.choiceSets ?? []).find((choiceSet) => Array.isArray(choiceSet?.options) && choiceSet.options.length > 0 && choiceSet.flag);
   if (!sourceChoiceSet) return true;
 
   const selectedValue = sourceChoices?.[sourceChoiceSet.flag];
@@ -885,7 +867,10 @@ function shouldApplyManualGrantedSection(data, section) {
 function isAncestryParagonGrantChain(data, section) {
   const sourceName = String(section?.sourceName ?? '').trim();
   if (!sourceName.includes('->')) return false;
-  const [primarySource] = sourceName.split('->').map((part) => part.trim()).filter(Boolean);
+  const [primarySource] = sourceName
+    .split('->')
+    .map((part) => part.trim())
+    .filter(Boolean);
   return !!primarySource && String(data?.ancestryParagonFeat?.name ?? '').trim() === primarySource;
 }
 
@@ -893,27 +878,20 @@ function findNestedManualGrantedSourceItem(actor, data, section) {
   if (!isAncestryParagonGrantChain(data, section)) return null;
   const sourceUuid = data?.ancestryParagonFeat?.uuid ?? null;
   const sourceName = data?.ancestryParagonFeat?.name ?? null;
-  return getActorItems(actor).find((item) =>
-    (sourceUuid && getActorItemSourceId(item) === sourceUuid)
-    || (sourceUuid && item?.uuid === sourceUuid)
-    || (sourceName && item?.name === sourceName),
-  ) ?? null;
+  return getActorItems(actor).find((item) => (sourceUuid && getActorItemSourceId(item) === sourceUuid) || (sourceUuid && item?.uuid === sourceUuid) || (sourceName && item?.name === sourceName)) ?? null;
 }
 
 function isSelectedFeatGrantChain(data, section) {
   const sourceName = String(section?.sourceName ?? '').trim();
   if (!sourceName.includes('->')) return false;
 
-  const [primarySource] = sourceName.split('->').map((part) => part.trim()).filter(Boolean);
+  const [primarySource] = sourceName
+    .split('->')
+    .map((part) => part.trim())
+    .filter(Boolean);
   if (!primarySource) return false;
 
-  return [
-    data?.ancestryFeat,
-    data?.ancestryParagonFeat,
-    data?.classFeat,
-    data?.dualClassFeat,
-    data?.skillFeat,
-  ].some((feat) => String(feat?.name ?? '').trim() === primarySource);
+  return [data?.ancestryFeat, data?.ancestryParagonFeat, data?.classFeat, data?.dualClassFeat, data?.skillFeat].some((feat) => String(feat?.name ?? '').trim() === primarySource);
 }
 
 function getActorItems(actor) {
@@ -923,15 +901,16 @@ function getActorItems(actor) {
 }
 
 function getActorItemSourceId(item) {
-  return item?.sourceId
-    ?? item?.flags?.core?.sourceId
-    ?? item?._stats?.compendiumSource
-    ?? null;
+  return item?.sourceId ?? item?.flags?.core?.sourceId ?? item?._stats?.compendiumSource ?? null;
 }
 
 function isAssuranceSection(section) {
-  const featName = String(section?.featName ?? '').trim().toLowerCase();
-  const sourceName = String(section?.sourceName ?? '').trim().toLowerCase();
+  const featName = String(section?.featName ?? '')
+    .trim()
+    .toLowerCase();
+  const sourceName = String(section?.sourceName ?? '')
+    .trim()
+    .toLowerCase();
   return featName === 'assurance' || sourceName.endsWith('-> assurance');
 }
 
@@ -939,13 +918,13 @@ function findManualGrantedSourceSection(data, section) {
   const sourceName = String(section?.sourceName ?? '').trim();
   if (!sourceName.includes('->')) return null;
 
-  const [primarySource] = sourceName.split('->').map((part) => part.trim()).filter(Boolean);
+  const [primarySource] = sourceName
+    .split('->')
+    .map((part) => part.trim())
+    .filter(Boolean);
   if (!primarySource) return null;
 
-  return (data?.grantedFeatSections ?? []).find((candidate) =>
-    candidate !== section
-    && String(candidate?.featName ?? '').trim() === primarySource,
-  ) ?? null;
+  return (data?.grantedFeatSections ?? []).find((candidate) => candidate !== section && String(candidate?.featName ?? '').trim() === primarySource) ?? null;
 }
 
 async function resolveAncestryFromMixedChoice(value) {
@@ -988,13 +967,7 @@ function resolveSelectedSkillChoice(choiceSet, selectedValue) {
   }
 
   const option = choiceSet.options?.find((candidate) => candidate.value === selectedValue);
-  const candidates = [
-    selectedValue,
-    option?.value,
-    option?.label,
-    option?.slug,
-    option?.name,
-  ];
+  const candidates = [selectedValue, option?.value, option?.label, option?.slug, option?.name];
 
   for (const candidate of candidates) {
     const slug = normalizeSkillChoice(candidate);
@@ -1038,24 +1011,7 @@ function normalizeSkillChoice(value) {
     thi: 'thievery',
   };
   if (aliases[normalized]) return aliases[normalized];
-  if ([
-    'acrobatics',
-    'arcana',
-    'athletics',
-    'crafting',
-    'deception',
-    'diplomacy',
-    'intimidation',
-    'medicine',
-    'nature',
-    'occultism',
-    'performance',
-    'religion',
-    'society',
-    'stealth',
-    'survival',
-    'thievery',
-  ].includes(normalized)) return normalized;
+  if (['acrobatics', 'arcana', 'athletics', 'crafting', 'deception', 'diplomacy', 'intimidation', 'medicine', 'nature', 'occultism', 'performance', 'religion', 'society', 'stealth', 'survival', 'thievery'].includes(normalized)) return normalized;
 
   const skills = globalThis.CONFIG?.PF2E?.skills ?? {};
   for (const [slug, rawEntry] of Object.entries(skills)) {
@@ -1093,19 +1049,13 @@ function isHandlerManagedFocusSpellChoiceSection(data, section) {
   if (!Array.isArray(section?.choiceSets) || section.choiceSets.length === 0) return false;
   if (!section.choiceSets.every(isStoredSpellChoiceSet)) return false;
 
-  const labels = [
-    section?.slug,
-    section?.featName,
-    section?.name,
-    section?.sourceName,
-    section?.slot,
-  ].map((value) => String(value ?? '').trim().toLowerCase());
+  const labels = [section?.slug, section?.featName, section?.name, section?.sourceName, section?.slot].map((value) =>
+    String(value ?? '')
+      .trim()
+      .toLowerCase(),
+  );
 
-  return labels.some((label) =>
-    label === 'devotion-spells'
-    || label === 'devotion spells'
-    || label.endsWith('-> devotion spells')
-    || label.includes('feature-devotion-spells'));
+  return labels.some((label) => label === 'devotion-spells' || label === 'devotion spells' || label.endsWith('-> devotion spells') || label.includes('feature-devotion-spells'));
 }
 
 function isStoredSpellChoiceSet(choiceSet) {
@@ -1131,9 +1081,7 @@ async function applySelectedSpell(actor, entry, data) {
   const spell = await fromUuid(entry.uuid).catch(() => null);
   if (!spell) return;
 
-  const existing = actor.items?.find((item) =>
-    item.type === 'spell' && (item.sourceId ?? item.flags?.core?.sourceId ?? item.uuid) === spell.uuid,
-  );
+  const existing = actor.items?.find((item) => item.type === 'spell' && (item.sourceId ?? item.flags?.core?.sourceId ?? item.uuid) === spell.uuid);
   if (existing) return;
 
   const focusLike = isFocusLikeSpell(spell);
@@ -1145,7 +1093,6 @@ async function applySelectedSpell(actor, entry, data) {
   if (focusLike) {
     await ensureFocusPool(actor);
   }
-
 }
 
 function isFocusLikeSpell(spell) {
@@ -1156,27 +1103,27 @@ function isFocusLikeSpell(spell) {
 }
 
 async function ensureSpellcastingEntry(actor, spell, data, { focusLike = false } = {}) {
-  const existing = actor.items?.find((item) =>
-    item.type === 'spellcastingEntry' && (focusLike ? item.system?.prepared?.value === 'focus' : true),
-  );
+  const existing = actor.items?.find((item) => item.type === 'spellcastingEntry' && (focusLike ? item.system?.prepared?.value === 'focus' : true));
   if (existing) return existing;
 
   const classDef = data.class?.slug ? ClassRegistry.get(data.class.slug) : null;
   const tradition = resolveSpellTradition(spell, data, classDef, focusLike);
   const ability = classDef?.keyAbility?.length === 1 ? classDef.keyAbility[0] : 'cha';
   const name = focusLike ? `${capitalize(data.class?.slug ?? 'Focus')} Focus Spells` : 'Innate Spells';
-  const prepared = focusLike ? 'focus' : (classDef?.spellcasting ? classDef.spellcasting.type : 'innate');
+  const prepared = focusLike ? 'focus' : classDef?.spellcasting ? classDef.spellcasting.type : 'innate';
 
-  const created = await actor.createEmbeddedDocuments('Item', [{
-    name,
-    type: 'spellcastingEntry',
-    system: {
-      tradition: { value: tradition },
-      prepared: { value: prepared },
-      ability: { value: ability },
-      proficiency: { value: 1 },
+  const created = await actor.createEmbeddedDocuments('Item', [
+    {
+      name,
+      type: 'spellcastingEntry',
+      system: {
+        tradition: { value: tradition },
+        prepared: { value: prepared },
+        ability: { value: ability },
+        proficiency: { value: 1 },
+      },
     },
-  }]);
+  ]);
 
   return created[0];
 }
@@ -1184,7 +1131,7 @@ async function ensureSpellcastingEntry(actor, spell, data, { focusLike = false }
 function resolveSpellTradition(spell, data, classDef, focusLike) {
   if (focusLike && data.subclass?.tradition) return data.subclass.tradition;
   if (focusLike && isDivineFocusSpell(spell, data)) return 'divine';
-  if (classDef?.spellcasting?.tradition && !['bloodline', 'patron'].includes(classDef.spellcasting.tradition)) {
+  if (classDef?.spellcasting?.tradition && !['bloodline', 'patron', 'connection', 'paradox'].includes(classDef.spellcasting.tradition)) {
     return classDef.spellcasting.tradition;
   }
   if (data.subclass?.tradition) return data.subclass.tradition;
@@ -1194,8 +1141,7 @@ function resolveSpellTradition(spell, data, classDef, focusLike) {
 
 function isDivineFocusSpell(spell, data) {
   const traits = spell.system?.traits?.value ?? [];
-  return ['cleric', 'champion'].some((trait) => traits.includes(trait))
-    || ['cleric', 'champion'].includes(data.class?.slug);
+  return ['cleric', 'champion'].some((trait) => traits.includes(trait)) || ['cleric', 'champion'].includes(data.class?.slug);
 }
 
 async function ensureFocusPool(actor) {
@@ -1217,14 +1163,28 @@ async function createCreationMessage(actor, data) {
   const sections = [];
   const subclassChoiceLabels = await getSelectedSubclassChoiceLabels(data.subclass);
   const identityRows = [];
-  if (data.ancestry) identityRows.push({ label: localize('CREATION.STEPS.ANCESTRY'), value: formatChatLink(data.ancestry) });
-  if (data.heritage) identityRows.push({ label: localize('CREATION.STEPS.HERITAGE'), value: formatChatLink(data.heritage) });
-  if (data.background) identityRows.push({ label: localize('CREATION.STEPS.BACKGROUND'), value: formatChatLink(data.background) });
-  if (data.class) identityRows.push({ label: localize('CREATION.STEPS.CLASS'), value: formatChatLink(data.class) });
+  if (data.ancestry)
+    identityRows.push({
+      label: localize('CREATION.STEPS.ANCESTRY'),
+      value: formatChatLink(data.ancestry),
+    });
+  if (data.heritage)
+    identityRows.push({
+      label: localize('CREATION.STEPS.HERITAGE'),
+      value: formatChatLink(data.heritage),
+    });
+  if (data.background)
+    identityRows.push({
+      label: localize('CREATION.STEPS.BACKGROUND'),
+      value: formatChatLink(data.background),
+    });
+  if (data.class)
+    identityRows.push({
+      label: localize('CREATION.STEPS.CLASS'),
+      value: formatChatLink(data.class),
+    });
   if (data.subclass) {
-    const subclassLabel = subclassChoiceLabels.length > 0
-      ? `${formatChatLink(data.subclass)} (${subclassChoiceLabels.join(', ')})`
-      : formatChatLink(data.subclass);
+    const subclassLabel = subclassChoiceLabels.length > 0 ? `${formatChatLink(data.subclass)} (${subclassChoiceLabels.join(', ')})` : formatChatLink(data.subclass);
     identityRows.push({ label: localize('CREATION.STEPS.SUBCLASS'), value: subclassLabel });
   }
   if (identityRows.length) {
@@ -1232,28 +1192,73 @@ async function createCreationMessage(actor, data) {
   }
 
   const classChoices = [];
-  if (data.implement) classChoices.push({ label: localize('CREATION.CHAT.IMPLEMENT'), value: formatChatLink(data.implement) });
-  if (data.tactics?.length) classChoices.push({ label: localize('CREATION.CHAT.TACTICS'), value: data.tactics.map((entry) => formatChatLink(entry)).join(', ') });
-  if (data.ikons?.length) classChoices.push({ label: localize('CREATION.CHAT.IKONS'), value: data.ikons.map((entry) => formatChatLink(entry)).join(', ') });
-  if (data.innovationItem) classChoices.push({ label: localize('CREATION.CHAT.INNOVATION_ITEM'), value: formatChatLink(data.innovationItem) });
-  if (data.innovationModification) classChoices.push({ label: localize('CREATION.CHAT.INNOVATION_MOD'), value: formatChatLink(data.innovationModification) });
-  if (data.kineticGateMode) classChoices.push({ label: localize('CREATION.CHAT.KINETIC_GATE'), value: data.kineticGateMode === 'dual-gate' ? localize('CREATION.CHAT.DUAL_GATE') : localize('CREATION.CHAT.SINGLE_GATE') });
-  if (data.secondElement) classChoices.push({ label: localize('CREATION.CHAT.SECOND_ELEMENT'), value: formatChatLink(data.secondElement) });
-  if (data.kineticImpulses?.length) classChoices.push({ label: localize('CREATION.CHAT.IMPULSES'), value: data.kineticImpulses.map((entry) => formatChatLink(entry)).join(', ') });
-  if (data.subconsciousMind) classChoices.push({ label: localize('CREATION.CHAT.SUBCONSCIOUS_MIND'), value: formatChatLink(data.subconsciousMind) });
-  if (data.thesis) classChoices.push({ label: localize('CREATION.CHAT.ARCANE_THESIS'), value: formatChatLink(data.thesis) });
+  if (data.implement)
+    classChoices.push({
+      label: localize('CREATION.CHAT.IMPLEMENT'),
+      value: formatChatLink(data.implement),
+    });
+  if (data.tactics?.length)
+    classChoices.push({
+      label: localize('CREATION.CHAT.TACTICS'),
+      value: data.tactics.map((entry) => formatChatLink(entry)).join(', '),
+    });
+  if (data.ikons?.length)
+    classChoices.push({
+      label: localize('CREATION.CHAT.IKONS'),
+      value: data.ikons.map((entry) => formatChatLink(entry)).join(', '),
+    });
+  if (data.innovationItem)
+    classChoices.push({
+      label: localize('CREATION.CHAT.INNOVATION_ITEM'),
+      value: formatChatLink(data.innovationItem),
+    });
+  if (data.innovationModification)
+    classChoices.push({
+      label: localize('CREATION.CHAT.INNOVATION_MOD'),
+      value: formatChatLink(data.innovationModification),
+    });
+  if (data.kineticGateMode)
+    classChoices.push({
+      label: localize('CREATION.CHAT.KINETIC_GATE'),
+      value: data.kineticGateMode === 'dual-gate' ? localize('CREATION.CHAT.DUAL_GATE') : localize('CREATION.CHAT.SINGLE_GATE'),
+    });
+  if (data.secondElement)
+    classChoices.push({
+      label: localize('CREATION.CHAT.SECOND_ELEMENT'),
+      value: formatChatLink(data.secondElement),
+    });
+  if (data.kineticImpulses?.length)
+    classChoices.push({
+      label: localize('CREATION.CHAT.IMPULSES'),
+      value: data.kineticImpulses.map((entry) => formatChatLink(entry)).join(', '),
+    });
+  if (data.subconsciousMind)
+    classChoices.push({
+      label: localize('CREATION.CHAT.SUBCONSCIOUS_MIND'),
+      value: formatChatLink(data.subconsciousMind),
+    });
+  if (data.thesis)
+    classChoices.push({
+      label: localize('CREATION.CHAT.ARCANE_THESIS'),
+      value: formatChatLink(data.thesis),
+    });
   if (data.apparitions?.length) {
-    const labels = data.apparitions.map((entry) =>
-      entry.uuid === data.primaryApparition ? `${formatChatLink(entry)} (Primary)` : formatChatLink(entry),
-    );
+    const labels = data.apparitions.map((entry) => (entry.uuid === data.primaryApparition ? `${formatChatLink(entry)} (Primary)` : formatChatLink(entry)));
     classChoices.push({ label: localize('CREATION.CHAT.APPARITIONS'), value: labels.join(', ') });
   }
-  if (data.deity) classChoices.push({ label: localize('CREATION.STEPS.DEITY'), value: formatChatLink(data.deity) });
+  if (data.deity)
+    classChoices.push({
+      label: localize('CREATION.STEPS.DEITY'),
+      value: formatChatLink(data.deity),
+    });
   if (data.sanctification) {
     const handler = getClassHandler(data.class?.slug);
     const sanctStep = handler.getExtraSteps().find((s) => s.id === 'sanctification');
     const sanctLabel = sanctStep?.label ?? 'Sanctification';
-    classChoices.push({ label: sanctLabel, value: data.sanctification === 'none' ? localize('CREATION.CHAT.NONE') : capitalize(data.sanctification) });
+    classChoices.push({
+      label: sanctLabel,
+      value: data.sanctification === 'none' ? localize('CREATION.CHAT.NONE') : capitalize(data.sanctification),
+    });
   }
   if (data.divineFont) {
     const handler = getClassHandler(data.class?.slug);
@@ -1266,20 +1271,33 @@ async function createCreationMessage(actor, data) {
   }
 
   const training = [];
-  if (data.languages?.length) training.push({ label: localize('CREATION.STEPS.LANGUAGES'), value: data.languages.map((slug) => localizeLanguageSlug(slug)).join(', ') });
+  if (data.languages?.length)
+    training.push({
+      label: localize('CREATION.STEPS.LANGUAGES'),
+      value: data.languages.map((slug) => localizeLanguageSlug(slug)).join(', '),
+    });
   if (data.lores?.length) training.push({ label: localize('CREATION.LORE_SKILLS'), value: data.lores.join(', ') });
   if (data.devotionSpell) {
-    training.push({ label: localize('CREATION.CHAT.FOCUS_SPELL'), value: formatChatLink(data.devotionSpell) });
+    training.push({
+      label: localize('CREATION.CHAT.FOCUS_SPELL'),
+      value: formatChatLink(data.devotionSpell),
+    });
   } else {
     const handler = getClassHandler(data.class?.slug);
     const focusSpells = await handler.resolveFocusSpells(data);
     if (focusSpells.length > 0) {
-      training.push({ label: localize('CREATION.CHAT.FOCUS_SPELLS'), value: focusSpells.map((s) => formatChatLink(s)).join(', ') });
+      training.push({
+        label: localize('CREATION.CHAT.FOCUS_SPELLS'),
+        value: focusSpells.map((s) => formatChatLink(s)).join(', '),
+      });
     }
   }
   if (data.ancestryFeat) {
     const labels = await getSelectedSubclassChoiceLabels(data.ancestryFeat);
-    training.push({ label: localize('SECTIONS.ANCESTRY_FEAT'), value: labels.length ? `${formatChatLink(data.ancestryFeat)} (${labels.join(', ')})` : formatChatLink(data.ancestryFeat) });
+    training.push({
+      label: localize('SECTIONS.ANCESTRY_FEAT'),
+      value: labels.length ? `${formatChatLink(data.ancestryFeat)} (${labels.join(', ')})` : formatChatLink(data.ancestryFeat),
+    });
   }
   if (data.ancestryParagonFeat) {
     const labels = await getSelectedSubclassChoiceLabels(data.ancestryParagonFeat);
@@ -1288,20 +1306,29 @@ async function createCreationMessage(actor, data) {
   }
   if (data.classFeat) {
     const labels = await getSelectedSubclassChoiceLabels(data.classFeat);
-    training.push({ label: localize('SECTIONS.CLASS_FEAT'), value: labels.length ? `${formatChatLink(data.classFeat)} (${labels.join(', ')})` : formatChatLink(data.classFeat) });
+    training.push({
+      label: localize('SECTIONS.CLASS_FEAT'),
+      value: labels.length ? `${formatChatLink(data.classFeat)} (${labels.join(', ')})` : formatChatLink(data.classFeat),
+    });
   }
   if (data.skillFeat) {
     const labels = await getSelectedSubclassChoiceLabels(data.skillFeat);
-    training.push({ label: localize('SECTIONS.SKILL_FEAT'), value: labels.length ? `${formatChatLink(data.skillFeat)} (${labels.join(', ')})` : formatChatLink(data.skillFeat) });
+    training.push({
+      label: localize('SECTIONS.SKILL_FEAT'),
+      value: labels.length ? `${formatChatLink(data.skillFeat)} (${labels.join(', ')})` : formatChatLink(data.skillFeat),
+    });
   }
-  for (const section of (data.grantedFeatSections ?? [])) {
+  for (const section of data.grantedFeatSections ?? []) {
     const labels = await getSelectedSubclassChoiceLabels({
       choiceSets: section.choiceSets ?? [],
       choices: getGrantedFeatChoiceValues(data, section.slot),
     });
     if (labels.length > 0) {
       const sourceSuffix = section.sourceName ? ` (${section.sourceName})` : '';
-      training.push({ label: localize('CREATION.CHAT.GRANTED_FEAT_CHOICE'), value: `${formatChatLink({ uuid: section.slot, name: section.featName })}${sourceSuffix}: ${labels.join(', ')}` });
+      training.push({
+        label: localize('CREATION.CHAT.GRANTED_FEAT_CHOICE'),
+        value: `${formatChatLink({ uuid: section.slot, name: section.featName })}${sourceSuffix}: ${labels.join(', ')}`,
+      });
     }
   }
   if (training.length) {
@@ -1339,7 +1366,7 @@ async function getSelectedSubclassChoiceLabels(subclass) {
   const currentChoices = subclass?.choices ?? {};
   const labels = [];
 
-  for (const choiceSet of (subclass?.choiceSets ?? [])) {
+  for (const choiceSet of subclass?.choiceSets ?? []) {
     const selectedValue = currentChoices[choiceSet.flag];
     if (typeof selectedValue !== 'string' || selectedValue === '[object Object]') continue;
 
@@ -1386,12 +1413,16 @@ function buildChatRowsSection(label, rows) {
     <div style="padding:10px 12px; background:rgba(255,255,255,0.72); border:1px solid rgba(0,0,0,0.08); border-radius:10px;">
       <div style="font-size:11px; font-weight:800; letter-spacing:0.06em; text-transform:uppercase; color:#666; margin-bottom:8px;">${label}</div>
       <div style="display:grid; gap:6px;">
-        ${rows.map((row) => `
+        ${rows
+          .map(
+            (row) => `
           <div style="display:grid; grid-template-columns:minmax(92px, 120px) minmax(0, 1fr); gap:10px; align-items:start;">
             <div style="font-size:12px; font-weight:700; color:#555; min-width:0;">${row.label}</div>
             <div style="font-size:12px; font-weight:600; color:#222; min-width:0; overflow-wrap:anywhere; word-break:break-word;">${row.value}</div>
           </div>
-        `).join('')}
+        `,
+          )
+          .join('')}
       </div>
     </div>
   `;
@@ -1406,7 +1437,7 @@ function localizeLanguageSlug(slug) {
 function formatChatLink(entry) {
   if (!entry) return '';
   const uuid = typeof entry.uuid === 'string' ? entry.uuid : null;
-  const name = typeof entry.name === 'string' ? entry.name : uuid ?? '';
+  const name = typeof entry.name === 'string' ? entry.name : (uuid ?? '');
   if (!uuid || !name) return name;
   return `@UUID[${uuid}]{${name}}`;
 }

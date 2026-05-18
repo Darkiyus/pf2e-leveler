@@ -2,35 +2,7 @@ import { MODULE_ID, MIN_PLAN_LEVEL, MAX_LEVEL, PLAN_STATUS, PERMANENT_ITEM_TYPES
 import { ensureActorClassRegistered, ensureClassItemRegistered, ensureClassRegistry } from '../../classes/ensure.js';
 import { ClassRegistry } from '../../classes/registry.js';
 import { getChoicesForLevel, getGradualBoostGroupLevels, getLevelSummary } from '../../classes/progression.js';
-import {
-  createPlan,
-  getLevelData,
-  setLevelBoosts,
-  setLevelFeat,
-  setLevelSkillIncrease,
-  toggleLevelIntBonusSkill,
-  toggleLevelIntBonusLanguage,
-  addLevelSpell,
-  addLevelReminder,
-  clearLevelReminders,
-  resetLevelData,
-  addLevelFeatRetrain,
-  addLevelSkillRetrain,
-  addLevelCustomFeat,
-  removeLevelCustomFeat,
-  addLevelCustomSkillIncrease,
-  removeLevelCustomSkillIncrease,
-  addLevelCustomSpell,
-  removeLevelCustomSpell,
-  addLevelCustomSpellEntry,
-  removeLevelCustomSpellEntry,
-  setLevelEquipmentSlot,
-  clearLevelEquipmentSlot,
-  addLevelCustomEquipment,
-  removeLevelCustomEquipment,
-  removeLevelSpell,
-  upsertLevelFeatGrant,
-} from '../../plan/plan-model.js';
+import { createPlan, getLevelData, setLevelBoosts, setLevelFeat, setLevelSkillIncrease, toggleLevelIntBonusSkill, toggleLevelIntBonusLanguage, addLevelSpell, addLevelReminder, clearLevelReminders, resetLevelData, addLevelFeatRetrain, addLevelSkillRetrain, addLevelCustomFeat, removeLevelCustomFeat, addLevelCustomSkillIncrease, removeLevelCustomSkillIncrease, addLevelCustomSpell, removeLevelCustomSpell, addLevelCustomSpellEntry, removeLevelCustomSpellEntry, setLevelEquipmentSlot, clearLevelEquipmentSlot, addLevelCustomEquipment, removeLevelCustomEquipment, removeLevelSpell, upsertLevelFeatGrant } from '../../plan/plan-model.js';
 import { getSpellbookBonusCantripSelectionCount } from '../../plan/spellbook-feats.js';
 import { buildFeatGrantRequirements, buildPlanFormulaProgressionRequirements } from '../../plan/feat-grants.js';
 import { getPlan, savePlan, clearPlan, exportPlan, importPlan } from '../../plan/plan-store.js';
@@ -41,58 +13,17 @@ import { isFreeArchetypeEnabled, isMythicEnabled, isABPEnabled, isGradualBoostsE
 import { getDedicationAliasesFromDescription } from '../../utils/feat-aliases.js';
 import { extractFeatSpellcastingMetadata, FEAT_SPELLCASTING_METADATA_VERSION } from '../../utils/spellcasting-support.js';
 import { localize } from '../../utils/i18n.js';
-import {
-  getActiveSkillConfigEntry,
-  getActiveSkillSlugs,
-  isActiveSkillSlug,
-  normalizeSkillSlug,
-  SKILL_ALIASES,
-} from '../../utils/skill-slugs.js';
+import { getActiveSkillConfigEntry, getActiveSkillSlugs, isActiveSkillSlug, normalizeSkillSlug, SKILL_ALIASES } from '../../utils/skill-slugs.js';
 import { FeatPicker } from '../feat-picker.js';
 import { captureScrollState, restoreScrollState } from '../shared/scroll-state.js';
 import { scheduleBringApplicationToFront } from '../shared/window-focus.js';
 import { loadFeats } from '../../feats/feat-cache.js';
 import { getCreationData } from '../../creation/creation-store.js';
-import {
-  doesFeatMatchRequiredSecondLevelClassFeat,
-  getRequiredSecondLevelClassFeatForActor,
-} from '../../classes/class-archetype-requirements.js';
-import {
-  buildAttributeContext,
-  buildIntBonusLanguageContext,
-  buildIntBonusSkillContext,
-  buildIntelligenceBenefitContext,
-  buildSkillContext,
-  getAvailableLanguages,
-  getPlannedLanguagesBeforeLevel,
-  localizeLanguageLabel,
-} from './context.js';
-import {
-  annotateFeat,
-  buildABPContext,
-  buildFeatGrantPreview,
-  buildLoreSkillIncreaseEntry,
-  buildLevelContext,
-  extractFeat,
-  getClassFeaturesForLevel,
-} from './level-context.js';
+import { doesFeatMatchRequiredSecondLevelClassFeat, getRequiredSecondLevelClassFeatForActor } from '../../classes/class-archetype-requirements.js';
+import { buildAttributeContext, buildIntBonusLanguageContext, buildIntBonusSkillContext, buildIntelligenceBenefitContext, buildSkillContext, getAvailableLanguages, getPlannedLanguagesBeforeLevel, localizeLanguageLabel } from './context.js';
+import { annotateFeat, buildABPContext, buildFeatGrantPreview, buildLoreSkillIncreaseEntry, buildLevelContext, extractFeat, getClassFeaturesForLevel } from './level-context.js';
 import { activateLevelPlannerListeners, syncPlannedFeatChoiceSkillRules, syncSameLevelSkillIncreaseFromFeatRules } from './listeners.js';
-import {
-  buildSpellContext,
-  buildCustomSpellEntryOptions,
-  buildSpellSlotDisplay,
-  detectNewSpellRank,
-  findFeatLevel,
-  getDedicationSelectionLimitsForPlanner,
-  getActorSpellCounts,
-  getFocusSpellsForLevel,
-  getGrantedSpellsForLevel,
-  getHighestRank,
-  getSubclassSlug,
-  ordinalRank,
-  resolveSpellTradition,
-  shouldExcludeOwnedSpellIdentityForPlanner,
-} from './spells.js';
+import { buildSpellContext, buildCustomSpellEntryOptions, buildSpellSlotDisplay, detectNewSpellRank, findFeatLevel, getDedicationSelectionLimitsForPlanner, getActorSpellCounts, getFocusSpellsForLevel, getGrantedSpellsForLevel, getHighestRank, getSubclassSlug, ordinalRank, resolveSpellTradition, shouldExcludeOwnedSpellIdentityForPlanner } from './spells.js';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const FEAT_PLAN_CATEGORIES = new Set(['classFeats', 'skillFeats', 'generalFeats', 'ancestryFeats', 'archetypeFeats', 'mythicFeats', 'dualClassFeats', 'customFeats']);
@@ -101,20 +32,7 @@ const FEAT_ALIASES_VERSION = 1;
 const FEAT_CORE_METADATA_VERSION = 1;
 const FEAT_SPELLCASTING_VERSION = FEAT_SPELLCASTING_METADATA_VERSION;
 const FEAT_KEYS = ['classFeats', 'skillFeats', 'generalFeats', 'ancestryFeats', 'archetypeFeats', 'mythicFeats', 'dualClassFeats', 'customFeats'];
-const INVESTIGATOR_SKILLFUL_LESSON_BASE_SKILLS = [
-  'arcana',
-  'crafting',
-  'occultism',
-  'society',
-  'medicine',
-  'nature',
-  'religion',
-  'survival',
-  'deception',
-  'diplomacy',
-  'intimidation',
-  'performance',
-];
+const INVESTIGATOR_SKILLFUL_LESSON_BASE_SKILLS = ['arcana', 'crafting', 'occultism', 'society', 'medicine', 'nature', 'religion', 'survival', 'deception', 'diplomacy', 'intimidation', 'performance'];
 const PLANNER_WINDOW_SELECTORS = ['#pf2e-leveler-planner', '.pf2e-leveler.level-planner'];
 
 installRetrainChoicePickerListeners();
@@ -165,8 +83,7 @@ function extractTextualFeatSkillRules(feat) {
   if (!description) return [];
 
   const rules = [];
-  const conditionalUpgradePattern =
-    /become trained in ([^.;]+?);\s*if you were already trained(?:\s+in\s+(?:it|either|any|one|one of (?:those|these) skills))?,\s*you become an expert(?:\s+in\s+(?:it|that skill|the skill))?\s+instead\.?/gi;
+  const conditionalUpgradePattern = /become trained in ([^.;]+?);\s*if you were already trained(?:\s+in\s+(?:it|either|any|one|one of (?:those|these) skills))?,\s*you become an expert(?:\s+in\s+(?:it|that skill|the skill))?\s+instead\.?/gi;
   const genericTrainedPattern = /\b(?:you\s+)?become trained in ([^.;]+?)(?:;|\.|,?\s+and\b|$)/gi;
 
   for (const match of description.matchAll(conditionalUpgradePattern)) {
@@ -266,8 +183,12 @@ function isArchetypeLikeFeat(feat) {
   const traits = (feat?.system?.traits?.value ?? []).map((trait) => String(trait).trim().toLowerCase());
   if (traits.includes('archetype') || traits.includes('dedication')) return true;
 
-  const slug = String(feat?.slug ?? '').trim().toLowerCase();
-  const name = String(feat?.name ?? '').trim().toLowerCase();
+  const slug = String(feat?.slug ?? '')
+    .trim()
+    .toLowerCase();
+  const name = String(feat?.name ?? '')
+    .trim()
+    .toLowerCase();
   if (slug.includes('dedication') || /\bdedication\b/.test(name)) return true;
 
   return getDedicationAliasesFromDescription(feat).length > 0;
@@ -304,10 +225,7 @@ export async function extractFeatSkillRules(feat, documentResolver = fromUuid, v
   if (featId && visited.has(featId)) return [];
   if (featId) visited.add(featId);
 
-  const results = mergeFeatSkillRules(
-    extractDirectFeatSkillRules(feat),
-    extractTextualFeatSkillRules(feat),
-  );
+  const results = mergeFeatSkillRules(extractDirectFeatSkillRules(feat), extractTextualFeatSkillRules(feat));
 
   for (const rule of feat.system?.rules ?? []) {
     if (rule?.key !== 'GrantItem' || typeof rule.uuid !== 'string' || !documentResolver) continue;
@@ -331,10 +249,8 @@ export async function extractFeatSkillRules(feat, documentResolver = fromUuid, v
 function mergeFeatSkillRules(baseRules, textRules) {
   const results = [...(baseRules ?? [])];
 
-  for (const textRule of (textRules ?? [])) {
-    const index = results.findIndex((entry) =>
-      entry.skill === textRule.skill
-      && JSON.stringify(entry.predicate ?? null) === JSON.stringify(textRule.predicate ?? null));
+  for (const textRule of textRules ?? []) {
+    const index = results.findIndex((entry) => entry.skill === textRule.skill && JSON.stringify(entry.predicate ?? null) === JSON.stringify(textRule.predicate ?? null));
 
     if (index >= 0) {
       results[index] = { ...results[index], ...textRule };
@@ -346,13 +262,7 @@ function mergeFeatSkillRules(baseRules, textRules) {
   return results;
 }
 
-const MANUAL_SPELL_FEATS = new Set([
-  'advanced-qi-spells',
-  'master-qi-spells',
-  'grandmaster-qi-spells',
-  'advanced-warden',
-  'masterful-warden',
-]);
+const MANUAL_SPELL_FEATS = new Set(['advanced-qi-spells', 'master-qi-spells', 'grandmaster-qi-spells', 'advanced-warden', 'masterful-warden']);
 
 function buildClassStateForSlug(classSlug) {
   const classDef = ClassRegistry.get(classSlug);
@@ -379,7 +289,11 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const actorLevel = actor.system?.details?.level?.value ?? 1;
 
     if (options.sequentialMode && actorLevel > 1 && this.plan) {
-      this.plan.sequentialMode = { active: true, targetLevel: actorLevel, currentLevel: MIN_PLAN_LEVEL };
+      this.plan.sequentialMode = {
+        active: true,
+        targetLevel: actorLevel,
+        currentLevel: MIN_PLAN_LEVEL,
+      };
       savePlan(this.actor, this.plan);
     }
 
@@ -426,7 +340,7 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!plan.apparitions && classDef.apparitions) {
       const merged = [];
       for (const levelData of Object.values(plan.levels)) {
-        for (const slug of (levelData.apparitions ?? [])) {
+        for (const slug of levelData.apparitions ?? []) {
           if (!merged.includes(slug)) merged.push(slug);
         }
       }
@@ -622,10 +536,12 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
           }
           try {
             const doc = await fromUuid(feat.uuid);
-            feat.spellcastingMetadata = doc ? extractFeatSpellcastingMetadata({
-              ...doc,
-              aliases: Array.isArray(feat.aliases) ? feat.aliases : [],
-            }) : null;
+            feat.spellcastingMetadata = doc
+              ? extractFeatSpellcastingMetadata({
+                  ...doc,
+                  aliases: Array.isArray(feat.aliases) ? feat.aliases : [],
+                })
+              : null;
           } catch {
             feat.spellcastingMetadata = null;
           }
@@ -658,7 +574,9 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _inferStoredDualClassSlug(actor, primaryClassSlug = null) {
-    const primarySlug = String(primaryClassSlug ?? '').trim().toLowerCase();
+    const primarySlug = String(primaryClassSlug ?? '')
+      .trim()
+      .toLowerCase();
     const trackedSlug = this._getTrackedPlanDualClassSlug(actor, primarySlug);
     if (trackedSlug) return trackedSlug;
     const storedSlug = this._getStoredDualClassSlug(actor, primarySlug);
@@ -667,11 +585,17 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _getTrackedPlanDualClassSlug(actor, primaryClassSlug) {
-    const dualClassSlug = String(this.plan?.dualClassSlug ?? '').trim().toLowerCase();
+    const dualClassSlug = String(this.plan?.dualClassSlug ?? '')
+      .trim()
+      .toLowerCase();
     if (!dualClassSlug || dualClassSlug === primaryClassSlug) return null;
     if (!ClassRegistry.has(dualClassSlug)) {
-      const matchingClassItem = this._getActorClassItems(actor)
-        .find((item) => String(item?.slug ?? item?.system?.slug ?? '').trim().toLowerCase() === dualClassSlug);
+      const matchingClassItem = this._getActorClassItems(actor).find(
+        (item) =>
+          String(item?.slug ?? item?.system?.slug ?? '')
+            .trim()
+            .toLowerCase() === dualClassSlug,
+      );
       if (!matchingClassItem) return null;
       ensureClassItemRegistered(matchingClassItem, dualClassSlug);
     }
@@ -680,11 +604,17 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _getStoredDualClassSlug(actor, primaryClassSlug) {
     if (!actor || typeof actor.getFlag !== 'function') return null;
-    const dualClassSlug = String(getCreationData(actor)?.dualClass?.slug ?? '').trim().toLowerCase();
+    const dualClassSlug = String(getCreationData(actor)?.dualClass?.slug ?? '')
+      .trim()
+      .toLowerCase();
     if (!dualClassSlug || dualClassSlug === primaryClassSlug) return null;
     if (!ClassRegistry.has(dualClassSlug)) {
-      const matchingClassItem = this._getActorClassItems(actor)
-        .find((item) => String(item?.slug ?? item?.system?.slug ?? '').trim().toLowerCase() === dualClassSlug);
+      const matchingClassItem = this._getActorClassItems(actor).find(
+        (item) =>
+          String(item?.slug ?? item?.system?.slug ?? '')
+            .trim()
+            .toLowerCase() === dualClassSlug,
+      );
       if (!matchingClassItem) return null;
       ensureClassItemRegistered(matchingClassItem, dualClassSlug);
     }
@@ -692,14 +622,17 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _inferActorDualClassSlug(actor, primaryClassSlug) {
-    const secondaryClassItem = this._getActorClassItems(actor)
-      .find((item) => {
-        const slug = String(item?.slug ?? item?.system?.slug ?? '').trim().toLowerCase();
-        return slug && slug !== primaryClassSlug;
-      });
+    const secondaryClassItem = this._getActorClassItems(actor).find((item) => {
+      const slug = String(item?.slug ?? item?.system?.slug ?? '')
+        .trim()
+        .toLowerCase();
+      return slug && slug !== primaryClassSlug;
+    });
     if (!secondaryClassItem) return null;
 
-    const dualClassSlug = String(secondaryClassItem?.slug ?? secondaryClassItem?.system?.slug ?? '').trim().toLowerCase();
+    const dualClassSlug = String(secondaryClassItem?.slug ?? secondaryClassItem?.system?.slug ?? '')
+      .trim()
+      .toLowerCase();
     if (!dualClassSlug) return null;
     ensureClassItemRegistered(secondaryClassItem, dualClassSlug);
     return ClassRegistry.has(dualClassSlug) ? dualClassSlug : null;
@@ -718,7 +651,10 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _ensureResolvedDualClassSlug() {
     if (!this.plan) return null;
-    const currentSlug = String(this.plan.dualClassSlug ?? '').trim().toLowerCase() || null;
+    const currentSlug =
+      String(this.plan.dualClassSlug ?? '')
+        .trim()
+        .toLowerCase() || null;
     const resolvedSlug = this._inferStoredDualClassSlug(this.actor, this.plan.classSlug);
     if (resolvedSlug !== currentSlug) {
       this.plan.dualClassSlug = resolvedSlug;
@@ -743,9 +679,7 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       const normalizedBoosts = normalizeActorBoostEntries(boosts);
       if (normalizedBoosts.length === 0) continue;
 
-      const normalized = [...new Set(normalizedBoosts.filter((boost) =>
-        ['str', 'dex', 'con', 'int', 'wis', 'cha'].includes(normalizeAbilityBoostKey(boost)),
-      ))];
+      const normalized = [...new Set(normalizedBoosts.filter((boost) => ['str', 'dex', 'con', 'int', 'wis', 'cha'].includes(normalizeAbilityBoostKey(boost))))];
       if (normalized.length > 0) setLevelBoosts(plan, level, normalized);
     }
   }
@@ -769,9 +703,7 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       const normalizedBoosts = normalizeActorBoostEntries(boosts);
       if (normalizedBoosts.length === 0) continue;
 
-      const normalized = [...new Set(normalizedBoosts.filter((boost) =>
-        ['str', 'dex', 'con', 'int', 'wis', 'cha'].includes(normalizeAbilityBoostKey(boost)),
-      ))];
+      const normalized = [...new Set(normalizedBoosts.filter((boost) => ['str', 'dex', 'con', 'int', 'wis', 'cha'].includes(normalizeAbilityBoostKey(boost))))];
       if (normalized.length === 0) continue;
 
       setLevelBoosts(plan, level, normalized);
@@ -786,8 +718,7 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!classDef || actorLevel <= 1) return false;
     if (this._hasPlannedSelectionsBeyondActorLevel(plan, actorLevel)) return false;
 
-    const pastSkillIncreaseLevels = classDef.skillIncreaseSchedule
-      .filter((level) => level >= MIN_PLAN_LEVEL && level <= actorLevel);
+    const pastSkillIncreaseLevels = classDef.skillIncreaseSchedule.filter((level) => level >= MIN_PLAN_LEVEL && level <= actorLevel);
     if (pastSkillIncreaseLevels.length === 0) return false;
 
     return pastSkillIncreaseLevels.every((level) => {
@@ -812,11 +743,8 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _seedPlanFeatsFromActor(actor, plan, options) {
     const actorLevel = Number(actor?.system?.details?.level?.value ?? 1);
-    const actorItems = actor?.items?.contents
-      ?? (Array.isArray(actor?.items) ? actor.items : []);
-    const actorFeats = actorItems
-      .filter((item) => item?.type === 'feat' && String(item?.system?.category ?? '').toLowerCase() !== 'classfeature')
-      .sort((a, b) => this._getActorFeatTakenLevel(a) - this._getActorFeatTakenLevel(b));
+    const actorItems = actor?.items?.contents ?? (Array.isArray(actor?.items) ? actor.items : []);
+    const actorFeats = actorItems.filter((item) => item?.type === 'feat' && String(item?.system?.category ?? '').toLowerCase() !== 'classfeature').sort((a, b) => this._getActorFeatTakenLevel(a) - this._getActorFeatTakenLevel(b));
 
     for (const feat of actorFeats) {
       const placement = this._getActorFeatPlanPlacement(feat, plan, options, actorLevel);
@@ -851,8 +779,7 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _seedPlanClassFeatureChoicesFromActor(actor, plan) {
-    const actorItems = actor?.items?.contents
-      ?? (Array.isArray(actor?.items) ? actor.items : []);
+    const actorItems = actor?.items?.contents ?? (Array.isArray(actor?.items) ? actor.items : []);
     for (const item of actorItems) {
       if (!isActorClassFeatureItem(item)) continue;
       const rulesSelections = item?.flags?.pf2e?.rulesSelections ?? {};
@@ -895,12 +822,7 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!Number.isInteger(level) || level < MIN_PLAN_LEVEL || level > actorLevel) return null;
 
     const group = rawGroup.replace(/[^a-z_]/gi, '').toLowerCase();
-    if (
-      options?.freeArchetype
-      && group === 'class'
-      && Array.isArray(plan?.levels?.[level]?.archetypeFeats)
-      && isArchetypeLikeFeat(feat)
-    ) {
+    if (options?.freeArchetype && group === 'class' && Array.isArray(plan?.levels?.[level]?.archetypeFeats) && isArchetypeLikeFeat(feat)) {
       return { level, category: 'archetypeFeats' };
     }
 
@@ -952,12 +874,18 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   _getStoredPrimaryClassSlug(actor) {
     if (!actor || typeof actor.getFlag !== 'function') return null;
     const creationData = getCreationData(actor);
-    const primaryClassSlug = String(creationData?.class?.slug ?? '').trim().toLowerCase();
+    const primaryClassSlug = String(creationData?.class?.slug ?? '')
+      .trim()
+      .toLowerCase();
     if (!primaryClassSlug) return null;
     if (ClassRegistry.has(primaryClassSlug)) return primaryClassSlug;
 
-    const matchingClassItem = this._getActorClassItems(actor)
-      .find((item) => String(item?.slug ?? item?.system?.slug ?? '').trim().toLowerCase() === primaryClassSlug);
+    const matchingClassItem = this._getActorClassItems(actor).find(
+      (item) =>
+        String(item?.slug ?? item?.system?.slug ?? '')
+          .trim()
+          .toLowerCase() === primaryClassSlug,
+    );
     if (!matchingClassItem) return null;
     ensureClassItemRegistered(matchingClassItem, primaryClassSlug);
     return ClassRegistry.has(primaryClassSlug) ? primaryClassSlug : null;
@@ -1006,9 +934,7 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const seq = this.plan?.sequentialMode;
     const isSequential = seq?.active === true;
     const validationOptions = this._getPlannerValidationOptions(options);
-    const currentLevelStatus = isSequential && classDef
-      ? validateLevel(this.plan, classDef, seq.currentLevel, validationOptions, this.actor).status
-      : null;
+    const currentLevelStatus = isSequential && classDef ? validateLevel(this.plan, classDef, seq.currentLevel, validationOptions, this.actor).status : null;
     const sequentialLevelComplete = currentLevelStatus != null && currentLevelStatus !== PLAN_STATUS.INCOMPLETE;
     const isLastSequentialLevel = isSequential && seq.currentLevel >= seq.targetLevel;
     const resolvedDualClassSlug = this._ensureResolvedDualClassSlug();
@@ -1052,7 +978,9 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _getVariantOptions() {
     const ancestryParagonFeatLevels = this._getAncestryParagonFeatLevels();
-    const dualClassSlug = String(this._ensureResolvedDualClassSlug() ?? '').trim().toLowerCase();
+    const dualClassSlug = String(this._ensureResolvedDualClassSlug() ?? '')
+      .trim()
+      .toLowerCase();
     return {
       freeArchetype: isFreeArchetypeEnabled(),
       mythic: isMythicEnabled(),
@@ -1088,9 +1016,7 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const isSequential = seq?.active === true;
     for (let level = MIN_PLAN_LEVEL; level <= MAX_LEVEL; level++) {
       const summary = classDef ? getLevelSummary(classDef, level, options) : '';
-      const status = this.plan && classDef
-        ? validateLevel(this.plan, classDef, level, validationOptions, this.actor).status
-        : PLAN_STATUS.EMPTY;
+      const status = this.plan && classDef ? validateLevel(this.plan, classDef, level, validationOptions, this.actor).status : PLAN_STATUS.EMPTY;
 
       const actorLevel = this.actor.system?.details?.level?.value ?? 1;
       levels.push({
@@ -1174,9 +1100,15 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!entry.label) return;
 
     if (custom) {
-      addLevelCustomSkillIncrease(this.plan, this.selectedLevel, { skill: entry.skill, toRank: entry.toRank });
+      addLevelCustomSkillIncrease(this.plan, this.selectedLevel, {
+        skill: entry.skill,
+        toRank: entry.toRank,
+      });
     } else {
-      setLevelSkillIncrease(this.plan, this.selectedLevel, { skill: entry.skill, toRank: entry.toRank });
+      setLevelSkillIncrease(this.plan, this.selectedLevel, {
+        skill: entry.skill,
+        toRank: entry.toRank,
+      });
     }
     this._savePlanAndRender();
   }
@@ -1186,7 +1118,9 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!dialogClass?.prompt) return '';
 
     const value = await dialogClass.prompt({
-      window: { title: game.i18n?.localize?.('PF2E_LEVELER.CREATION.LORE_SKILLS') ?? 'Lore Skills' },
+      window: {
+        title: game.i18n?.localize?.('PF2E_LEVELER.CREATION.LORE_SKILLS') ?? 'Lore Skills',
+      },
       content: `
         <div class="form-group">
           <label>${game.i18n?.localize?.('PF2E_LEVELER.UI.NAME') ?? 'Name'}</label>
@@ -1224,9 +1158,7 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   async _promptPlannedFeatLoreChoice({ category, flag, index = null } = {}) {
     const levelData = getLevelData(this.plan, this.selectedLevel);
     const featList = category ? levelData?.[category] : null;
-    const feat = Array.isArray(featList)
-      ? featList[Number.isInteger(index) && index >= 0 ? index : 0]
-      : null;
+    const feat = Array.isArray(featList) ? featList[Number.isInteger(index) && index >= 0 ? index : 0] : null;
     if (!feat || !flag) return;
 
     const loreSlug = await this._promptLoreSlug();
@@ -1234,13 +1166,8 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
     const sourceKey = `choice:${String(flag ?? '').toLowerCase()}`;
     feat.choices = { ...(feat.choices ?? {}), [flag]: loreSlug };
-    feat.dynamicSkillRules = Array.isArray(feat.dynamicSkillRules)
-      ? feat.dynamicSkillRules.filter((rule) => rule?.source !== sourceKey)
-      : [];
-    feat.dynamicLoreRules = [
-      ...(Array.isArray(feat.dynamicLoreRules) ? feat.dynamicLoreRules.filter((rule) => rule?.source !== sourceKey) : []),
-      { skill: loreSlug, value: 1, source: sourceKey },
-    ];
+    feat.dynamicSkillRules = Array.isArray(feat.dynamicSkillRules) ? feat.dynamicSkillRules.filter((rule) => rule?.source !== sourceKey) : [];
+    feat.dynamicLoreRules = [...(Array.isArray(feat.dynamicLoreRules) ? feat.dynamicLoreRules.filter((rule) => rule?.source !== sourceKey) : []), { skill: loreSlug, value: 1, source: sourceKey }];
     this._savePlanAndRender();
   }
 
@@ -1332,9 +1259,7 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         await savePlan(this.actor, plan);
         ui.notifications.info(game.i18n.localize('PF2E_LEVELER.NOTIFICATIONS.PLAN_IMPORTED'));
       } catch (err) {
-        ui.notifications.error(
-          game.i18n.format('PF2E_LEVELER.NOTIFICATIONS.IMPORT_FAILED', { error: err.message }),
-        );
+        ui.notifications.error(game.i18n.format('PF2E_LEVELER.NOTIFICATIONS.IMPORT_FAILED', { error: err.message }));
       } finally {
         this._isImportingPlan = false;
         await this.render(true);
@@ -1382,7 +1307,10 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const levelData = getLevelData(this.plan, this.selectedLevel) ?? {};
     const sectionSpells = (levelData.spells ?? []).filter((spell) => (spell.entryType ?? 'primary') === resolvedEntryType);
     const excludedUuids = sectionSpells.map((spell) => spell.uuid);
-    const excludedSelections = sectionSpells.map((spell) => ({ uuid: spell.uuid, rank: spell.rank }));
+    const excludedSelections = sectionSpells.map((spell) => ({
+      uuid: spell.uuid,
+      rank: spell.rank,
+    }));
     const currentSlots = classDef?.spellcasting?.slots?.[this.selectedLevel] ?? {};
     const maxRank = rank === -1 ? this._getHighestRank(currentSlots) : null;
     const currentRankSelections = sectionSpells.filter((spell) => !this._isPlannedCantripSpell(spell));
@@ -1393,9 +1321,7 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     if (maxSelect != null && maxSelect <= 0) return;
 
     import('../spell-picker.js').then(({ SpellPicker }) => {
-      const dedicationLimits = typeof resolvedEntryType === 'string' && resolvedEntryType.startsWith('archetype:')
-        ? getDedicationSelectionLimitsForPlanner(this, this.selectedLevel, resolvedEntryType)
-        : null;
+      const dedicationLimits = typeof resolvedEntryType === 'string' && resolvedEntryType.startsWith('archetype:') ? getDedicationSelectionLimitsForPlanner(this, this.selectedLevel, resolvedEntryType) : null;
       const picker = new SpellPicker(
         this.actor,
         tradition,
@@ -1439,16 +1365,22 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
           maxSelect,
           preset: {
             ...(rank > 0 ? { selectedRanks: [rank] } : {}),
-            ...(availableTraditions.length > 0 ? {
-              selectedTraditions: availableTraditions,
-              lockedTraditions: availableTraditions,
-            } : {}),
-            ...(Array.isArray(rank > 0 ? dedicationLimits?.rankRaritySelections?.[rank] : dedicationLimits?.selectedRarities) ? {
-              selectedRarities: rank > 0 ? dedicationLimits.rankRaritySelections[rank] : dedicationLimits.selectedRarities,
-            } : {}),
-            ...(Array.isArray(rank > 0 ? dedicationLimits?.rankLockedRarities?.[rank] : dedicationLimits?.lockedRarities) ? {
-              lockedRarities: rank > 0 ? dedicationLimits.rankLockedRarities[rank] : dedicationLimits.lockedRarities,
-            } : {}),
+            ...(availableTraditions.length > 0
+              ? {
+                  selectedTraditions: availableTraditions,
+                  lockedTraditions: availableTraditions,
+                }
+              : {}),
+            ...(Array.isArray(rank > 0 ? dedicationLimits?.rankRaritySelections?.[rank] : dedicationLimits?.selectedRarities)
+              ? {
+                  selectedRarities: rank > 0 ? dedicationLimits.rankRaritySelections[rank] : dedicationLimits.selectedRarities,
+                }
+              : {}),
+            ...(Array.isArray(rank > 0 ? dedicationLimits?.rankLockedRarities?.[rank] : dedicationLimits?.lockedRarities)
+              ? {
+                  lockedRarities: rank > 0 ? dedicationLimits.rankLockedRarities[rank] : dedicationLimits.lockedRarities,
+                }
+              : {}),
           },
         },
       );
@@ -1460,7 +1392,7 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     if (typeof entryType === 'string' && entryType.startsWith('archetype:')) {
       const classSlug = entryType.split(':')[1] ?? '';
       const archetypeClass = ClassRegistry.get(classSlug);
-      const tradition = archetypeClass?.spellcasting?.tradition ?? null;
+      const tradition = archetypeClass?.spellcasting ? resolveSpellTradition(this, archetypeClass) : null;
       return tradition ? [tradition] : [];
     }
 
@@ -1517,12 +1449,13 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   async _openCustomSpellPicker(rank = -1, entryType = 'primary') {
     const pickerRank = rank;
     const levelData = getLevelData(this.plan, this.selectedLevel) ?? {};
-    const excludedSelections = (levelData.customSpells ?? [])
-      .filter((spell) => (spell.entryType ?? 'primary') === entryType)
-      .map((spell) => ({ uuid: spell.uuid, rank: spell.rank ?? spell.baseRank ?? 0 }));
+    const excludedSelections = (levelData.customSpells ?? []).filter((spell) => (spell.entryType ?? 'primary') === entryType).map((spell) => ({ uuid: spell.uuid, rank: spell.rank ?? spell.baseRank ?? 0 }));
     const classDef = this._getSpellcastingClassForEntryType(entryType);
     const currentSlots = classDef?.spellcasting?.slots?.[this.selectedLevel] ?? {};
-    const levelRanks = Object.keys(currentSlots).filter((k) => k !== 'cantrips').map(Number).filter(Number.isFinite);
+    const levelRanks = Object.keys(currentSlots)
+      .filter((k) => k !== 'cantrips')
+      .map(Number)
+      .filter(Number.isFinite);
     const customEntryOptions = buildCustomSpellEntryOptions(this, this.selectedLevel);
     const selectedEntry = customEntryOptions.find((entry) => entry.entryType === entryType) ?? null;
 
@@ -1557,7 +1490,12 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
           excludedSelections,
           preset: {
             ...(levelRanks.length > 0 ? { selectedRanks: levelRanks } : {}),
-            ...(selectedEntry?.tradition ? { selectedTraditions: [selectedEntry.tradition], lockedTraditions: [selectedEntry.tradition] } : {}),
+            ...(selectedEntry?.tradition
+              ? {
+                  selectedTraditions: [selectedEntry.tradition],
+                  lockedTraditions: [selectedEntry.tradition],
+                }
+              : {}),
           },
         },
       );
@@ -1570,7 +1508,9 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!dialogClass?.prompt) return;
 
     const result = await dialogClass.prompt({
-      window: { title: game.i18n?.localize?.('PF2E_LEVELER.UI.ADD_SPELLCASTING_ENTRY') ?? 'Add Spellcasting Entry' },
+      window: {
+        title: game.i18n?.localize?.('PF2E_LEVELER.UI.ADD_SPELLCASTING_ENTRY') ?? 'Add Spellcasting Entry',
+      },
       content: `
         <div class="form-group">
           <label>${game.i18n?.localize?.('PF2E_LEVELER.UI.NAME') ?? 'Name'}</label>
@@ -1967,9 +1907,7 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     };
 
     const buildState = computeBuildState(this.actor, this.plan, level);
-    const pickerBuildState = category === 'dualClassFeats'
-      ? this._buildDualClassPickerState(buildState)
-      : buildState;
+    const pickerBuildState = category === 'dualClassFeats' ? this._buildDualClassPickerState(buildState) : buildState;
     if (category === 'dualClassFeats' && !pickerBuildState) {
       ui.notifications?.warn?.(game.i18n.localize('PF2E_LEVELER.NOTIFICATIONS.DUAL_CLASS_REQUIRED'));
       return;
@@ -2047,44 +1985,33 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
     if (pickerConfig.kind === 'spell') {
       const { SpellPicker } = await import('../spell-picker.js');
-      const picker = new SpellPicker(
-        this.actor,
-        'any',
-        Number.isInteger(pickerConfig.rank) ? pickerConfig.rank : -1,
-        selectChoice,
-        {
-          allowedUuids: pickerConfig.allowedUuids,
-          exactRank: Number.isInteger(pickerConfig.rank) && pickerConfig.rank >= 0,
-          preset: {
-            ...(Number.isInteger(pickerConfig.rank) && pickerConfig.rank >= 0 ? {
-              selectedRanks: [pickerConfig.rank],
-              lockedRanks: [pickerConfig.rank],
-            } : {}),
-          },
-          title: pickerConfig.title,
+      const picker = new SpellPicker(this.actor, 'any', Number.isInteger(pickerConfig.rank) ? pickerConfig.rank : -1, selectChoice, {
+        allowedUuids: pickerConfig.allowedUuids,
+        exactRank: Number.isInteger(pickerConfig.rank) && pickerConfig.rank >= 0,
+        preset: {
+          ...(Number.isInteger(pickerConfig.rank) && pickerConfig.rank >= 0
+            ? {
+                selectedRanks: [pickerConfig.rank],
+                lockedRanks: [pickerConfig.rank],
+              }
+            : {}),
         },
-      );
+        title: pickerConfig.title,
+      });
       picker.render(true);
       return;
     }
 
     const buildState = computeBuildState(this.actor, this.plan, this.selectedLevel);
-    const picker = new FeatPicker(
-      this.actor,
-      pickerConfig.category ?? 'custom',
-      pickerConfig.level ?? this.selectedLevel,
-      buildState,
-      selectChoice,
-      {
-        preset: {
-          allowedFeatUuids: pickerConfig.allowedUuids,
-          selectedRarities: ['common', 'uncommon', 'rare', 'unique'],
-          maxLevel: '',
-          levelOptionCap: this.selectedLevel,
-        },
-        title: pickerConfig.title,
+    const picker = new FeatPicker(this.actor, pickerConfig.category ?? 'custom', pickerConfig.level ?? this.selectedLevel, buildState, selectChoice, {
+      preset: {
+        allowedFeatUuids: pickerConfig.allowedUuids,
+        selectedRarities: ['common', 'uncommon', 'rare', 'unique'],
+        maxLevel: '',
+        levelOptionCap: this.selectedLevel,
       },
-    );
+      title: pickerConfig.title,
+    });
     picker.render(true);
   }
 
@@ -2099,8 +2026,7 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
     if (category === 'customFeats') {
       const entry = context?.customFeats?.[index];
-      return [...(entry?.choiceSets ?? []), ...(entry?.feat?.grantChoiceSets ?? [])]
-        .find((choiceSet) => choiceSet.flag === flag) ?? null;
+      return [...(entry?.choiceSets ?? []), ...(entry?.feat?.grantChoiceSets ?? [])].find((choiceSet) => choiceSet.flag === flag) ?? null;
     }
 
     const keys = contextKeys[category] ?? [];
@@ -2139,27 +2065,32 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
           const aliases = getDedicationAliasesFromDescription(feat);
           const additionalArchetype = picker.getAdditionalArchetypeMetadata(feat);
           const grantPreview = await buildFeatGrantPreview(this, feat);
-          addLevelCustomFeat(this.plan, level, {
-            uuid: feat.uuid,
-            name: feat.name,
-            slug,
-            img: feat.img,
-            level: feat.system.level.value,
-            traits: [...(feat.system?.traits?.value ?? [])],
-            system: buildStoredFeatSystemData(feat),
-            coreMetadataVersion: FEAT_CORE_METADATA_VERSION,
-            choices: {},
-            aliases,
-            aliasesResolved: true,
-            aliasesVersion: FEAT_ALIASES_VERSION,
-            ...(additionalArchetype ? { additionalArchetype } : {}),
-            ...(grantPreview.grantedItems.length > 0 ? { grantedItems: grantPreview.grantedItems } : {}),
-            spellcastingMetadata: extractFeatSpellcastingMetadata({ ...feat, aliases }),
-            spellcastingMetadataVersion: FEAT_SPELLCASTING_VERSION,
-            skillRules,
-            skillRulesResolved: true,
-            skillRulesVersion: FEAT_SKILL_RULES_VERSION,
-          }, replaceMode && offset === 0 ? index : null);
+          addLevelCustomFeat(
+            this.plan,
+            level,
+            {
+              uuid: feat.uuid,
+              name: feat.name,
+              slug,
+              img: feat.img,
+              level: feat.system.level.value,
+              traits: [...(feat.system?.traits?.value ?? [])],
+              system: buildStoredFeatSystemData(feat),
+              coreMetadataVersion: FEAT_CORE_METADATA_VERSION,
+              choices: {},
+              aliases,
+              aliasesResolved: true,
+              aliasesVersion: FEAT_ALIASES_VERSION,
+              ...(additionalArchetype ? { additionalArchetype } : {}),
+              ...(grantPreview.grantedItems.length > 0 ? { grantedItems: grantPreview.grantedItems } : {}),
+              spellcastingMetadata: extractFeatSpellcastingMetadata({ ...feat, aliases }),
+              spellcastingMetadataVersion: FEAT_SPELLCASTING_VERSION,
+              skillRules,
+              skillRulesResolved: true,
+              skillRulesVersion: FEAT_SKILL_RULES_VERSION,
+            },
+            replaceMode && offset === 0 ? index : null,
+          );
         }
         await this._savePlanAndRender();
       },
@@ -2179,12 +2110,8 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     switch (category) {
       case 'classFeats': {
         const enforceSubclassDedicationRequirement = game.settings.get(MODULE_ID, 'enforceSubclassDedicationRequirement') === true;
-        const requiredSecondLevelFeat = level === 2 && enforceSubclassDedicationRequirement
-          ? getRequiredSecondLevelClassFeatForActor(this.actor, classSlug)
-          : null;
-        const allowedFeatUuids = requiredSecondLevelFeat
-          ? await this._resolveRequiredSecondLevelClassFeatUuids(requiredSecondLevelFeat)
-          : [];
+        const requiredSecondLevelFeat = level === 2 && enforceSubclassDedicationRequirement ? getRequiredSecondLevelClassFeatForActor(this.actor, classSlug) : null;
+        const allowedFeatUuids = requiredSecondLevelFeat ? await this._resolveRequiredSecondLevelClassFeatUuids(requiredSecondLevelFeat) : [];
         return {
           selectedFeatTypes: ['class', 'archetype'],
           lockedFeatTypes: ['class'],
@@ -2204,7 +2131,7 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         return {
           selectedFeatTypes: ['skill'],
           lockedFeatTypes: ['skill'],
-          ...await this._buildInvestigatorSkillFeatLimitations(level, buildState),
+          ...(await this._buildInvestigatorSkillFeatLimitations(level, buildState)),
           maxLevel: level,
         };
       case 'generalFeats':
@@ -2223,11 +2150,8 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         };
       case 'archetypeFeats': {
         const isFreeArchetypeEntryLevel = level === 2;
-        const ignoreDedicationLock =
-          game.settings.get(MODULE_ID, 'ignoreFreeArchetypeDedicationLock') === true;
-        const canChooseDedication = isFreeArchetypeEntryLevel
-          || ignoreDedicationLock
-          || buildState?.canTakeNewArchetypeDedication === true;
+        const ignoreDedicationLock = game.settings.get(MODULE_ID, 'ignoreFreeArchetypeDedicationLock') === true;
+        const canChooseDedication = isFreeArchetypeEntryLevel || ignoreDedicationLock || buildState?.canTakeNewArchetypeDedication === true;
         return {
           selectedFeatTypes: ['archetype'],
           lockedFeatTypes: ['archetype'],
@@ -2284,11 +2208,7 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   async _getInvestigatorMethodologySkills() {
-    const items = Array.isArray(this.actor?.items)
-      ? this.actor.items
-      : Array.isArray(this.actor?.items?.contents)
-        ? this.actor.items.contents
-        : [];
+    const items = Array.isArray(this.actor?.items) ? this.actor.items : Array.isArray(this.actor?.items?.contents) ? this.actor.items.contents : [];
     const methodologyItems = items.filter((item) => this._isInvestigatorMethodologyItem(item));
     const skills = new Set();
 
@@ -2306,10 +2226,11 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _isInvestigatorMethodologyItem(item) {
-    const otherTags = [
-      ...(item?.otherTags ?? []),
-      ...(item?.system?.traits?.otherTags ?? []),
-    ].map((tag) => String(tag ?? '').trim().toLowerCase());
+    const otherTags = [...(item?.otherTags ?? []), ...(item?.system?.traits?.otherTags ?? [])].map((tag) =>
+      String(tag ?? '')
+        .trim()
+        .toLowerCase(),
+    );
 
     return otherTags.some((tag) => tag === 'investigator-methodology' || tag.startsWith('investigator-methodology-'));
   }
@@ -2328,7 +2249,9 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _buildDualClassPickerState(buildState) {
-    const dualClassSlug = String(this._ensureResolvedDualClassSlug() ?? '').trim().toLowerCase();
+    const dualClassSlug = String(this._ensureResolvedDualClassSlug() ?? '')
+      .trim()
+      .toLowerCase();
     if (!dualClassSlug) return null;
     if (!ClassRegistry.has(dualClassSlug)) return null;
 
@@ -2340,7 +2263,10 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   async _setDualClassSlug(classSlug) {
-    const normalized = String(classSlug ?? '').trim().toLowerCase() || null;
+    const normalized =
+      String(classSlug ?? '')
+        .trim()
+        .toLowerCase() || null;
     const nextSlug = normalized && ClassRegistry.has(normalized) ? normalized : null;
     if (this.plan.dualClassSlug === nextSlug) return;
 
@@ -2416,34 +2342,36 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
   async _openEquipmentSlotPicker(slotIndex, maxLevel) {
     const { ItemPicker } = await import('../item-picker.js');
-    const picker = new ItemPicker(
-      this.actor,
-      async (item) => {
-        const itemType = String(item.type ?? '').toLowerCase();
-        const itemLevel = Number(item.system?.level?.value ?? 0);
-        if (!game.user.isGM) {
-          if (!PERMANENT_ITEM_TYPES.has(itemType)) {
-            ui.notifications.warn(game.i18n.localize('PF2E_LEVELER.STARTING_WEALTH.NOT_PERMANENT'));
-            return;
-          }
-          if (itemLevel > maxLevel) {
-            ui.notifications.warn(game.i18n.format('PF2E_LEVELER.STARTING_WEALTH.LEVEL_TOO_HIGH', { item: itemLevel, max: maxLevel }));
-            return;
-          }
+    const picker = new ItemPicker(this.actor, async (item) => {
+      const itemType = String(item.type ?? '').toLowerCase();
+      const itemLevel = Number(item.system?.level?.value ?? 0);
+      if (!game.user.isGM) {
+        if (!PERMANENT_ITEM_TYPES.has(itemType)) {
+          ui.notifications.warn(game.i18n.localize('PF2E_LEVELER.STARTING_WEALTH.NOT_PERMANENT'));
+          return;
         }
-        const pricePer = Number(item.system?.price?.per ?? 1);
-        setLevelEquipmentSlot(this.plan, this.selectedLevel, slotIndex, {
-          uuid: item.uuid,
-          name: item.name,
-          img: item.img,
-          itemLevel,
-          price: item.system?.price?.value,
-          category: itemType,
-          quantity: pricePer > 1 ? pricePer : 1,
-        });
-        await this._savePlanAndRender();
-      },
-    );
+        if (itemLevel > maxLevel) {
+          ui.notifications.warn(
+            game.i18n.format('PF2E_LEVELER.STARTING_WEALTH.LEVEL_TOO_HIGH', {
+              item: itemLevel,
+              max: maxLevel,
+            }),
+          );
+          return;
+        }
+      }
+      const pricePer = Number(item.system?.price?.per ?? 1);
+      setLevelEquipmentSlot(this.plan, this.selectedLevel, slotIndex, {
+        uuid: item.uuid,
+        name: item.name,
+        img: item.img,
+        itemLevel,
+        price: item.system?.price?.value,
+        category: itemType,
+        quantity: pricePer > 1 ? pricePer : 1,
+      });
+      await this._savePlanAndRender();
+    });
     picker.render(true);
   }
 
@@ -2462,15 +2390,20 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         for (let offset = 0; offset < selectedItems.length; offset++) {
           const item = selectedItems[offset];
           const pricePer = Number(item.system?.price?.per ?? 1);
-          addLevelCustomEquipment(this.plan, level, {
-            uuid: item.uuid,
-            name: item.name,
-            img: item.img,
-            itemLevel: Number(item.system?.level?.value ?? 0),
-            price: item.system?.price?.value,
-            category: String(item.type ?? ''),
-            quantity: pricePer > 1 ? pricePer : 1,
-          }, replaceMode && offset === 0 ? index : null);
+          addLevelCustomEquipment(
+            this.plan,
+            level,
+            {
+              uuid: item.uuid,
+              name: item.name,
+              img: item.img,
+              itemLevel: Number(item.system?.level?.value ?? 0),
+              price: item.system?.price?.value,
+              category: String(item.type ?? ''),
+              quantity: pricePer > 1 ? pricePer : 1,
+            },
+            replaceMode && offset === 0 ? index : null,
+          );
         }
         await this._savePlanAndRender();
       },
@@ -2538,16 +2471,7 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _getLevelFeatEntries(levelData) {
-    return [
-      'classFeats',
-      'skillFeats',
-      'generalFeats',
-      'ancestryFeats',
-      'archetypeFeats',
-      'mythicFeats',
-      'dualClassFeats',
-      'customFeats',
-    ].flatMap((key) => levelData?.[key] ?? []);
+    return ['classFeats', 'skillFeats', 'generalFeats', 'ancestryFeats', 'archetypeFeats', 'mythicFeats', 'dualClassFeats', 'customFeats'].flatMap((key) => levelData?.[key] ?? []);
   }
 
   _getClassGrantEntries() {
@@ -2560,10 +2484,10 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         uuid: this.actor?.class?.uuid ?? `class:${primary.slug}`,
       });
     }
-    const dualClassSlug = String(this.plan?.dualClassSlug ?? '').trim().toLowerCase();
-    const dual = dualClassSlug && dualClassSlug !== primary?.slug && ClassRegistry.has(dualClassSlug)
-      ? ClassRegistry.get(dualClassSlug)
-      : null;
+    const dualClassSlug = String(this.plan?.dualClassSlug ?? '')
+      .trim()
+      .toLowerCase();
+    const dual = dualClassSlug && dualClassSlug !== primary?.slug && ClassRegistry.has(dualClassSlug) ? ClassRegistry.get(dualClassSlug) : null;
     if (dual) {
       entries.push({
         slug: dual.slug,
@@ -2668,7 +2592,12 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         preset: {
           ...(Number.isFinite(Number(filters.rank)) ? { selectedRanks: [Number(filters.rank)] } : {}),
           ...(filters.tradition ? { selectedTraditions: [filters.tradition], lockedTraditions: [filters.tradition] } : {}),
-          ...(Array.isArray(filters.rarity) ? { selectedRarities: filters.rarity, lockedRarities: ['common', 'uncommon', 'rare', 'unique'].filter((rarity) => !filters.rarity.includes(rarity)) } : {}),
+          ...(Array.isArray(filters.rarity)
+            ? {
+                selectedRarities: filters.rarity,
+                lockedRarities: ['common', 'uncommon', 'rare', 'unique'].filter((rarity) => !filters.rarity.includes(rarity)),
+              }
+            : {}),
         },
       },
     );
@@ -2756,11 +2685,7 @@ function buildStoredFeatSystemData(feat) {
       ...(rule.mode ? { mode: rule.mode } : {}),
       value: rule.value,
     }));
-  if (
-    (!Array.isArray(prerequisites) || prerequisites.length === 0) &&
-    rules.length === 0 &&
-    !/\blanguage(?:s)?\b/i.test(description)
-  ) {
+  if ((!Array.isArray(prerequisites) || prerequisites.length === 0) && rules.length === 0 && !/\blanguage(?:s)?\b/i.test(description)) {
     return undefined;
   }
 
@@ -2770,9 +2695,7 @@ function buildStoredFeatSystemData(feat) {
       value: prerequisites
         .map((entry) => {
           const value = typeof entry === 'string' ? entry : entry?.value;
-          return typeof value === 'string' && value.trim().length > 0
-            ? { value: value.trim() }
-            : null;
+          return typeof value === 'string' && value.trim().length > 0 ? { value: value.trim() } : null;
         })
         .filter(Boolean),
     };
@@ -2788,12 +2711,7 @@ function applyStoredFeatCoreMetadata(target, source) {
   target.img = source?.img ?? target.img;
   const level = Number(source?.system?.level?.value ?? source?.level);
   if (Number.isFinite(level)) target.level = level;
-  target.traits = [
-    ...new Set([
-      ...(Array.isArray(target?.traits) ? target.traits : []),
-      ...(source?.system?.traits?.value ?? []),
-    ]),
-  ];
+  target.traits = [...new Set([...(Array.isArray(target?.traits) ? target.traits : []), ...(source?.system?.traits?.value ?? [])])];
   const system = buildStoredFeatSystemData(source);
   if (system) target.system = system;
 }
@@ -2819,15 +2737,13 @@ function buildItemGrantPickerPreset(requirement, { maxLevelCap = null } = {}) {
     ...(Array.isArray(filters.traits) && filters.traits.length > 0 ? { selectedTraits: filters.traits } : {}),
     ...(Array.isArray(filters.requiredTraits) && filters.requiredTraits.length > 0 ? { requiredTraits: filters.requiredTraits } : {}),
     ...(typeof filters.traitLogic === 'string' ? { traitLogic: filters.traitLogic } : {}),
-    ...(rarityFilter.length > 0 ? {
-      selectedRarities: rarityFilter,
-      ...(shouldLockGrantRarityFilter(rarityFilter)
-        ? { lockedRarities: rarityValues.filter((rarity) => !rarityFilter.includes(rarity)) }
-        : {}),
-    } : {}),
-    ...(Number.isFinite(Number(maxLevelCap)) ? { maxLevel: Number(maxLevelCap), maxLevelCap: Number(maxLevelCap) } : (
-      Number.isFinite(Number(filters.maxLevel)) ? { maxLevel: Number(filters.maxLevel) } : {}
-    )),
+    ...(rarityFilter.length > 0
+      ? {
+          selectedRarities: rarityFilter,
+          ...(shouldLockGrantRarityFilter(rarityFilter) ? { lockedRarities: rarityValues.filter((rarity) => !rarityFilter.includes(rarity)) } : {}),
+        }
+      : {}),
+    ...(Number.isFinite(Number(maxLevelCap)) ? { maxLevel: Number(maxLevelCap), maxLevelCap: Number(maxLevelCap) } : Number.isFinite(Number(filters.maxLevel)) ? { maxLevel: Number(filters.maxLevel) } : {}),
   };
 }
 
@@ -2836,7 +2752,7 @@ function shouldLockGrantRarityFilter(rarityFilter) {
 }
 
 function normalizeRarityFilter(value, allowedValues) {
-  const values = Array.isArray(value) ? value : (typeof value === 'string' ? [value] : []);
+  const values = Array.isArray(value) ? value : typeof value === 'string' ? [value] : [];
   const allowed = new Set(allowedValues);
   return [...new Set(values.map((entry) => String(entry).toLowerCase()).filter((entry) => allowed.has(entry)))];
 }
@@ -2928,16 +2844,18 @@ function formatFeatCategoryLabel(category) {
 }
 
 function buildRetrainChoiceContent({ name, searchPlaceholder, choices }) {
-  const rows = buildRetrainChoiceGroups(choices).map((group) => {
-    const groupRows = group.choices.map(({ choice, index }) => buildRetrainChoiceRow(choice, index)).join('');
-    if (!group.label) return groupRows;
-    return `
+  const rows = buildRetrainChoiceGroups(choices)
+    .map((group) => {
+      const groupRows = group.choices.map(({ choice, index }) => buildRetrainChoiceRow(choice, index)).join('');
+      if (!group.label) return groupRows;
+      return `
       <details class="retrain-choice-group" data-retrain-choice-group open>
         <summary class="retrain-choice-heading">${escapeHtml(group.label)}</summary>
         ${groupRows}
       </details>
     `;
-  }).join('');
+    })
+    .join('');
 
   return `
     <div class="retrain-choice-picker" data-retrain-picker>
@@ -2988,7 +2906,9 @@ function installRetrainChoicePickerListeners() {
 }
 
 function filterRetrainChoicePicker(input) {
-  const query = String(input.value ?? '').trim().toLowerCase();
+  const query = String(input.value ?? '')
+    .trim()
+    .toLowerCase();
   const root = input.closest('[data-retrain-picker]');
   if (!root) return;
 
@@ -2996,7 +2916,7 @@ function filterRetrainChoicePicker(input) {
     row.hidden = !!query && !String(row.dataset.retrainSearchText ?? '').includes(query);
   });
 
-          root.querySelectorAll('[data-retrain-choice-group]').forEach((group) => {
+  root.querySelectorAll('[data-retrain-choice-group]').forEach((group) => {
     const hasVisibleRow = Array.from(group.querySelectorAll('[data-retrain-choice]')).some((row) => !row.hidden);
     group.hidden = !!query && !hasVisibleRow;
     if (query && hasVisibleRow) group.open = true;
@@ -3038,11 +2958,7 @@ function buildRetrainChoiceRow(choice, index) {
 }
 
 function buildRankTransitionMarkup(fromRankName, toRankName) {
-  return [
-    buildRankTextMarkup(fromRankName),
-    ' -> ',
-    buildRankTextMarkup(toRankName),
-  ].join('');
+  return [buildRankTextMarkup(fromRankName), ' -> ', buildRankTextMarkup(toRankName)].join('');
 }
 
 function buildRankTextMarkup(rankName) {
@@ -3127,7 +3043,9 @@ function normalizeActorBoostEntries(value) {
 }
 
 function normalizeAbilityBoostKey(value) {
-  const normalized = String(value ?? '').trim().toLowerCase();
+  const normalized = String(value ?? '')
+    .trim()
+    .toLowerCase();
   const aliases = {
     strength: 'str',
     dexterity: 'dex',

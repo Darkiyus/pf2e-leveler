@@ -1,0 +1,40 @@
+export const OPERATIVE = {
+  slug: 'operative',
+  nameKey: 'Operative',
+  compendiumUuid: 'Compendium.sf2e-anachronism.classes.Item.cUWBC21I0XbzP44A',
+  keyAbility: ['dex'],
+  hp: 8,
+
+  featSchedule: {
+    class: [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20],
+    skill: [2, 3, 4, 6, 7, 8, 10, 12, 14, 15, 16, 18, 20],
+    general: [3, 7, 11, 15, 19],
+    ancestry: [5, 9, 13, 17],
+  },
+  skillIncreaseSchedule: [3, 5, 7, 9, 11, 13, 15, 17, 19],
+  abilityBoostSchedule: [5, 10, 15, 20],
+
+  classFeatures: [
+    { level: 3, name: 'Focused', key: 'focused' },
+    { level: 3, name: 'Specialized Skill Set', key: 'specialized-skill-set' },
+    { level: 5, name: 'Master Gunner', key: 'master-gunner' },
+    { level: 5, name: 'Urban Operator', key: 'urban-operator' },
+    { level: 7, name: "Operative's Edge", key: 'operative-s-edge' },
+    { level: 7, name: 'Reflex Mastery', key: 'reflex-mastery' },
+    { level: 7, name: 'Weapon Specialization', key: 'weapon-specialization' },
+    { level: 9, name: 'Operative Resilience', key: 'operative-resilience' },
+    { level: 11, name: 'On the Move', key: 'on-the-move' },
+    { level: 11, name: 'Operative Expertise', key: 'operative-expertise' },
+    { level: 13, name: 'Legendary Gunner', key: 'legendary-gunner' },
+    { level: 13, name: 'Light Armor Expertise', key: 'light-armor-expertise' },
+    { level: 15, name: 'Critical Aim', key: 'critical-aim' },
+    { level: 15, name: 'Greater Weapon Specialization', key: 'greater-weapon-specialization' },
+    { level: 17, name: 'Resolve', key: 'resolve' },
+    { level: 17, name: 'Tactical Barrage', key: 'tactical-barrage' },
+    { level: 19, name: 'Galaxy Renowned', key: 'galaxy-renowned' },
+    { level: 19, name: 'Incredible Senses', key: 'incredible-senses' },
+    { level: 19, name: 'Light Armor Mastery', key: 'light-armor-mastery' },
+  ],
+
+  spellcasting: null,
+};

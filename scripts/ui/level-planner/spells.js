@@ -6,6 +6,9 @@ import { getSpellbookBonusCantripSelectionCount } from '../../plan/spellbook-fea
 import { loadCompendiumCategory } from '../character-wizard/loaders.js';
 import { SUBCLASS_SPELLS, resolveSubclassSpells } from '../../data/subclass-spells.js';
 import { collectArchetypeSpellcastingConfigs, normalizeSpellcastingFeatRecord } from '../../utils/spellcasting-support.js';
+import { SF2E_VARIABLE_SPELL_TRADITIONS, resolveSf2eSpellcastingTradition } from '../../utils/sf2e-spellcasting.js';
+
+const VARIABLE_SPELL_TRADITIONS = new Set(['bloodline', 'patron', 'connection', 'paradox']);
 
 function getCachedBuildState(planner, level) {
   planner._buildStateCache ??= new Map();
@@ -88,8 +91,12 @@ async function buildClassFocusSections(planner, classDef, level) {
     }
   }
 
-  const dualClassSlug = String(planner?.plan?.dualClassSlug ?? '').trim().toLowerCase();
-  const primaryClassSlug = String(planner?.plan?.classSlug ?? '').trim().toLowerCase();
+  const dualClassSlug = String(planner?.plan?.dualClassSlug ?? '')
+    .trim()
+    .toLowerCase();
+  const primaryClassSlug = String(planner?.plan?.classSlug ?? '')
+    .trim()
+    .toLowerCase();
   if (dualClassSlug && dualClassSlug !== primaryClassSlug && ClassRegistry.has(dualClassSlug)) {
     const dualClassDef = ClassRegistry.get(dualClassSlug);
     if (dualClassDef?.spellcasting) {
@@ -115,8 +122,12 @@ async function buildClassSpellSections(planner, classDef, level) {
     if (primarySection) sections.push(primarySection);
   }
 
-  const dualClassSlug = String(planner?.plan?.dualClassSlug ?? '').trim().toLowerCase();
-  const primaryClassSlug = String(planner?.plan?.classSlug ?? '').trim().toLowerCase();
+  const dualClassSlug = String(planner?.plan?.dualClassSlug ?? '')
+    .trim()
+    .toLowerCase();
+  const primaryClassSlug = String(planner?.plan?.classSlug ?? '')
+    .trim()
+    .toLowerCase();
   if (dualClassSlug && dualClassSlug !== primaryClassSlug && ClassRegistry.has(dualClassSlug)) {
     const dualClassDef = ClassRegistry.get(dualClassSlug);
     if (dualClassDef?.spellcasting) {
@@ -142,15 +153,7 @@ async function buildClassSpellSection(planner, classDef, level, entryType, class
   const grantedSpells = await getGrantedSpellsForLevel(planner, classDef, level, classSlug);
   const selectionAdjustments = getSpellSelectionAdjustments(classDef, level);
   const selectionOptions = getSpellSelectionOptions(classDef);
-  const spellSlots = buildSpellSlotDisplay(
-    planner,
-    currentSlots,
-    prevSlots,
-    sectionPlannedSpells,
-    grantedSpells,
-    selectionAdjustments,
-    selectionOptions,
-  );
+  const spellSlots = buildSpellSlotDisplay(planner, currentSlots, prevSlots, sectionPlannedSpells, grantedSpells, selectionAdjustments, selectionOptions);
   const hasNewRank = detectNewSpellRank(currentSlots, prevSlots);
   const highestRank = getHighestRank(currentSlots);
   const hasSpellbook = SPELLBOOK_CLASSES.includes(classDef.slug);
@@ -162,7 +165,7 @@ async function buildClassSpellSection(planner, classDef, level, entryType, class
     classSlug,
     label: classSlug,
     entryType,
-    spellTradition: classDef.spellcasting.tradition,
+    spellTradition: resolveSpellTradition(planner, classDef),
     spellType: classDef.spellcasting.type,
     isSpontaneous,
     hasRankSpellSelections: isSpontaneous,
@@ -237,37 +240,37 @@ export function buildCustomSpellEntryOptions(planner, level) {
 
 function buildDedicationSpellSections(planner, level, plannedSpells) {
   const configs = collectDedicationSpellcastingConfigs(planner, level);
-  return configs.map((config) => {
-    const sectionSpells = plannedSpells.filter((spell) => spell.entryType === config.entryType);
-    const cantripSpells = sectionSpells.filter((spell) => spell.isCantrip === true || spell.rank === 0 || spell.displayRank === 0);
-    const rankSpells = sectionSpells.filter((spell) => !(spell.isCantrip === true || spell.rank === 0 || spell.displayRank === 0));
-    const rankRows = Object.entries(config.rankSelectionCounts ?? {}).map(([rawRank, rawCount]) => {
-      const rank = Number(rawRank);
-      const count = Number(rawCount ?? 0);
-      const planned = rankSpells.filter((spell) => Number(spell.displayRank ?? spell.rank ?? spell.baseRank ?? -1) === rank).length;
-      return {
-        rank,
-        label: ordinalRank(rank),
-        count,
-        planned,
-        remaining: Math.max(0, count - planned),
-        isFull: planned >= count,
-      };
-    }).sort((a, b) => a.rank - b.rank);
+  return configs
+    .map((config) => {
+      const sectionSpells = plannedSpells.filter((spell) => spell.entryType === config.entryType);
+      const cantripSpells = sectionSpells.filter((spell) => spell.isCantrip === true || spell.rank === 0 || spell.displayRank === 0);
+      const rankSpells = sectionSpells.filter((spell) => !(spell.isCantrip === true || spell.rank === 0 || spell.displayRank === 0));
+      const rankRows = Object.entries(config.rankSelectionCounts ?? {})
+        .map(([rawRank, rawCount]) => {
+          const rank = Number(rawRank);
+          const count = Number(rawCount ?? 0);
+          const planned = rankSpells.filter((spell) => Number(spell.displayRank ?? spell.rank ?? spell.baseRank ?? -1) === rank).length;
+          return {
+            rank,
+            label: ordinalRank(rank),
+            count,
+            planned,
+            remaining: Math.max(0, count - planned),
+            isFull: planned >= count,
+          };
+        })
+        .sort((a, b) => a.rank - b.rank);
 
-    return {
-      ...config,
-      plannedSpells: rankSpells,
-      plannedCantripSpells: cantripSpells,
-      plannedCantripCount: cantripSpells.length,
-      remainingCantripSelections: Math.max(0, config.cantripSelectionCount - cantripSpells.length),
-      rankRows,
-    };
-  }).filter((section) =>
-    section.plannedSpells.length > 0
-    || section.cantripSelectionCount > 0
-    || section.rankRows.length > 0,
-  );
+      return {
+        ...config,
+        plannedSpells: rankSpells,
+        plannedCantripSpells: cantripSpells,
+        plannedCantripCount: cantripSpells.length,
+        remainingCantripSelections: Math.max(0, config.cantripSelectionCount - cantripSpells.length),
+        rankRows,
+      };
+    })
+    .filter((section) => section.plannedSpells.length > 0 || section.cantripSelectionCount > 0 || section.rankRows.length > 0);
 }
 
 export function getCustomSpellEntryLabel(planner, level, entryType) {
@@ -285,7 +288,11 @@ function collectPlannerSpellcastingFeats(planner, level) {
   const actorFeats = (planner.actor.items?.filter?.((item) => item?.type === 'feat') ?? []).map(normalizeSpellcastingFeatRecord);
   const actorSlugs = new Set(actorFeats.map((feat) => feat.slug).filter(Boolean));
   const plannedFeats = getAllPlannedFeats(planner.plan, level)
-    .map((feat) => ({ ...feat, __plannedGroup: inferFeatPlanGroup(feat), level: feat?.level ?? findFeatLevel(planner, [feat?.slug].filter(Boolean)) ?? level }))
+    .map((feat) => ({
+      ...feat,
+      __plannedGroup: inferFeatPlanGroup(feat),
+      level: feat?.level ?? findFeatLevel(planner, [feat?.slug].filter(Boolean)) ?? level,
+    }))
     .map(normalizeSpellcastingFeatRecord)
     .filter((feat) => feat.slug && !actorSlugs.has(feat.slug));
 
@@ -299,8 +306,7 @@ function inferFeatPlanGroup(feat) {
 }
 
 export function getDedicationSelectionLimitsForPlanner(planner, level, entryType) {
-  const config = collectDedicationSpellcastingConfigs(planner, level)
-    .find((entry) => entry.entryType === entryType);
+  const config = collectDedicationSpellcastingConfigs(planner, level).find((entry) => entry.entryType === entryType);
 
   return {
     cantripSelectionCount: config?.cantripSelectionCount ?? 0,
@@ -315,23 +321,23 @@ export function getDedicationSelectionLimitsForPlanner(planner, level, entryType
 
 function resolveDedicationTradition(planner, classDef, _classSlug) {
   const tradition = classDef?.spellcasting?.tradition ?? 'arcane';
-  if (!['bloodline', 'patron'].includes(tradition)) return tradition;
+  if (!VARIABLE_SPELL_TRADITIONS.has(tradition)) return tradition;
+  const sf2eTradition = resolveSf2eSpellcastingTradition(planner?.actor, tradition);
+  if (sf2eTradition) return sf2eTradition;
+  if (SF2E_VARIABLE_SPELL_TRADITIONS.has(tradition)) return 'any';
   const entry = planner.actor.items?.find?.((item) => item.type === 'spellcastingEntry');
   return entry?.system?.tradition?.value ?? 'arcane';
 }
 
 export function shouldExcludeOwnedSpellIdentityForPlanner(classDef) {
-  return SPELLBOOK_CLASSES.includes(classDef?.slug)
-    && classDef?.spellcasting?.type !== 'spontaneous';
+  return SPELLBOOK_CLASSES.includes(classDef?.slug) && classDef?.spellcasting?.type !== 'spontaneous';
 }
 
 function normalizePlannedSpellsForDisplay(plannedSpells) {
   return (plannedSpells ?? []).map((spell) => {
     const rank = Number(spell?.rank);
     const baseRank = Number(spell?.baseRank);
-    const displayRank = Number.isFinite(rank) && rank >= 0
-      ? rank
-      : (Number.isFinite(baseRank) ? baseRank : rank);
+    const displayRank = Number.isFinite(rank) && rank >= 0 ? rank : Number.isFinite(baseRank) ? baseRank : rank;
 
     return {
       ...spell,
@@ -388,7 +394,9 @@ export async function getFocusSpellsForLevel(planner, level, classSlug = null) {
 }
 
 export function getSubclassSlug(planner, classSlug = null) {
-  const targetClassSlug = String(classSlug ?? planner.plan.classSlug ?? '').trim().toLowerCase();
+  const targetClassSlug = String(classSlug ?? planner.plan.classSlug ?? '')
+    .trim()
+    .toLowerCase();
   planner._subclassSlugCache ??= new Map();
   if (planner._subclassSlugCache.has(targetClassSlug)) return planner._subclassSlugCache.get(targetClassSlug);
   const subclassTag = SUBCLASS_TAGS[targetClassSlug];
@@ -397,16 +405,16 @@ export function getSubclassSlug(planner, classSlug = null) {
     return null;
   }
 
-  const subItem = planner.actor.items?.find((item) =>
-    item.type === 'feat' && (item.system?.traits?.otherTags ?? []).includes(subclassTag),
-  );
+  const subItem = planner.actor.items?.find((item) => item.type === 'feat' && (item.system?.traits?.otherTags ?? []).includes(subclassTag));
   const resolved = subItem?.slug ?? null;
   planner._subclassSlugCache.set(targetClassSlug, resolved);
   return resolved;
 }
 
 export function getSubclassItem(planner, classSlug = null) {
-  const targetClassSlug = String(classSlug ?? planner.plan.classSlug ?? '').trim().toLowerCase();
+  const targetClassSlug = String(classSlug ?? planner.plan.classSlug ?? '')
+    .trim()
+    .toLowerCase();
   planner._subclassItemCache ??= new Map();
   if (planner._subclassItemCache.has(targetClassSlug)) return planner._subclassItemCache.get(targetClassSlug);
   const subclassTag = SUBCLASS_TAGS[targetClassSlug];
@@ -415,16 +423,17 @@ export function getSubclassItem(planner, classSlug = null) {
     return null;
   }
 
-  const resolved = planner.actor.items?.find((item) =>
-    item.type === 'feat' && (item.system?.traits?.otherTags ?? []).includes(subclassTag),
-  ) ?? null;
+  const resolved = planner.actor.items?.find((item) => item.type === 'feat' && (item.system?.traits?.otherTags ?? []).includes(subclassTag)) ?? null;
   planner._subclassItemCache.set(targetClassSlug, resolved);
   return resolved;
 }
 
 export function getSubclassChoices(planner, classSlug = null) {
   const item = getSubclassItem(planner, classSlug);
-  const rawChoices = item?.flags?.pf2e?.rulesSelections ?? {};
+  const rawChoices = {
+    ...(item?.flags?.pf2e?.rulesSelections ?? {}),
+    ...(item?.flags?.system?.rulesSelections ?? {}),
+  };
   const choices = {};
 
   for (const [key, value] of Object.entries(rawChoices)) {
@@ -466,12 +475,14 @@ export async function getGrantedSpellsForLevel(planner, classDef, level, classSl
   return grantedEntries.flatMap((entry, index) => {
     const spell = resolvedSpells[index];
     if (!spell) return [];
-    return [{
-      uuid: spell.uuid,
-      name: spell.name,
-      img: spell.img,
-      rank: entry.rank,
-    }];
+    return [
+      {
+        uuid: spell.uuid,
+        name: spell.name,
+        img: spell.img,
+        rank: entry.rank,
+      },
+    ];
   });
 }
 
@@ -498,15 +509,7 @@ export function findFeatLevel(planner, slugs) {
   return null;
 }
 
-export function buildSpellSlotDisplay(
-  planner,
-  currentSlots,
-  prevSlots,
-  plannedSpells,
-  grantedSpells = [],
-  selectionAdjustments = {},
-  selectionOptions = {},
-) {
+export function buildSpellSlotDisplay(planner, currentSlots, prevSlots, plannedSpells, grantedSpells = [], selectionAdjustments = {}, selectionOptions = {}) {
   const plannedByRank = {};
   for (const spell of plannedSpells) {
     plannedByRank[spell.rank] = (plannedByRank[spell.rank] ?? 0) + 1;
@@ -525,7 +528,7 @@ export function buildSpellSlotDisplay(
 
     if (rank === 'cantrips') {
       const prevCantrips = prevSlots?.cantrips;
-      const prevTotal = prevCantrips == null ? 0 : (Array.isArray(prevCantrips) ? prevCantrips[0] + prevCantrips[1] : prevCantrips);
+      const prevTotal = prevCantrips == null ? 0 : Array.isArray(prevCantrips) ? prevCantrips[0] + prevCantrips[1] : prevCantrips;
       const newCantrips = total - prevTotal;
       const planned = plannedByRank[0] ?? 0;
       display.push({
@@ -543,7 +546,7 @@ export function buildSpellSlotDisplay(
 
     const rankNum = Number(rank);
     const prevVal = prevSlots?.[rank];
-    const prevTotal = prevVal == null ? null : (Array.isArray(prevVal) ? prevVal[0] + prevVal[1] : prevVal);
+    const prevTotal = prevVal == null ? null : Array.isArray(prevVal) ? prevVal[0] + prevVal[1] : prevVal;
     const isNew = prevTotal === null;
     const gainedSlots = isNew ? total : total - prevTotal;
     const grantedCount = grantedByRank[rankNum] ?? 0;
@@ -599,7 +602,9 @@ export function detectNewSpellRank(currentSlots, prevSlots) {
 }
 
 export function getHighestRank(slots) {
-  const ranks = Object.keys(slots).filter((rank) => rank !== 'cantrips').map(Number);
+  const ranks = Object.keys(slots)
+    .filter((rank) => rank !== 'cantrips')
+    .map(Number);
   return Math.max(...ranks);
 }
 
@@ -669,7 +674,10 @@ export function getActorSpellCounts(planner) {
 
 export function resolveSpellTradition(planner, classDef) {
   const tradition = classDef.spellcasting.tradition;
-  if (!['bloodline', 'patron'].includes(tradition)) return tradition;
+  if (!VARIABLE_SPELL_TRADITIONS.has(tradition)) return tradition;
+  const sf2eTradition = resolveSf2eSpellcastingTradition(planner?.actor, tradition);
+  if (sf2eTradition) return sf2eTradition;
+  if (SF2E_VARIABLE_SPELL_TRADITIONS.has(tradition)) return 'any';
   const entry = planner.actor.items?.find?.((item) => item.type === 'spellcastingEntry');
   return entry?.system?.tradition?.value ?? 'arcane';
 }

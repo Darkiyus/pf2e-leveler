@@ -1,4 +1,4 @@
-import { buildSpellContext, buildSpellSlotDisplay, shouldExcludeOwnedSpellIdentityForPlanner } from '../../../scripts/ui/level-planner/spells.js';
+import { buildSpellContext, buildSpellSlotDisplay, resolveSpellTradition, shouldExcludeOwnedSpellIdentityForPlanner } from '../../../scripts/ui/level-planner/spells.js';
 import { ClassRegistry } from '../../../scripts/classes/registry.js';
 import { DRUID } from '../../../scripts/classes/druid.js';
 import { ORACLE } from '../../../scripts/classes/oracle.js';
@@ -113,12 +113,14 @@ describe('level planner spell context', () => {
     const context = await buildSpellContext(planner, SORCERER, 19);
     const rankTen = context.spellSlots.find((slot) => slot.rankNum === 10);
 
-    expect(rankTen).toEqual(expect.objectContaining({
-      rankNum: 10,
-      gainedSlots: 1,
-      newSlots: 2,
-      hasNew: true,
-    }));
+    expect(rankTen).toEqual(
+      expect.objectContaining({
+        rankNum: 10,
+        gainedSlots: 1,
+        newSlots: 2,
+        hasNew: true,
+      }),
+    );
   });
 
   test('new-rank granted spells reduce spontaneous free picks', async () => {
@@ -197,19 +199,15 @@ describe('level planner spell context', () => {
 
   test('buildSpellSlotDisplay subtracts granted spells from new spontaneous picks', () => {
     const planner = { _ordinalRank: (rank) => `${rank}th` };
-    const display = buildSpellSlotDisplay(
-      planner,
-      { cantrips: 5, 1: 4, 2: 3 },
-      { cantrips: 5, 1: 4 },
-      [],
-      [{ uuid: 'x', rank: 2 }],
-    );
+    const display = buildSpellSlotDisplay(planner, { cantrips: 5, 1: 4, 2: 3 }, { cantrips: 5, 1: 4 }, [], [{ uuid: 'x', rank: 2 }]);
 
-    expect(display.find((slot) => slot.rankNum === 2)).toEqual(expect.objectContaining({
-      gainedSlots: 3,
-      grantedCount: 1,
-      newSlots: 2,
-    }));
+    expect(display.find((slot) => slot.rankNum === 2)).toEqual(
+      expect.objectContaining({
+        gainedSlots: 3,
+        grantedCount: 1,
+        newSlots: 2,
+      }),
+    );
   });
 
   test('passes subclass rule selections when resolving genie bloodline spells', async () => {
@@ -249,9 +247,7 @@ describe('level planner spell context', () => {
     const context = await buildSpellContext(planner, classDef, 5);
 
     expect(resolveSubclassSpells).toHaveBeenCalledWith('bloodline-genie', { genie: 'ifrit' }, 5);
-    expect(context.grantedSpells).toEqual([
-      expect.objectContaining({ uuid: 'granted-rank-5', rank: 5 }),
-    ]);
+    expect(context.grantedSpells).toEqual([expect.objectContaining({ uuid: 'granted-rank-5', rank: 5 })]);
   });
 
   test('spellbook planned spells use base rank when stored rank is any-rank sentinel', async () => {
@@ -332,7 +328,13 @@ describe('level planner spell context', () => {
         classSlug: 'wizard',
         levels: {
           3: {
-            generalFeats: [{ uuid: 'feat-cantrip-expansion', name: 'Cantrip Expansion', slug: 'cantrip-expansion' }],
+            generalFeats: [
+              {
+                uuid: 'feat-cantrip-expansion',
+                name: 'Cantrip Expansion',
+                slug: 'cantrip-expansion',
+              },
+            ],
           },
         },
       },
@@ -358,36 +360,129 @@ describe('level planner spell context', () => {
     expect(context.spellbookTotalSelectionCount).toBe(4);
     expect(context.plannedSpellbookSelectionCount).toBe(2);
     expect(context.plannedSpellbookCantripCount).toBe(1);
-    expect(context.plannedSpells).toEqual([
-      expect.objectContaining({ uuid: 'spell-rank-1' }),
-      expect.objectContaining({ uuid: 'spell-rank-2' }),
-    ]);
-    expect(context.plannedSpellbookCantripSpells).toEqual([
-      expect.objectContaining({ uuid: 'spell-cantrip' }),
-    ]);
+    expect(context.plannedSpells).toEqual([expect.objectContaining({ uuid: 'spell-rank-1' }), expect.objectContaining({ uuid: 'spell-rank-2' })]);
+    expect(context.plannedSpellbookCantripSpells).toEqual([expect.objectContaining({ uuid: 'spell-cantrip' })]);
   });
 
   test('prepared spellbook classes exclude already known spells by identity in planner picks', () => {
-    expect(shouldExcludeOwnedSpellIdentityForPlanner({
-      slug: 'wizard',
-      spellcasting: { type: 'prepared' },
-    })).toBe(true);
+    expect(
+      shouldExcludeOwnedSpellIdentityForPlanner({
+        slug: 'wizard',
+        spellcasting: { type: 'prepared' },
+      }),
+    ).toBe(true);
 
-    expect(shouldExcludeOwnedSpellIdentityForPlanner({
-      slug: 'witch',
-      spellcasting: { type: 'prepared' },
-    })).toBe(true);
+    expect(
+      shouldExcludeOwnedSpellIdentityForPlanner({
+        slug: 'witch',
+        spellcasting: { type: 'prepared' },
+      }),
+    ).toBe(true);
 
-    expect(shouldExcludeOwnedSpellIdentityForPlanner({
-      slug: 'sorcerer',
-      spellcasting: { type: 'spontaneous' },
-    })).toBe(false);
+    expect(
+      shouldExcludeOwnedSpellIdentityForPlanner({
+        slug: 'sorcerer',
+        spellcasting: { type: 'spontaneous' },
+      }),
+    ).toBe(false);
+  });
+
+  test('resolves Mystic spell tradition from the active connection item', () => {
+    const planner = {
+      actor: {
+        items: [
+          {
+            type: 'feat',
+            slug: 'healing',
+            system: {
+              traits: { otherTags: ['mystic-connection'] },
+              rules: [
+                {
+                  key: 'ActiveEffectLike',
+                  path: 'flags.system.mystic.tradition',
+                  value: 'divine',
+                },
+              ],
+            },
+          },
+        ],
+      },
+    };
+
+    expect(
+      resolveSpellTradition(planner, {
+        slug: 'mystic',
+        spellcasting: { tradition: 'connection' },
+      }),
+    ).toBe('divine');
+  });
+
+  test('resolves Witchwarper spell tradition from the active paradox item', () => {
+    const planner = {
+      actor: {
+        items: [
+          {
+            type: 'feat',
+            slug: 'analyst',
+            system: {
+              traits: { otherTags: ['witchwarper-paradox'] },
+              rules: [
+                {
+                  key: 'ActiveEffectLike',
+                  path: 'flags.system.witchwarper.tradition',
+                  value: 'arcane',
+                },
+              ],
+            },
+          },
+        ],
+      },
+    };
+
+    expect(
+      resolveSpellTradition(planner, {
+        slug: 'witchwarper',
+        spellcasting: { tradition: 'paradox' },
+      }),
+    ).toBe('arcane');
+  });
+
+  test('leaves unresolved Starfinder variable spell traditions open in the planner', () => {
+    const planner = {
+      actor: {
+        items: [
+          {
+            type: 'spellcastingEntry',
+            system: { tradition: { value: 'arcane' } },
+          },
+        ],
+      },
+    };
+
+    expect(
+      resolveSpellTradition(planner, {
+        slug: 'mystic',
+        spellcasting: { tradition: 'connection' },
+      }),
+    ).toBe('any');
+    expect(
+      resolveSpellTradition(planner, {
+        slug: 'witchwarper',
+        spellcasting: { tradition: 'paradox' },
+      }),
+    ).toBe('any');
   });
 
   test('spellbook planner builds a separate dedication spell section for multiclass spellcasting', async () => {
     getLevelData.mockReturnValue({
       spells: [
-        { uuid: 'druid-cantrip', name: 'Electric Arc', rank: 0, isCantrip: true, entryType: 'archetype:druid' },
+        {
+          uuid: 'druid-cantrip',
+          name: 'Electric Arc',
+          rank: 0,
+          isCantrip: true,
+          entryType: 'archetype:druid',
+        },
       ],
     });
 
@@ -397,10 +492,24 @@ describe('level planner spell context', () => {
         classSlug: 'wizard',
         levels: {
           2: {
-            archetypeFeats: [{ uuid: 'feat-druid', name: 'Druid Dedication', slug: 'druid-dedication', traits: ['archetype', 'dedication', 'druid', 'multiclass'] }],
+            archetypeFeats: [
+              {
+                uuid: 'feat-druid',
+                name: 'Druid Dedication',
+                slug: 'druid-dedication',
+                traits: ['archetype', 'dedication', 'druid', 'multiclass'],
+              },
+            ],
           },
           4: {
-            archetypeFeats: [{ uuid: 'feat-basic-druid', name: 'Basic Druid Spellcasting', slug: 'basic-druid-spellcasting', traits: ['archetype', 'druid'] }],
+            archetypeFeats: [
+              {
+                uuid: 'feat-basic-druid',
+                name: 'Basic Druid Spellcasting',
+                slug: 'basic-druid-spellcasting',
+                traits: ['archetype', 'druid'],
+              },
+            ],
           },
         },
       },
@@ -427,9 +536,7 @@ describe('level planner spell context', () => {
         plannedCantripCount: 1,
         plannedSpells: [],
         plannedCantripSpells: [expect.objectContaining({ uuid: 'druid-cantrip' })],
-        rankRows: expect.arrayContaining([
-          expect.objectContaining({ rank: 1 }),
-        ]),
+        rankRows: expect.arrayContaining([expect.objectContaining({ rank: 1 })]),
       }),
     ]);
   });
@@ -437,7 +544,13 @@ describe('level planner spell context', () => {
   test('dual-class planner builds a separate secondary class spell section', async () => {
     getLevelData.mockReturnValue({
       spells: [
-        { uuid: 'wizard-spell', name: 'Force Barrage', rank: -1, baseRank: 1, entryType: 'class:wizard' },
+        {
+          uuid: 'wizard-spell',
+          name: 'Force Barrage',
+          rank: -1,
+          baseRank: 1,
+          entryType: 'class:wizard',
+        },
       ],
     });
 
@@ -449,7 +562,13 @@ describe('level planner spell context', () => {
         levels: {
           2: {
             spells: [
-              { uuid: 'wizard-spell', name: 'Force Barrage', rank: -1, baseRank: 1, entryType: 'class:wizard' },
+              {
+                uuid: 'wizard-spell',
+                name: 'Force Barrage',
+                rank: -1,
+                baseRank: 1,
+                entryType: 'class:wizard',
+              },
             ],
           },
         },

@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.4.11
+
+### Level Planner
+
+- **Starfinder Player Core classes now plan correctly** - The planner now registers Envoy, Mystic, Operative, Solarian, Soldier, and Witchwarper, resolves Mystic connection and Witchwarper paradox spell traditions, and keeps unresolved SF2e spell pickers open instead of locking them to the wrong tradition
+
 ## 3.4.10
 
 ### Character Wizard

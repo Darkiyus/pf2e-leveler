@@ -3,16 +3,9 @@ import { ClassRegistry } from '../classes/registry.js';
 import { capitalize } from '../utils/pf2e-api.js';
 import { SUBCLASS_SPELLS, resolveSubclassSpells } from '../data/subclass-spells.js';
 import { warn } from '../utils/logger.js';
-import {
-  classUsesPhysicalSpellbook,
-  collectArchetypeSpellcastingConfigs,
-  ensureActorHasSpellbook,
-  normalizeSpellcastingFeatRecord,
-} from '../utils/spellcasting-support.js';
-import {
-  buildCompendiumUuid,
-  getCompendiumPacksForCategory,
-} from '../system-support/profiles.js';
+import { classUsesPhysicalSpellbook, collectArchetypeSpellcastingConfigs, ensureActorHasSpellbook, normalizeSpellcastingFeatRecord } from '../utils/spellcasting-support.js';
+import { buildCompendiumUuid, getCompendiumPacksForCategory } from '../system-support/profiles.js';
+import { resolveSf2eSpellcastingTradition } from '../utils/sf2e-spellcasting.js';
 
 const ADVANCED_FOCUS_FEAT_SLUGS = ['advanced-bloodline', 'advanced-mystery', 'advanced-order', 'advanced-revelation'];
 const GREATER_FOCUS_FEAT_SLUGS = ['greater-bloodline', 'greater-mystery', 'greater-order', 'greater-revelation'];
@@ -71,8 +64,16 @@ function getTrackedSpellcastingClasses(plan) {
   const primaryClassDef = ClassRegistry.get(plan.classSlug);
   if (primaryClassDef) classes.push(primaryClassDef);
 
-  const dualClassSlug = String(plan?.dualClassSlug ?? '').trim().toLowerCase();
-  if (dualClassSlug && dualClassSlug !== String(plan?.classSlug ?? '').trim().toLowerCase()) {
+  const dualClassSlug = String(plan?.dualClassSlug ?? '')
+    .trim()
+    .toLowerCase();
+  if (
+    dualClassSlug &&
+    dualClassSlug !==
+      String(plan?.classSlug ?? '')
+        .trim()
+        .toLowerCase()
+  ) {
     const dualClassDef = ClassRegistry.get(dualClassSlug);
     if (dualClassDef) classes.push(dualClassDef);
   }
@@ -102,9 +103,7 @@ async function ensureCustomPlannedSpellcastingEntries(actor, plan, level) {
 async function updateDivineFont(actor, classDef, level) {
   if (classDef?.slug !== 'cleric') return;
 
-  const fontEntry = actor.items?.find((i) =>
-    i.type === 'spellcastingEntry' && i.name?.includes('Font'),
-  );
+  const fontEntry = actor.items?.find((i) => i.type === 'spellcastingEntry' && i.name?.includes('Font'));
   if (!fontEntry) return;
 
   // Font slots: 4 at level 1, 5 at level 5, 6 at level 15
@@ -116,7 +115,10 @@ async function updateDivineFont(actor, classDef, level) {
   const slots = classDef?.spellcasting?.slots?.[level];
   if (!slots) return;
 
-  const ranks = Object.keys(slots).filter((k) => k !== 'cantrips').map(Number).filter((n) => !isNaN(n));
+  const ranks = Object.keys(slots)
+    .filter((k) => k !== 'cantrips')
+    .map(Number)
+    .filter((n) => !isNaN(n));
   const highestRank = Math.max(...ranks, 1);
 
   const update = { _id: fontEntry.id };
@@ -193,12 +195,18 @@ export async function ensureArchetypeSpellcastingEntries(actor, plan, level) {
   return entriesByType;
 }
 
-const VARIABLE_TRADITIONS = ['bloodline', 'patron'];
+const VARIABLE_TRADITIONS = ['bloodline', 'patron', 'connection', 'paradox'];
+
+function getVariableTraditionFallback(tradition) {
+  return tradition === 'connection' ? 'divine' : 'arcane';
+}
 
 function resolveActorTradition(actor, tradition) {
   if (!VARIABLE_TRADITIONS.includes(tradition)) return tradition;
+  const sf2eTradition = resolveSf2eSpellcastingTradition(actor, tradition);
+  if (sf2eTradition) return sf2eTradition;
   const entry = actor.items?.find((i) => i.type === 'spellcastingEntry');
-  return entry?.system?.tradition?.value ?? 'arcane';
+  return entry?.system?.tradition?.value ?? getVariableTraditionFallback(tradition);
 }
 
 function resolveActorSpellAbility(actor, classDef) {
@@ -214,12 +222,11 @@ async function findOrCreateEntry(actor, config) {
     (i) =>
       i.type === 'spellcastingEntry' &&
       (config.flagKey
-        ? (
-            (config.flagValue !== undefined
-              ? i.flags?.['pf2e-leveler']?.[config.flagKey] === config.flagValue
-              : i.flags?.['pf2e-leveler']?.[config.flagKey] === true)
-            || (config.flagKey === MAGUS_STUDIOUS_ENTRY_FLAG && String(i.name ?? '').toLowerCase().includes('studious'))
-          )
+        ? (config.flagValue !== undefined ? i.flags?.['pf2e-leveler']?.[config.flagKey] === config.flagValue : i.flags?.['pf2e-leveler']?.[config.flagKey] === true) ||
+          (config.flagKey === MAGUS_STUDIOUS_ENTRY_FLAG &&
+            String(i.name ?? '')
+              .toLowerCase()
+              .includes('studious'))
         : true) &&
       i.system.tradition?.value === config.tradition &&
       i.system.prepared?.value === config.prepared,
@@ -313,16 +320,16 @@ function collectPlannedArchetypeSpellcastingFeats(plan, level) {
 function resolveArchetypeTradition(actor, classDef, classSlug) {
   const tradition = classDef?.spellcasting?.tradition ?? 'arcane';
   if (!VARIABLE_TRADITIONS.includes(tradition)) return tradition;
+  const sf2eTradition = resolveSf2eSpellcastingTradition(actor, tradition);
+  if (sf2eTradition) return sf2eTradition;
 
   const subclassTag = SUBCLASS_TAGS[classSlug];
-  const subclassItem = actor.items?.find((item) =>
-    item?.type === 'feat' && (item.system?.traits?.otherTags ?? []).includes(subclassTag),
-  );
+  const subclassItem = actor.items?.find((item) => item?.type === 'feat' && (item.system?.traits?.otherTags ?? []).includes(subclassTag));
   const subclassTradition = subclassItem?.system?.tradition?.value ?? null;
   if (typeof subclassTradition === 'string' && subclassTradition.length > 0) return subclassTradition;
 
   const existingEntry = actor.items?.find((item) => item?.type === 'spellcastingEntry');
-  return existingEntry?.system?.tradition?.value ?? 'arcane';
+  return existingEntry?.system?.tradition?.value ?? getVariableTraditionFallback(tradition);
 }
 
 function buildArchetypeSpellcastingSlotUpdate(entry, config) {
@@ -424,8 +431,7 @@ function getMagusStudiousRankForLevel(level) {
 }
 
 async function addPlannedSpells(actor, entries, levelData, classSlug = null, includeDefaultPrimary = true) {
-  const plannedSpells = [...(levelData?.spells ?? []), ...(levelData?.customSpells ?? [])]
-    .filter((spellPlan) => shouldApplyPlannedSpellToClass(spellPlan, classSlug, includeDefaultPrimary));
+  const plannedSpells = [...(levelData?.spells ?? []), ...(levelData?.customSpells ?? [])].filter((spellPlan) => shouldApplyPlannedSpellToClass(spellPlan, classSlug, includeDefaultPrimary));
   if (!plannedSpells.length) return [];
 
   const added = [];
@@ -454,10 +460,17 @@ async function addPlannedSpells(actor, entries, levelData, classSlug = null, inc
 }
 
 function shouldApplyPlannedSpellToClass(spellPlan, classSlug, includeDefaultPrimary) {
-  const entryType = String(spellPlan?.entryType ?? '').trim().toLowerCase();
+  const entryType = String(spellPlan?.entryType ?? '')
+    .trim()
+    .toLowerCase();
   if (!entryType || entryType === 'primary') return includeDefaultPrimary;
   if (entryType.startsWith('class:')) {
-    return entryType.slice('class:'.length) === String(classSlug ?? '').trim().toLowerCase();
+    return (
+      entryType.slice('class:'.length) ===
+      String(classSlug ?? '')
+        .trim()
+        .toLowerCase()
+    );
   }
   return true;
 }
@@ -466,9 +479,7 @@ async function addGrantedSpells(actor, entries, classDef, _plan, level) {
   const tag = SUBCLASS_TAGS[classDef.slug];
   if (!tag) return [];
 
-  const subclassItem = actor.items?.find((i) =>
-    i.type === 'feat' && (i.system?.traits?.otherTags ?? []).includes(tag),
-  );
+  const subclassItem = actor.items?.find((i) => i.type === 'feat' && (i.system?.traits?.otherTags ?? []).includes(tag));
   if (!subclassItem?.slug) return [];
   const subclassChoices = getSubclassChoices(subclassItem);
 
@@ -509,9 +520,7 @@ async function addSubclassFocusSpells(actor, classDef, plan, level) {
   const tag = SUBCLASS_TAGS[classDef.slug];
   if (!tag) return [];
 
-  const subclassItem = actor.items?.find((i) =>
-    i.type === 'feat' && (i.system?.traits?.otherTags ?? []).includes(tag),
-  );
+  const subclassItem = actor.items?.find((i) => i.type === 'feat' && (i.system?.traits?.otherTags ?? []).includes(tag));
   if (!subclassItem?.slug) return [];
 
   const focusTier = getNewSubclassFocusTier(plan, level);
@@ -529,9 +538,7 @@ async function addSubclassFocusSpells(actor, classDef, plan, level) {
   }
   if (!spell) return [];
 
-  const existing = actor.items?.find((i) =>
-    i.type === 'spell' && (i.sourceId ?? i.flags?.core?.sourceId) === spell.uuid,
-  );
+  const existing = actor.items?.find((i) => i.type === 'spell' && (i.sourceId ?? i.flags?.core?.sourceId) === spell.uuid);
   if (existing) return [];
 
   const focusEntry = await ensureFocusEntry(actor, classDef);
@@ -564,16 +571,18 @@ async function ensureFocusEntry(actor, classDef) {
 
   const tradition = resolveActorTradition(actor, classDef.spellcasting?.tradition ?? 'arcane');
   const ability = resolveActorSpellAbility(actor, classDef);
-  const created = await actor.createEmbeddedDocuments('Item', [{
-    name: `${capitalize(classDef.slug)} Focus Spells`,
-    type: 'spellcastingEntry',
-    system: {
-      tradition: { value: tradition },
-      prepared: { value: 'focus' },
-      ability: { value: ability },
-      proficiency: { value: 1 },
+  const created = await actor.createEmbeddedDocuments('Item', [
+    {
+      name: `${capitalize(classDef.slug)} Focus Spells`,
+      type: 'spellcastingEntry',
+      system: {
+        tradition: { value: tradition },
+        prepared: { value: 'focus' },
+        ability: { value: ability },
+        proficiency: { value: 1 },
+      },
     },
-  }]);
+  ]);
 
   return created[0] ?? null;
 }
@@ -595,7 +604,10 @@ async function increaseFocusPool(actor, addedSpells) {
 }
 
 function getSubclassChoices(subclassItem) {
-  const rawChoices = subclassItem?.flags?.pf2e?.rulesSelections ?? {};
+  const rawChoices = {
+    ...(subclassItem?.flags?.pf2e?.rulesSelections ?? {}),
+    ...(subclassItem?.flags?.system?.rulesSelections ?? {}),
+  };
   const choices = {};
 
   for (const [key, value] of Object.entries(rawChoices)) {
@@ -619,19 +631,13 @@ function resolveTargetEntry(actor, entries, entryType) {
     const stagedEntry = entries?.custom?.[entryType];
     if (stagedEntry) return stagedEntry;
     const customKey = entryType.slice('custom:'.length);
-    return actor.items?.find?.((item) =>
-      item?.type === 'spellcastingEntry'
-      && item?.flags?.['pf2e-leveler']?.customSpellcastingEntry === customKey,
-    ) ?? null;
+    return actor.items?.find?.((item) => item?.type === 'spellcastingEntry' && item?.flags?.['pf2e-leveler']?.customSpellcastingEntry === customKey) ?? null;
   }
   if (typeof entryType === 'string' && entryType.startsWith('archetype:')) {
     const stagedEntry = entries?.archetypes?.[entryType];
     if (stagedEntry) return stagedEntry;
     const classSlug = entryType.split(':')[1] ?? '';
-    return actor.items?.find?.((item) =>
-      item?.type === 'spellcastingEntry'
-      && item?.flags?.['pf2e-leveler']?.archetypeSpellcastingEntry === classSlug,
-    ) ?? null;
+    return actor.items?.find?.((item) => item?.type === 'spellcastingEntry' && item?.flags?.['pf2e-leveler']?.archetypeSpellcastingEntry === classSlug) ?? null;
   }
   return entries.primary ?? entries.animist;
 }
@@ -646,19 +652,22 @@ async function resolveSpell(uuid) {
 }
 
 async function resolveSpellByName(name) {
-  const normalizedName = String(name ?? '').trim().toLowerCase();
+  const normalizedName = String(name ?? '')
+    .trim()
+    .toLowerCase();
   if (!normalizedName) return null;
 
   for (const pack of getCompendiumPacksForCategory('spells')) {
-    const index = typeof pack.getIndex === 'function'
-      ? await pack.getIndex({ fields: ['name'] })
-      : (pack.index ?? []);
-    const match = [...index].find((entry) => String(entry?.name ?? '').trim().toLowerCase() === normalizedName);
+    const index = typeof pack.getIndex === 'function' ? await pack.getIndex({ fields: ['name'] }) : (pack.index ?? []);
+    const match = [...index].find(
+      (entry) =>
+        String(entry?.name ?? '')
+          .trim()
+          .toLowerCase() === normalizedName,
+    );
     if (!match) continue;
 
-    const uuid = typeof match.uuid === 'string' && match.uuid.length > 0
-      ? match.uuid
-      : buildCompendiumUuid('spells', match._id, { packKey: pack.collection });
+    const uuid = typeof match.uuid === 'string' && match.uuid.length > 0 ? match.uuid : buildCompendiumUuid('spells', match._id, { packKey: pack.collection });
     if (!uuid) continue;
 
     const spell = await resolveSpell(uuid);

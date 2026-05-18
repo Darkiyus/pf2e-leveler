@@ -5,29 +5,14 @@ import { FIGHTER } from '../../../scripts/classes/fighter.js';
 import { GUARDIAN } from '../../../scripts/classes/guardian.js';
 import { INVESTIGATOR } from '../../../scripts/classes/investigator.js';
 import { MAGUS } from '../../../scripts/classes/magus.js';
+import { MYSTIC } from '../../../scripts/classes/mystic.js';
 import { ORACLE } from '../../../scripts/classes/oracle.js';
 import { ROGUE } from '../../../scripts/classes/rogue.js';
 import { SORCERER } from '../../../scripts/classes/sorcerer.js';
 import { WIZARD } from '../../../scripts/classes/wizard.js';
-import {
-  MIXED_ANCESTRY_CHOICE_FLAG,
-  MIXED_ANCESTRY_UUID,
-  PROFICIENCY_RANKS,
-} from '../../../scripts/constants.js';
-import {
-  computeBuildState,
-  computePlanArchetypeDedicationProgress,
-  syncPlanArchetypeDedicationProgress,
-} from '../../../scripts/plan/build-state.js';
-import {
-  createPlan,
-  addLevelFeatRetrain,
-  addLevelSkillRetrain,
-  setLevelBoosts,
-  setLevelFeat,
-  setLevelSkillIncrease,
-  toggleLevelIntBonusSkill,
-} from '../../../scripts/plan/plan-model.js';
+import { MIXED_ANCESTRY_CHOICE_FLAG, MIXED_ANCESTRY_UUID, PROFICIENCY_RANKS } from '../../../scripts/constants.js';
+import { computeBuildState, computePlanArchetypeDedicationProgress, syncPlanArchetypeDedicationProgress } from '../../../scripts/plan/build-state.js';
+import { createPlan, addLevelFeatRetrain, addLevelSkillRetrain, setLevelBoosts, setLevelFeat, setLevelSkillIncrease, toggleLevelIntBonusSkill } from '../../../scripts/plan/plan-model.js';
 
 beforeAll(() => {
   ClassRegistry.clear();
@@ -37,6 +22,7 @@ beforeAll(() => {
   ClassRegistry.register(GUARDIAN);
   ClassRegistry.register(INVESTIGATOR);
   ClassRegistry.register(MAGUS);
+  ClassRegistry.register(MYSTIC);
   ClassRegistry.register(ORACLE);
   ClassRegistry.register(ROGUE);
   ClassRegistry.register(SORCERER);
@@ -325,13 +311,9 @@ describe('computeBuildState', () => {
   });
 
   test('includes custom feats, custom skill increases, and custom spells in build state awareness', () => {
-    plan.levels[2].customFeats = [
-      { uuid: 'z', name: 'Secret Technique', slug: 'secret-technique' },
-    ];
+    plan.levels[2].customFeats = [{ uuid: 'z', name: 'Secret Technique', slug: 'secret-technique' }];
     plan.levels[2].customSkillIncreases = [{ skill: 'athletics', toRank: 2 }];
-    plan.levels[2].customSpells = [
-      { uuid: 'spell-z', name: 'Mystic Bolt', slug: 'mystic-bolt', traits: ['evocation'] },
-    ];
+    plan.levels[2].customSpells = [{ uuid: 'spell-z', name: 'Mystic Bolt', slug: 'mystic-bolt', traits: ['evocation'] }];
 
     const state = computeBuildState(mockActor, plan, 2);
 
@@ -417,8 +399,16 @@ describe('computeBuildState', () => {
     setLevelSkillIncrease(plan, 3, { skill: 'stealth', toRank: PROFICIENCY_RANKS.EXPERT });
     addLevelSkillRetrain(plan, 8, {
       fromLevel: 3,
-      original: { skill: 'stealth', fromRank: PROFICIENCY_RANKS.TRAINED, toRank: PROFICIENCY_RANKS.EXPERT },
-      replacement: { skill: 'occultism', fromRank: PROFICIENCY_RANKS.TRAINED, toRank: PROFICIENCY_RANKS.EXPERT },
+      original: {
+        skill: 'stealth',
+        fromRank: PROFICIENCY_RANKS.TRAINED,
+        toRank: PROFICIENCY_RANKS.EXPERT,
+      },
+      replacement: {
+        skill: 'occultism',
+        fromRank: PROFICIENCY_RANKS.TRAINED,
+        toRank: PROFICIENCY_RANKS.EXPERT,
+      },
     });
 
     const beforeRetrain = computeBuildState(mockActor, plan, 7);
@@ -497,8 +487,7 @@ describe('computeBuildState', () => {
             category: 'classfeature',
             level: { value: 1, taken: 1 },
             description: {
-              value:
-                '<p>You gain the @UUID[Compendium.pf2e.actionspf2e.Item.intercept-attack]{Intercept Attack} reaction.</p>',
+              value: '<p>You gain the @UUID[Compendium.pf2e.actionspf2e.Item.intercept-attack]{Intercept Attack} reaction.</p>',
             },
           },
         },
@@ -928,12 +917,8 @@ describe('computeBuildState', () => {
     };
     const fighterPlan = createPlan('fighter');
 
-    expect(computeBuildState(mockActor, fighterPlan, 11).proficiencies.classdc).toBe(
-      PROFICIENCY_RANKS.EXPERT,
-    );
-    expect(computeBuildState(mockActor, fighterPlan, 19).proficiencies.classdc).toBe(
-      PROFICIENCY_RANKS.LEGENDARY,
-    );
+    expect(computeBuildState(mockActor, fighterPlan, 11).proficiencies.classdc).toBe(PROFICIENCY_RANKS.EXPERT);
+    expect(computeBuildState(mockActor, fighterPlan, 19).proficiencies.classdc).toBe(PROFICIENCY_RANKS.LEGENDARY);
   });
 
   test('applies explicit investigator perception and reflex progression metadata', () => {
@@ -945,15 +930,9 @@ describe('computeBuildState', () => {
     };
     const investigatorPlan = createPlan('investigator');
 
-    expect(computeBuildState(mockActor, investigatorPlan, 7).proficiencies.perception).toBe(
-      PROFICIENCY_RANKS.EXPERT,
-    );
-    expect(computeBuildState(mockActor, investigatorPlan, 13).proficiencies.perception).toBe(
-      PROFICIENCY_RANKS.MASTER,
-    );
-    expect(computeBuildState(mockActor, investigatorPlan, 15).proficiencies.reflex).toBe(
-      PROFICIENCY_RANKS.MASTER,
-    );
+    expect(computeBuildState(mockActor, investigatorPlan, 7).proficiencies.perception).toBe(PROFICIENCY_RANKS.EXPERT);
+    expect(computeBuildState(mockActor, investigatorPlan, 13).proficiencies.perception).toBe(PROFICIENCY_RANKS.MASTER);
+    expect(computeBuildState(mockActor, investigatorPlan, 15).proficiencies.reflex).toBe(PROFICIENCY_RANKS.MASTER);
   });
 
   test('collects weapon proficiency categories from actor data', () => {
@@ -1280,9 +1259,7 @@ describe('computeBuildState', () => {
 
     expect(state.archetypeDedicationProgress.get('archaeologist-dedication')).toBe(2);
     expect(state.canTakeNewArchetypeDedication).toBe(true);
-    expect(planProgress.dedications).toEqual([
-      expect.objectContaining({ slug: 'archaeologist-dedication', count: 2, complete: true }),
-    ]);
+    expect(planProgress.dedications).toEqual([expect.objectContaining({ slug: 'archaeologist-dedication', count: 2, complete: true })]);
   });
 
   test('counts class-slot additional archetype feats by stored source metadata', () => {
@@ -1334,9 +1311,7 @@ describe('computeBuildState', () => {
 
     expect(state.archetypeDedicationProgress.get('archaeologist-dedication')).toBe(2);
     expect(state.canTakeNewArchetypeDedication).toBe(true);
-    expect(planProgress.dedications).toEqual([
-      expect.objectContaining({ slug: 'archaeologist-dedication', count: 2, complete: true }),
-    ]);
+    expect(planProgress.dedications).toEqual([expect.objectContaining({ slug: 'archaeologist-dedication', count: 2, complete: true })]);
   });
 
   test('counts same-level generic archetype feats by stored dedication prerequisite text', () => {
@@ -1581,6 +1556,80 @@ describe('computeBuildState', () => {
 
     const state = computeBuildState(actor, createPlan('sorcerer'), 4);
     expect(state.spellcasting.traditions.has('arcane')).toBe(true);
+  });
+
+  test('infers Mystic spell tradition from the active connection item', () => {
+    const actor = createMockActor();
+    actor.items = {
+      filter: jest.fn((predicate) => {
+        const items = [
+          {
+            type: 'feat',
+            slug: 'healing',
+            system: {
+              rules: [
+                {
+                  key: 'ActiveEffectLike',
+                  path: 'flags.system.mystic.tradition',
+                  value: 'divine',
+                },
+              ],
+              traits: {
+                otherTags: ['mystic-connection'],
+              },
+            },
+          },
+        ];
+        return items.filter(predicate);
+      }),
+    };
+
+    const state = computeBuildState(actor, createPlan('mystic'), 4);
+    expect(state.spellcasting.traditions.has('divine')).toBe(true);
+    expect(state.spellcasting.traditions.has('connection')).toBe(false);
+  });
+
+  test('infers Witchwarper spell tradition from the active paradox item', () => {
+    ClassRegistry.register({
+      slug: 'witchwarper',
+      featSchedule: {
+        class: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20],
+        skill: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20],
+        general: [3, 7, 11, 15, 19],
+        ancestry: [5, 9, 13, 17],
+      },
+      skillIncreaseSchedule: [3, 5, 7, 9, 11, 13, 15, 17, 19],
+      abilityBoostSchedule: [5, 10, 15, 20],
+      spellcasting: { tradition: 'paradox', slots: { 1: { cantrips: 5, 1: 3 } } },
+    });
+    const actor = createMockActor();
+    actor.items = {
+      filter: jest.fn((predicate) => {
+        const items = [
+          {
+            type: 'feat',
+            slug: 'gap-influenced',
+            system: {
+              rules: [
+                {
+                  key: 'ActiveEffectLike',
+                  path: 'flags.system.witchwarper.tradition',
+                  value: 'occult',
+                },
+              ],
+              traits: {
+                otherTags: ['witchwarper-paradox'],
+              },
+            },
+          },
+        ];
+        return items.filter(predicate);
+      }),
+    };
+
+    const state = computeBuildState(actor, createPlan('witchwarper'), 4);
+    expect(state.spellcasting.traditions.has('occult')).toBe(true);
+    expect(state.spellcasting.traditions.has('paradox')).toBe(false);
   });
 
   test('tracks incomplete dedication progress until two other archetype feats are taken', () => {

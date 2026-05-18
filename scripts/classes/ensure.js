@@ -7,6 +7,7 @@ import { CLERIC } from './cleric.js';
 import { COMMANDER } from './commander.js';
 import { DAREDEVIL } from './daredevil.js';
 import { DRUID } from './druid.js';
+import { ENVOY } from './envoy.js';
 import { EXEMPLAR } from './exemplar.js';
 import { FIGHTER } from './fighter.js';
 import { GUARDIAN } from './guardian.js';
@@ -16,25 +17,25 @@ import { INVESTIGATOR } from './investigator.js';
 import { KINETICIST } from './kineticist.js';
 import { MAGUS } from './magus.js';
 import { MONK } from './monk.js';
+import { MYSTIC } from './mystic.js';
 import { ORACLE } from './oracle.js';
+import { OPERATIVE } from './operative.js';
 import { PSYCHIC } from './psychic.js';
 import { RANGER } from './ranger.js';
 import { ROGUE } from './rogue.js';
 import { SLAYER } from './slayer.js';
+import { SOLARIAN } from './solarian.js';
+import { SOLDIER } from './soldier.js';
 import { SORCERER } from './sorcerer.js';
 import { SUMMONER } from './summoner.js';
 import { SWASHBUCKLER } from './swashbuckler.js';
 import { THAUMATURGE } from './thaumaturge.js';
 import { WITCH } from './witch.js';
+import { WITCHWARPER } from './witchwarper.js';
 import { WIZARD } from './wizard.js';
 import { ClassRegistry } from './registry.js';
 
-const DEFAULT_CLASSES = [
-  ALCHEMIST, ANIMIST, BARBARIAN, BARD, CHAMPION, CLERIC, COMMANDER, DAREDEVIL, DRUID,
-  EXEMPLAR, FIGHTER, GUARDIAN, GUNSLINGER, INVENTOR, INVESTIGATOR, KINETICIST,
-  MAGUS, MONK, ORACLE, PSYCHIC, RANGER, ROGUE, SLAYER, SORCERER, SUMMONER,
-  SWASHBUCKLER, THAUMATURGE, WITCH, WIZARD,
-];
+const DEFAULT_CLASSES = [ALCHEMIST, ANIMIST, BARBARIAN, BARD, CHAMPION, CLERIC, COMMANDER, DAREDEVIL, DRUID, ENVOY, EXEMPLAR, FIGHTER, GUARDIAN, GUNSLINGER, INVENTOR, INVESTIGATOR, KINETICIST, MAGUS, MONK, MYSTIC, OPERATIVE, ORACLE, PSYCHIC, RANGER, ROGUE, SLAYER, SOLARIAN, SOLDIER, SORCERER, SUMMONER, SWASHBUCKLER, THAUMATURGE, WITCH, WITCHWARPER, WIZARD];
 
 export function ensureClassRegistry() {
   if (ClassRegistry.getAll().length > 0) return ClassRegistry.getAll();
@@ -50,7 +51,9 @@ export function ensureActorClassRegistered(actor) {
   ensureClassRegistry();
 
   const actorClass = actor?.class ?? null;
-  const slug = String(actorClass?.slug ?? actorClass?.system?.slug ?? '').trim().toLowerCase();
+  const slug = String(actorClass?.slug ?? actorClass?.system?.slug ?? '')
+    .trim()
+    .toLowerCase();
   if (!slug) return null;
   if (ClassRegistry.has(slug)) return ClassRegistry.get(slug);
 
@@ -60,7 +63,9 @@ export function ensureActorClassRegistered(actor) {
 export function ensureClassItemRegistered(classItem, slug = null) {
   ensureClassRegistry();
 
-  const normalizedSlug = String(slug ?? classItem?.slug ?? classItem?.system?.slug ?? '').trim().toLowerCase();
+  const normalizedSlug = String(slug ?? classItem?.slug ?? classItem?.system?.slug ?? '')
+    .trim()
+    .toLowerCase();
   if (!normalizedSlug) return null;
   if (ClassRegistry.has(normalizedSlug)) return ClassRegistry.get(normalizedSlug);
 
@@ -114,9 +119,7 @@ function normalizeStringArray(values) {
 
 function normalizeNumericArray(values) {
   if (!Array.isArray(values)) return [];
-  return values
-    .map((value) => Number(value))
-    .filter((value) => Number.isInteger(value));
+  return values.map((value) => Number(value)).filter((value) => Number.isInteger(value));
 }
 
 function normalizeClassFeatures(features) {
