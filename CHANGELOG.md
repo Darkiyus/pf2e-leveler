@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.4.12
+
+### Level Planner
+
+- **Organization training prerequisites now stay unknown instead of failing** - Prerequisites such as `Trained By A Hellknight Order` are treated as unverifiable narrative requirements, and the feat picker no longer colors `Trained` as a skill rank unless it appears in real rank wording like `Trained In`
+
 ## 3.4.11
 
 ### Level Planner

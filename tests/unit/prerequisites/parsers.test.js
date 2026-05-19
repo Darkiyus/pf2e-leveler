@@ -427,6 +427,11 @@ describe('parsePrerequisite', () => {
     expect(result.type).toBe('unknown');
   });
 
+  test('treats trained-by organization prerequisites as unknown legacy text', () => {
+    const result = parsePrerequisite('Trained By A Hellknight Order');
+    expect(result.type).toBe('unknown');
+  });
+
   test('treats age prerequisites as unknown legacy text', () => {
     const result = parsePrerequisite('At Least 100 Years Old');
     expect(result.type).toBe('unknown');
@@ -788,6 +793,12 @@ describe('parsePrerequisiteNode', () => {
 
   test('does not split curse-state text into fake or alternatives', () => {
     const result = parsePrerequisiteNode('You are cursed or have previously been cursed.');
+    expect(result.kind).toBe('leaf');
+    expect(result.type).toBe('unknown');
+  });
+
+  test('does not split trained-by organization text into fake requirements', () => {
+    const result = parsePrerequisiteNode('Trained By A Hellknight Order');
     expect(result.kind).toBe('leaf');
     expect(result.type).toBe('unknown');
   });

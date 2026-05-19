@@ -529,6 +529,36 @@ describe('FeatPicker prerequisite enforcement', () => {
     expect(result.selectionBlocked).toBe(false);
   });
 
+  test('trained-by organization prerequisites are unknown and do not color trained as a rank', () => {
+    const feat = createFeat({
+      name: 'Hellknight Armiger',
+      prereqText: 'Trained By A Hellknight Order',
+      uuid: 'hellknight-armiger',
+      slug: 'hellknight-armiger',
+    });
+
+    const picker = new FeatPicker(
+      createActor(),
+      'archetype',
+      2,
+      createBuildState(),
+      jest.fn(),
+    );
+    picker.allFeats = [feat];
+
+    const [result] = picker._applyFilters();
+    const templated = picker._toTemplateFeat(result);
+
+    expect(result.prereqResults).toHaveLength(1);
+    expect(result.prereqResults[0].met).toBeNull();
+    expect(result.hasUnknownPrerequisites).toBe(true);
+    expect(result.hasFailedPrerequisites).toBe(false);
+    expect(result.prerequisitesFailed).toBe(false);
+    expect(result.selectionBlocked).toBe(false);
+    expect(templated.prereqResults[0].displayHtml).toBe('Trained By A Hellknight Order');
+    expect(templated.prereqResults[0].displayHtml).not.toContain('prereq-rank');
+  });
+
   test('multi-ancestry feat selection prerequisites pass with adopted ancestry in build state', () => {
     const feat = createFeat({
       name: 'Different Worlds',

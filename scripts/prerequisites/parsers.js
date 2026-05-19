@@ -91,6 +91,7 @@ const WIELDING_WEAPON_GROUP_PATTERN = /^wielding\s+(?:an?\s+)?weapon in the\s+(.
 const WIELDING_WEAPON_TRAIT_PATTERN = /^wielding\s+(?:an?\s+)?weapon with the\s+(.+?)\s+trait$/i;
 const NARRATIVE_MEMBERSHIP_PATTERN =
   /^(member of|you were|you are or were|worshipper of|follower of)\b/i;
+const NARRATIVE_TRAINED_BY_PATTERN = /^trained by\b/i;
 const NARRATIVE_ATTENDANCE_PATTERN = /^(attended|studied at|graduated from)\b/i;
 const NARRATIVE_DEATH_PATTERN = /\b(dead|died|mummified)\b/i;
 const NARRATIVE_INITIATION_PATTERN = /\b(initiates you into|earned the trust of)\b/i;
@@ -299,6 +300,7 @@ function shouldKeepUnknownPrerequisiteAtomic(text) {
 
   return [
     NARRATIVE_MEMBERSHIP_PATTERN,
+    NARRATIVE_TRAINED_BY_PATTERN,
     NARRATIVE_ATTENDANCE_PATTERN,
     NARRATIVE_DEATH_PATTERN,
     NARRATIVE_INITIATION_PATTERN,
@@ -995,6 +997,7 @@ function looksLikeDescriptiveRequirement(text) {
 
   if (/[.!?]/.test(normalized)) return true;
   if (NARRATIVE_MEMBERSHIP_PATTERN.test(normalized)) return true;
+  if (NARRATIVE_TRAINED_BY_PATTERN.test(normalized)) return true;
   if (NARRATIVE_ATTENDANCE_PATTERN.test(normalized)) return true;
   if (NARRATIVE_DEATH_PATTERN.test(normalized)) return true;
   if (NARRATIVE_INITIATION_PATTERN.test(normalized)) return true;

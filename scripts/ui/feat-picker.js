@@ -1443,7 +1443,7 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _colorizePrereqRanks(text) {
     const escaped = this._escapeHtml(text);
-    return escaped.replace(/\b(Untrained|Trained|Expert|Master|Legendary)\b/g, (match) => {
+    return escaped.replace(/\b(Untrained|Trained|Expert|Master|Legendary)\b(?=\s+(?:In|En)\b)/g, (match) => {
       const rankName = String(match).toLowerCase();
       return `<span class="prereq-rank rank-text-${rankName}">${match}</span>`;
     });
