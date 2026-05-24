@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.4.16
+
+### Level Planner
+
+- **Initial trained skills can now be retrained during downtime** - Skill retraining now offers original trained skill choices from character creation at early levels, including recovered actors without saved creation skill data, and previews the original skill dropping back to untrained after the retrain
+- **Class feature rows now open their details reliably** - Class features that arrive without a stored UUID now resolve against the PF2e class feature compendium, so entries such as Bravery and Fighter Weapon Mastery can be clicked for details
+
 ## 3.4.15
 
 ### Level Planner
