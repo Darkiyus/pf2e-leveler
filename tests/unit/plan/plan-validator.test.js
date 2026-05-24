@@ -200,6 +200,22 @@ describe('validateLevel', () => {
     ]));
   });
 
+  test('initial trained skill retrain does not require a planned skill increase source', () => {
+    const plan = createPlan('alchemist');
+    setLevelFeat(plan, 3, 'generalFeats', { uuid: 'general', name: 'General', slug: 'general' });
+    setLevelSkillIncrease(plan, 3, { skill: 'stealth', toRank: 2 });
+    addLevelSkillRetrain(plan, 3, {
+      fromLevel: 1,
+      sourceType: 'initialSkill',
+      original: { skill: 'athletics', fromRank: 0, toRank: 1 },
+      replacement: { skill: 'occultism', fromRank: 0, toRank: 1 },
+    });
+
+    const result = validateLevel(plan, ALCHEMIST, 3);
+
+    expect(result.issues.map((issue) => issue.message)).not.toContain('Athletics: original skill increase can no longer be found');
+  });
+
   test('skill retrain replacement cannot exceed the traded-away rank', () => {
     const plan = createPlan('alchemist');
     setLevelFeat(plan, 3, 'generalFeats', { uuid: 'general', name: 'General', slug: 'general' });

@@ -1,4 +1,4 @@
-import { PROFICIENCY_RANK_NAMES, SUBCLASS_TAGS, WEALTH_MODES, CHARACTER_WEALTH, expandPermanentItemSlots, MODULE_ID } from '../../constants.js';
+import { INITIAL_SKILL_RETRAIN_SOURCE_TYPE, PROFICIENCY_RANK_NAMES, PROFICIENCY_RANKS, SUBCLASS_TAGS, WEALTH_MODES, CHARACTER_WEALTH, expandPermanentItemSlots, MODULE_ID } from '../../constants.js';
 import { getChoicesForLevel } from '../../classes/progression.js';
 import { ClassRegistry } from '../../classes/registry.js';
 import { getLevelData } from '../../plan/plan-model.js';
@@ -18,7 +18,8 @@ import { extractFeatSkillRules } from './index.js';
 import { getAvailableLanguages } from './context.js';
 import { buildCustomSpellEntryOptions } from './spells.js';
 import { evaluatePredicate } from '../../utils/predicate.js';
-import { getActiveSkillConfigEntry, getActiveSkillSlugs, isActiveSkillSlug, normalizeSkillSlug } from '../../utils/skill-slugs.js';
+import { getActiveSkillConfigEntry, getActiveSkillSlugs, isActiveSkillSlug, normalizeSkillSlug, SKILL_ALIASES } from '../../utils/skill-slugs.js';
+import { getCreationData } from '../../creation/creation-store.js';
 
 const MANUAL_SPELL_FEATS = new Set([
   'advanced-qi-spells',
@@ -135,6 +136,7 @@ export async function buildLevelContext(planner, classDef, options) {
 }
 
 function buildRetrainingContext(planner, level, levelData) {
+  const skillRetrainSources = buildSkillRetrainSources(planner, level);
   const retrainedFeats = (levelData.retrainedFeats ?? []).map((entry, index) => ({
     index,
     activityLevel: level,
@@ -164,7 +166,8 @@ function buildRetrainingContext(planner, level, levelData) {
     hasRetraining: retrainedFeats.length > 0 || retrainedSkillIncreases.length > 0,
     retrainedFeats,
     retrainedSkillIncreases,
-    skillRetrainSources: buildSkillRetrainSources(planner, level),
+    skillRetrainSources,
+    hasSkillRetrainSources: skillRetrainSources.length > 0,
   };
 }
 
@@ -173,8 +176,8 @@ function formatOriginalLevelLabel(level) {
   return Number.isFinite(numericLevel) ? `Original Level ${numericLevel}` : 'Original Level Unknown';
 }
 
-function buildSkillRetrainSources(planner, level) {
-  const sources = [];
+export function buildSkillRetrainSources(planner, level) {
+  const sources = buildInitialSkillRetrainSources(planner);
   for (let fromLevel = 1; fromLevel < level; fromLevel++) {
     const levelData = getLevelData(planner.plan, fromLevel);
     for (const increase of levelData?.skillIncreases ?? []) {
@@ -189,6 +192,60 @@ function buildSkillRetrainSources(planner, level) {
     }
   }
   return sources;
+}
+
+function buildInitialSkillRetrainSources(planner) {
+  const creationData = getCreationData(planner.actor);
+  const creationSkills = Array.isArray(creationData?.skills) ? creationData.skills : [];
+  const sources = [];
+  const seen = new Set();
+
+  for (const rawSkill of creationSkills) {
+    addInitialSkillRetrainSource(sources, seen, planner, rawSkill, { allowHigherRanks: true });
+  }
+
+  if (sources.length === 0) {
+    for (const skill of getActiveSkillSlugs()) {
+      addInitialSkillRetrainSource(sources, seen, planner, skill, { allowHigherRanks: false });
+    }
+  }
+
+  return sources;
+}
+
+function addInitialSkillRetrainSource(sources, seen, planner, rawSkill, { allowHigherRanks }) {
+  const skill = normalizeSkillSlug(rawSkill);
+  if (!isActiveSkillSlug(skill) || seen.has(skill)) return;
+  const actorRank = getActorSkillRank(planner.actor, skill);
+  const eligible = allowHigherRanks
+    ? actorRank >= PROFICIENCY_RANKS.TRAINED
+    : actorRank === PROFICIENCY_RANKS.TRAINED;
+  if (!eligible) return;
+  seen.add(skill);
+  sources.push({
+    fromLevel: 1,
+    sourceType: INITIAL_SKILL_RETRAIN_SOURCE_TYPE,
+    skill,
+    fromRank: PROFICIENCY_RANKS.UNTRAINED,
+    toRank: PROFICIENCY_RANKS.TRAINED,
+    label: localizeSkillSlug(skill),
+    rankName: titleCase(PROFICIENCY_RANK_NAMES[PROFICIENCY_RANKS.TRAINED]),
+  });
+}
+
+function getActorSkillRank(actor, skill) {
+  const skills = actor?.system?.skills ?? {};
+  const directRank = readSkillRank(skills[skill]);
+  if (directRank !== null) return directRank;
+
+  const alias = Object.entries(SKILL_ALIASES).find(([, canonical]) => canonical === skill)?.[0];
+  if (!alias) return PROFICIENCY_RANKS.UNTRAINED;
+  return readSkillRank(skills[alias]) ?? PROFICIENCY_RANKS.UNTRAINED;
+}
+
+function readSkillRank(entry) {
+  const rank = Number(entry?.rank ?? entry?.value);
+  return Number.isFinite(rank) ? rank : null;
 }
 
 function formatFeatCategoryLabel(category) {
@@ -298,20 +355,70 @@ async function buildClassFeatureEntries(planner, level, levelData) {
   const wizard = createPlannerChoiceWizard(planner);
 
   return Promise.all(features.map(async (feature) => {
-    if (!feature.uuid) return { ...feature, choiceSets: [] };
-    const source = await fromUuid(feature.uuid).catch(() => null);
+    const sourceEntry = await resolveClassFeatureSource(planner, feature);
+    const enrichedFeature = {
+      ...feature,
+      uuid: feature.uuid ?? sourceEntry?.uuid ?? null,
+      img: feature.img ?? sourceEntry?.img ?? null,
+    };
+    const source = sourceEntry?.source ?? null;
     const rules = Array.isArray(source?.system?.rules) ? source.system.rules : [];
-    if (rules.length === 0) return { ...feature, choiceSets: [] };
+    if (rules.length === 0) return { ...enrichedFeature, choiceSets: [] };
 
     const storedChoices = levelData?.classFeatureChoices?.[feature.key] ?? {};
     const choiceSets = await parseChoiceSets(wizard, rules, getClassFeatureChoiceValues(storedChoices), source);
     return {
-      ...feature,
+      ...enrichedFeature,
       choiceSets: choiceSets
         .map((entry) => decoratePlannerClassFeatureChoiceSet(entry, storedChoices))
         .filter((entry) => entry.options.length > 0),
     };
   }));
+}
+
+async function resolveClassFeatureSource(planner, feature) {
+  if (feature?.uuid) {
+    const source = await fromUuid(feature.uuid).catch(() => null);
+    if (source) {
+      return {
+        uuid: source.uuid ?? feature.uuid,
+        img: source.img ?? null,
+        source,
+      };
+    }
+  }
+
+  const entry = await findClassFeatureCompendiumEntry(planner, feature);
+  if (!entry?.uuid) return null;
+
+  const source = await fromUuid(entry.uuid).catch(() => null);
+  return {
+    uuid: source?.uuid ?? entry.uuid,
+    img: entry.img ?? source?.img ?? null,
+    source,
+  };
+}
+
+async function findClassFeatureCompendiumEntry(planner, feature) {
+  const featureKey = getClassFeatureKey(feature);
+  const featureName = normalizeFeatureName(feature?.name);
+  const entries = await loadCompendiumCategory(planner, 'classFeatures').catch(() => []);
+
+  return entries.find((entry) => {
+    if (!entry) return false;
+    const entryKeys = new Set([
+      entry.uuid,
+      entry.slug,
+      entry.key,
+      getClassFeatureKey(entry),
+    ].filter(Boolean));
+    if (featureKey && entryKeys.has(featureKey)) return true;
+    return featureName && normalizeFeatureName(entry.name) === featureName;
+  }) ?? null;
+}
+
+function normalizeFeatureName(name) {
+  return String(name ?? '').trim().toLowerCase();
 }
 
 function getClassFeatureKey(feature) {

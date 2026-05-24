@@ -14,6 +14,8 @@ export const PROFICIENCY_RANKS = {
 
 export const PROFICIENCY_RANK_NAMES = ['untrained', 'trained', 'expert', 'master', 'legendary'];
 
+export const INITIAL_SKILL_RETRAIN_SOURCE_TYPE = 'initialSkill';
+
 export const ATTRIBUTES = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
 
 export const SKILLS = ['acrobatics', 'arcana', 'athletics', 'crafting', 'deception', 'diplomacy', 'intimidation', 'medicine', 'nature', 'occultism', 'performance', 'religion', 'society', 'stealth', 'survival', 'thievery'];

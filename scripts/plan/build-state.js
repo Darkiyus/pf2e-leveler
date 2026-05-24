@@ -1,4 +1,4 @@
-import { ANCESTRY_TRAIT_ALIASES, ATTRIBUTES, MIXED_ANCESTRY_CHOICE_FLAG, MIXED_ANCESTRY_UUID, MAX_LEVEL, PROFICIENCY_RANKS } from '../constants.js';
+import { ANCESTRY_TRAIT_ALIASES, ATTRIBUTES, INITIAL_SKILL_RETRAIN_SOURCE_TYPE, MIXED_ANCESTRY_CHOICE_FLAG, MIXED_ANCESTRY_UUID, MAX_LEVEL, PROFICIENCY_RANKS } from '../constants.js';
 import { ClassRegistry } from '../classes/registry.js';
 import { SUBCLASS_SPELLS } from '../data/subclass-spells.js';
 import { getAllPlannedFeats, getAllPlannedBoosts, getAllPlannedSpells } from './plan-model.js';
@@ -183,7 +183,7 @@ function getActiveRetrainedSkillIncreaseOriginals(plan, atLevel) {
   const originals = [];
   for (let level = 1; level <= atLevel; level++) {
     for (const retrain of plan?.levels?.[level]?.retrainedSkillIncreases ?? []) {
-      if (retrain?.original) originals.push({ ...retrain.original, fromLevel: retrain.fromLevel });
+      if (retrain?.original) originals.push({ ...retrain.original, fromLevel: retrain.fromLevel, sourceType: retrain.sourceType ?? retrain.original.sourceType ?? null });
     }
   }
   return originals;
@@ -834,6 +834,7 @@ export function computeSkillPickerState(actor, plan, atLevel, classDef, options 
 
   applyActorSkillRankRules(skills, actor, atLevel);
   applyActorDeitySkill(skills, actor);
+  applyInitialSkillRetrains(skills, plan, atLevel);
 
   for (let level = 1; level <= atLevel; level++) {
     const levelData = plan.levels?.[level];
@@ -860,6 +861,27 @@ export function computeSkillPickerState(actor, plan, atLevel, classDef, options 
   }
 
   return skills;
+}
+
+function applyInitialSkillRetrains(skills, plan, atLevel) {
+  for (const original of getActiveRetrainedSkillIncreaseOriginals(plan, atLevel)) {
+    if (!isInitialSkillRetrainOriginal(original)) continue;
+    const skill = normalizeSkillSlug(original.skill);
+    if (!isActiveSkillSlug(skill)) continue;
+
+    const fromRank = Number(original.fromRank ?? PROFICIENCY_RANKS.UNTRAINED);
+    const toRank = Number(original.toRank ?? PROFICIENCY_RANKS.TRAINED);
+    const currentRank = Number(skills[skill] ?? PROFICIENCY_RANKS.UNTRAINED);
+    if (!Number.isFinite(fromRank) || !Number.isFinite(toRank) || !Number.isFinite(currentRank)) continue;
+    if (currentRank <= toRank && currentRank > fromRank) skills[skill] = fromRank;
+  }
+}
+
+function isInitialSkillRetrainOriginal(original) {
+  if (original?.sourceType === INITIAL_SKILL_RETRAIN_SOURCE_TYPE) return true;
+  return Number(original?.fromLevel) === 1
+    && Number(original?.fromRank) === PROFICIENCY_RANKS.UNTRAINED
+    && Number(original?.toRank) === PROFICIENCY_RANKS.TRAINED;
 }
 
 function applyActorDeitySkill(skills, actor) {

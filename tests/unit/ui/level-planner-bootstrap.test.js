@@ -4464,6 +4464,96 @@ describe('LevelPlanner bootstrap from existing actor', () => {
     ]));
   });
 
+  it('offers creation-selected trained skills as skill retrain sources', async () => {
+    const actor = createMockActor();
+    actor.items = [];
+    actor.class.slug = 'alchemist';
+    actor.system.skills.athletics.rank = 1;
+    actor.getFlag = jest.fn(() => ({ skills: ['athletics'] }));
+
+    const planner = new LevelPlanner(actor);
+    planner.plan = createPlan('alchemist');
+    planner.selectedLevel = 8;
+    planner.plan.levels[3].skillIncreases = [{ skill: 'stealth', toRank: 2 }];
+
+    const context = await planner._buildLevelContext(ClassRegistry.get('alchemist'), planner._getVariantOptions());
+
+    expect(context.skillRetrainSources).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        fromLevel: 1,
+        sourceType: 'initialSkill',
+        skill: 'athletics',
+        toRank: 1,
+        label: 'Athletics',
+        rankName: 'Trained',
+      }),
+      expect.objectContaining({ fromLevel: 3, skill: 'stealth', toRank: 2 }),
+    ]));
+    expect(planner._getSkillRetrainSources()).toEqual(expect.arrayContaining([
+      expect.objectContaining({ fromLevel: 1, sourceType: 'initialSkill', skill: 'athletics', toRank: 1 }),
+    ]));
+  });
+
+  it('infers initial trained skill retrain sources when creation selected skills are not saved', async () => {
+    const actor = createMockActor();
+    actor.items = [];
+    actor.class.slug = 'alchemist';
+    actor.system.skills.athletics.rank = 1;
+
+    const planner = new LevelPlanner(actor);
+    planner.plan = createPlan('alchemist');
+
+    for (const level of [2, 3]) {
+      planner.selectedLevel = level;
+      const context = await planner._buildLevelContext(ClassRegistry.get('alchemist'), planner._getVariantOptions());
+
+      expect(context.skillRetrainSources).toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          fromLevel: 1,
+          sourceType: 'initialSkill',
+          skill: 'athletics',
+          toRank: 1,
+          label: 'Athletics',
+          rankName: 'Trained',
+        }),
+      ]));
+      expect(planner._getSkillRetrainSources()).toEqual(expect.arrayContaining([
+        expect.objectContaining({ fromLevel: 1, sourceType: 'initialSkill', skill: 'athletics', toRank: 1 }),
+      ]));
+    }
+  });
+
+  it('infers initial trained skill retrain sources from PF2E short skill keys', async () => {
+    const actor = createMockActor();
+    actor.items = [];
+    actor.class.slug = 'alchemist';
+    actor.system.skills = {
+      ath: { rank: 1 },
+      ste: { rank: 0 },
+    };
+
+    const planner = new LevelPlanner(actor);
+    planner.plan = createPlan('alchemist');
+    planner.selectedLevel = 2;
+
+    const context = await planner._buildLevelContext(ClassRegistry.get('alchemist'), planner._getVariantOptions());
+
+    expect(context.skillRetrainSources).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        fromLevel: 1,
+        sourceType: 'initialSkill',
+        skill: 'athletics',
+        toRank: 1,
+        label: 'Athletics',
+        rankName: 'Trained',
+      }),
+    ]));
+    expect(context.hasSkillRetrainSources).toBe(true);
+    expect(planner._getSkillRetrainSources()).toEqual(expect.arrayContaining([
+      expect.objectContaining({ fromLevel: 1, sourceType: 'initialSkill', skill: 'athletics', toRank: 1 }),
+    ]));
+  });
+
   it('renders retrain source choices as searchable rows instead of a native select', async () => {
     const actor = createMockActor();
     actor.items = [];

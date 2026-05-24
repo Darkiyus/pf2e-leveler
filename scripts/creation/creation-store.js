@@ -4,7 +4,7 @@ import { normalizeCreationData } from './creation-model.js';
 const CREATION_FLAG = 'creation';
 
 export function getCreationData(actor) {
-  return actor.getFlag(MODULE_ID, CREATION_FLAG) ?? null;
+  return actor?.getFlag?.(MODULE_ID, CREATION_FLAG) ?? null;
 }
 
 export async function saveCreationData(actor, data) {

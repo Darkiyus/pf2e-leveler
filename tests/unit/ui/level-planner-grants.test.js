@@ -623,6 +623,64 @@ describe('level planner grant previews', () => {
     ]);
   });
 
+  test('resolves missing class feature UUIDs from the class feature compendium', async () => {
+    const actor = createMockActor({
+      items: [],
+      class: {
+        slug: 'fighter',
+        name: 'Fighter',
+        system: {
+          items: {
+            bravery: {
+              level: 3,
+              name: 'Bravery',
+              key: 'bravery',
+            },
+          },
+        },
+      },
+    });
+    const planner = {
+      actor,
+      selectedLevel: 3,
+      plan: {
+        classSlug: 'fighter',
+        levels: {
+          3: {},
+        },
+      },
+      _compendiumCache: {
+        'category-classFeatures': [
+          {
+            uuid: 'Compendium.pf2e.classfeatures.Item.bravery',
+            name: 'Bravery',
+            slug: 'bravery',
+            type: 'classfeature',
+            img: 'icons/bravery.webp',
+          },
+        ],
+      },
+      _buildAttributeContext: jest.fn(() => ({})),
+      _buildIntelligenceBenefitContext: jest.fn(() => ({})),
+      _buildIntBonusSkillContext: jest.fn(() => []),
+      _buildIntBonusLanguageContext: jest.fn(() => []),
+      _shouldHideHistoricalSkillIncrease: jest.fn(() => false),
+      _buildSkillContext: jest.fn(() => []),
+      _buildSpellContext: jest.fn(async () => ({ showSpells: false })),
+      _isCustomPlanOpen: jest.fn(() => false),
+    };
+
+    const context = await buildLevelContext(planner, FIGHTER, {});
+
+    expect(context.classFeatures).toEqual([
+      expect.objectContaining({
+        name: 'Bravery',
+        uuid: 'Compendium.pf2e.classfeatures.Item.bravery',
+        img: 'icons/bravery.webp',
+      }),
+    ]);
+  });
+
   test('attaches detected grant requirements and completion to enriched planner feats', async () => {
     global.fromUuid = jest.fn(async (uuid) => {
       if (uuid === 'feat-formulas') {

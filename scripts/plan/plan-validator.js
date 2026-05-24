@@ -1,4 +1,4 @@
-import { PLAN_STATUS, MIN_PLAN_LEVEL, MAX_LEVEL, SPELLBOOK_CLASSES, SUBCLASS_TAGS, MODULE_ID } from '../constants.js';
+import { INITIAL_SKILL_RETRAIN_SOURCE_TYPE, PLAN_STATUS, MIN_PLAN_LEVEL, MAX_LEVEL, SPELLBOOK_CLASSES, SUBCLASS_TAGS, MODULE_ID } from '../constants.js';
 import { ClassRegistry } from '../classes/registry.js';
 import { getChoicesForLevel, getGradualBoostGroupLevels } from '../classes/progression.js';
 import { resolveSubclassSpells } from '../data/subclass-spells.js';
@@ -183,7 +183,7 @@ function validateSkillRetrains(levelData, level, plan) {
     }
 
     const fromLevel = Number(retrain?.fromLevel);
-    if (!findPlannedSkillIncrease(plan, fromLevel, original)) {
+    if (!isInitialSkillRetrain(retrain) && !findPlannedSkillIncrease(plan, fromLevel, original)) {
       issues.push({
         severity: 'warning',
         message: `${originalLabel}: original skill increase can no longer be found`,
@@ -199,6 +199,12 @@ function validateSkillRetrains(levelData, level, plan) {
     }
   }
   return issues;
+}
+
+function isInitialSkillRetrain(retrain) {
+  if (retrain?.sourceType === INITIAL_SKILL_RETRAIN_SOURCE_TYPE) return true;
+  const original = retrain?.original;
+  return Number(retrain?.fromLevel) === 1 && Number(original?.fromRank) === 0 && Number(original?.toRank) === 1;
 }
 
 function findPlannedSkillIncrease(plan, level, original) {

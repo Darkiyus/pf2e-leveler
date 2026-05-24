@@ -21,7 +21,7 @@ import { loadFeats } from '../../feats/feat-cache.js';
 import { getCreationData } from '../../creation/creation-store.js';
 import { doesFeatMatchRequiredSecondLevelClassFeat, getRequiredSecondLevelClassFeatForActor } from '../../classes/class-archetype-requirements.js';
 import { buildAttributeContext, buildIntBonusLanguageContext, buildIntBonusSkillContext, buildIntelligenceBenefitContext, buildSkillContext, getAvailableLanguages, getPlannedLanguagesBeforeLevel, localizeLanguageLabel } from './context.js';
-import { annotateFeat, buildABPContext, buildFeatGrantPreview, buildLoreSkillIncreaseEntry, buildLevelContext, extractFeat, getClassFeaturesForLevel } from './level-context.js';
+import { annotateFeat, buildABPContext, buildFeatGrantPreview, buildLoreSkillIncreaseEntry, buildLevelContext, buildSkillRetrainSources, extractFeat, getClassFeaturesForLevel } from './level-context.js';
 import { activateLevelPlannerListeners, syncPlannedFeatChoiceSkillRules, syncSameLevelSkillIncreaseFromFeatRules } from './listeners.js';
 import { buildSpellContext, buildCustomSpellEntryOptions, buildSpellSlotDisplay, detectNewSpellRank, findFeatLevel, getDedicationSelectionLimitsForPlanner, getActorSpellCounts, getFocusSpellsForLevel, getGrantedSpellsForLevel, getHighestRank, getSubclassSlug, ordinalRank, resolveSpellTradition, shouldExcludeOwnedSpellIdentityForPlanner } from './spells.js';
 
@@ -1791,31 +1791,30 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const replacementSkill = await this._promptSkillRetrainReplacement(source);
     if (!replacementSkill) return;
 
-    addLevelSkillRetrain(this.plan, this.selectedLevel, {
+    const fromRank = Number.isFinite(Number(source.fromRank))
+      ? Number(source.fromRank)
+      : Math.max(0, Number(source.toRank ?? 1) - 1);
+    const retrainEntry = {
       fromLevel: source.fromLevel,
       original: {
         skill: source.skill,
-        fromRank: Math.max(0, Number(source.toRank ?? 1) - 1),
+        fromRank,
         toRank: source.toRank,
       },
       replacement: {
         skill: replacementSkill,
-        fromRank: Math.max(0, Number(source.toRank ?? 1) - 1),
+        fromRank,
         toRank: source.toRank,
       },
-    });
+    };
+    if (source.sourceType) retrainEntry.sourceType = source.sourceType;
+
+    addLevelSkillRetrain(this.plan, this.selectedLevel, retrainEntry);
     await this._savePlanAndRender();
   }
 
   _getSkillRetrainSources() {
-    const sources = [];
-    for (let fromLevel = 1; fromLevel < this.selectedLevel; fromLevel++) {
-      const levelData = getLevelData(this.plan, fromLevel);
-      for (const increase of levelData?.skillIncreases ?? []) {
-        sources.push({ fromLevel, ...increase });
-      }
-    }
-    return sources;
+    return buildSkillRetrainSources(this, this.selectedLevel);
   }
 
   async _promptRetrainSource({ title, name, sources, getLabel, getMeta = null, getIcon = null, getGroupLabel = null }) {
