@@ -2022,6 +2022,7 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         grantsSkillTraining: choiceSet.grantsSkillTraining === true,
       });
       syncSameLevelSkillIncreaseFromFeatRules(this, selectedRules);
+      await this._refreshPlannedFeatGrantPreview(feat);
       await this._savePlanAndRender();
     };
 
@@ -2712,6 +2713,13 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this._subclassItemCache = new Map();
     await savePlan(this.actor, this.plan);
     this.render(true);
+  }
+
+  async _refreshPlannedFeatGrantPreview(feat) {
+    if (!feat?.uuid) return;
+    const preview = await buildFeatGrantPreview(this, feat);
+    feat.grantedItems = preview.grantedItems;
+    feat.grantChoiceSets = preview.grantChoiceSets;
   }
 
   _capturePlannerScroll() {

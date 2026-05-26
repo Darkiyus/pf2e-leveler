@@ -1567,6 +1567,64 @@ describe('computeBuildState', () => {
     expect(state.featAliasSources.get('qi-spells')?.get('natural-ambition')).toBe('Natural Ambition');
   });
 
+  test('tracks class feats granted through Cultural Adaptability into Natural Ambition', () => {
+    const naturalAmbitionUuid = 'Compendium.pf2e.feats-srd.Item.liveNaturalAmbitionId';
+    const classFeatUuid = 'Compendium.pf2e.feats-srd.Item.liveClassFeatId';
+    const plan = {
+      levels: {
+        5: {
+          ancestryFeats: [
+            {
+              uuid: 'Compendium.pf2e.feats-srd.Item.culturalAdaptabilityId',
+              name: 'Cultural Adaptability',
+              slug: 'cultural-adaptability',
+              choices: {
+                feat: naturalAmbitionUuid,
+                naturalAmbition: classFeatUuid,
+              },
+              grantChoiceSets: [
+                {
+                  flag: 'feat',
+                  options: [
+                    {
+                      value: naturalAmbitionUuid,
+                      uuid: naturalAmbitionUuid,
+                      slug: 'natural-ambition',
+                      label: 'Natural Ambition',
+                      type: 'feat',
+                      category: 'ancestry',
+                      grantChoiceSets: [
+                        {
+                          flag: 'naturalAmbition',
+                          options: [
+                            {
+                              value: classFeatUuid,
+                              uuid: classFeatUuid,
+                              slug: 'alchemical-familiar',
+                              label: 'Alchemical Familiar',
+                              type: 'feat',
+                              category: 'class',
+                              traits: ['alchemist'],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      },
+    };
+
+    const state = computeBuildState(mockActor, plan, 10);
+
+    expect(state.feats.has('natural-ambition')).toBe(true);
+    expect(state.feats.has('alchemical-familiar')).toBe(true);
+  });
+
   test('tracks planned Multitalented dedication choices from choice set metadata with random compendium ids', () => {
     const druidDedicationUuid = 'Compendium.pf2e.feats-srd.Item.liveDruidDedicationId';
     const plan = {

@@ -553,6 +553,9 @@ describe('Level planner skill increase listeners', () => {
         },
       },
       selectedLevel: 2,
+      _refreshPlannedFeatGrantPreview: jest.fn(async (feat) => {
+        feat.grantChoiceSets = [{ flag: 'druidicOrder', options: [] }];
+      }),
       _savePlanAndRender: jest.fn(),
     };
 
@@ -582,6 +585,8 @@ describe('Level planner skill increase listeners', () => {
       expect(planner.plan.levels[2].archetypeFeats[0].choices).toEqual({
         druidicOrder: 'Compendium.pf2e.classfeatures.Item.animal-order',
       });
+      expect(planner._refreshPlannedFeatGrantPreview).toHaveBeenCalledWith(planner.plan.levels[2].archetypeFeats[0]);
+      expect(planner.plan.levels[2].archetypeFeats[0].grantChoiceSets).toEqual([{ flag: 'druidicOrder', options: [] }]);
       expect(planner.plan.levels[2].archetypeFeats[0].dynamicSkillRules).toEqual(expect.arrayContaining([
         expect.objectContaining({ skill: 'nature', source: 'base-choice' }),
         expect.objectContaining({ skill: 'athletics', source: 'choice:druidicorder' }),

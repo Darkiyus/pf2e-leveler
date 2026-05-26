@@ -112,6 +112,7 @@ export function activateLevelPlannerListeners(planner, html) {
       });
       syncSameLevelSkillIncreaseFromFeatChoice(planner, value, { grantsSkillTraining });
       syncSameLevelSkillIncreaseFromFeatRules(planner, selectedRules);
+      await planner._refreshPlannedFeatGrantPreview?.(feat);
       planner._savePlanAndRender();
     });
   });

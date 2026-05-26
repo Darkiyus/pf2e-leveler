@@ -28,6 +28,9 @@ describe('module manifest', () => {
     expect(stampStepIndex).toBeGreaterThan(-1);
     expect(archiveStepIndex).toBeGreaterThan(stampStepIndex);
     expect(uploadStepIndex).toBeGreaterThan(stampStepIndex);
+    expect(workflow).not.toContain('battila7/get-version-action');
+    expect(workflow).toContain('version-without-v=${version}');
+    expect(workflow).toContain('TAG_NAME: ${{ github.event.release.tag_name }}');
     expect(workflow).toContain('VERSION: ${{steps.get_version.outputs.version-without-v}}');
     expect(workflow).toContain('.version = $version');
   });

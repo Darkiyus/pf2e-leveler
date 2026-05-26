@@ -2524,6 +2524,9 @@ describe('LevelPlanner bootstrap from existing actor', () => {
       name: 'Cultural Adaptability',
       choices: {},
     }];
+    planner._refreshPlannedFeatGrantPreview = jest.fn(async (feat) => {
+      feat.grantChoiceSets = [{ flag: 'feat', options: [] }];
+    });
     planner._buildLevelContext = jest.fn(async () => ({
       ancestryFeat: {
         grantChoiceSets: [
@@ -2575,6 +2578,8 @@ describe('LevelPlanner bootstrap from existing actor', () => {
       await pickerInstance.onSelect(pickerInstance.allItems[0]);
 
       expect(planner.plan.levels[5].ancestryFeats[0].choices.ancestry).toBe('dwarf');
+      expect(planner._refreshPlannedFeatGrantPreview).toHaveBeenCalledWith(planner.plan.levels[5].ancestryFeats[0]);
+      expect(planner.plan.levels[5].ancestryFeats[0].grantChoiceSets).toEqual([{ flag: 'feat', options: [] }]);
       expect(savePlan).toHaveBeenCalledWith(actor, planner.plan);
     } finally {
       renderSpy.mockRestore();

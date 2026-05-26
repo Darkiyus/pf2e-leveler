@@ -1773,17 +1773,49 @@ function addFeatChoiceAlias(target, selected) {
 }
 
 function getFeatChoiceSelections(feat) {
+  const selections = [];
+  collectFeatChoiceSelections(selections, feat);
+  return selections;
+}
+
+function collectFeatChoiceSelections(target, source, inheritedSelections = new Map(), visited = new Set()) {
+  if (!source || typeof source !== 'object' || visited.has(source)) return;
+  visited.add(source);
+
+  target.push(...getStoredFeatChoiceValues(source));
+
+  const selections = mergeFeatChoiceSelectionMaps(inheritedSelections, getFeatChoiceSelectionMap(source));
+  const selectedOptions = getSelectedChoiceSetOptions(source, selections);
+  target.push(...selectedOptions);
+
+  for (const option of selectedOptions) {
+    collectFeatChoiceSelections(target, option, selections, visited);
+  }
+
+  const grantedItems = getGrantedFeatLikeItems(source);
+  target.push(...grantedItems);
+  for (const granted of grantedItems) {
+    collectFeatChoiceSelections(target, granted, selections, visited);
+  }
+}
+
+function getStoredFeatChoiceValues(feat) {
   return [
     ...Object.values(feat?.choices ?? {}),
     ...Object.values(feat?.flags?.pf2e?.rulesSelections ?? {}),
     ...Object.values(feat?.flags?.system?.rulesSelections ?? {}),
-    ...getSelectedChoiceSetOptions(feat),
-    ...getGrantedFeatLikeItems(feat),
   ];
 }
 
-function getSelectedChoiceSetOptions(feat) {
-  const selections = getFeatChoiceSelectionMap(feat);
+function mergeFeatChoiceSelectionMaps(inheritedSelections, ownSelections) {
+  const selections = new Map(inheritedSelections);
+  for (const [flag, value] of ownSelections.entries()) {
+    selections.set(flag, value);
+  }
+  return selections;
+}
+
+function getSelectedChoiceSetOptions(feat, selections = getFeatChoiceSelectionMap(feat)) {
   const selectedOptions = [];
 
   for (const choiceSet of getStoredChoiceSets(feat)) {
