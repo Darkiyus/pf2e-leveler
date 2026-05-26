@@ -225,15 +225,15 @@ describe('LevelPlanner intelligence boost planner choices', () => {
     actor.class.slug = 'alchemist';
     actor.system.details.level.value = 8;
     actor.system.build.attributes.boosts[5] = ['dex', 'con'];
-    actor.system.abilities.dex.mod = 4;
+    actor.system.abilities.dex.mod = 4.5;
     actor.system.abilities.con.mod = 4;
     actor.abilities = {
-      str: { base: 0 },
-      dex: { base: 4.5 },
-      con: { base: 4 },
-      int: { base: 0 },
-      wis: { base: 0 },
-      cha: { base: 0 },
+      str: { mod: 0, base: 0 },
+      dex: { mod: 4.5, base: 4 },
+      con: { mod: 4, base: 4 },
+      int: { mod: 0, base: 0 },
+      wis: { mod: 0, base: 0 },
+      cha: { mod: 0, base: 0 },
     };
 
     const planner = new LevelPlanner(actor);
@@ -262,19 +262,80 @@ describe('LevelPlanner intelligence boost planner choices', () => {
     }));
   });
 
+  it('uses level 1 boost history when reconstructing hidden partial boosts', () => {
+    const actor = createMockActor();
+    actor.class.slug = 'fighter';
+    actor.class.system.keyAbility = { value: ['str', 'dex'], selected: 'str' };
+    actor.ancestry = {
+      system: {
+        boosts: {
+          0: { value: ['str'] },
+          1: { value: ['con'] },
+        },
+        flaws: {},
+      },
+    };
+    actor.background = {
+      system: {
+        boosts: {
+          0: { value: ['str'] },
+          1: { value: ['con'] },
+        },
+      },
+    };
+    actor.system.details.level.value = 8;
+    actor.system.build.attributes.boosts[1] = ['str', 'con'];
+    actor.system.build.attributes.boosts[5] = ['str', 'con'];
+    actor.system.abilities.str.mod = 4.5;
+    actor.system.abilities.con.mod = 4;
+    actor.abilities = {
+      str: { mod: 4.5, base: 4 },
+      dex: { mod: 0, base: 0 },
+      con: { mod: 4, base: 4 },
+      int: { mod: 0, base: 0 },
+      wis: { mod: 0, base: 0 },
+      cha: { mod: 0, base: 0 },
+    };
+
+    const planner = new LevelPlanner(actor);
+    planner.selectedLevel = 5;
+
+    const choices = [{ type: 'abilityBoosts', count: 4 }];
+    const context = planner._buildAttributeContext(planner.plan.levels[5], choices);
+    const strength = context.find((entry) => entry.key === 'str');
+    const constitution = context.find((entry) => entry.key === 'con');
+
+    expect(strength).toEqual(expect.objectContaining({
+      selected: true,
+      applied: true,
+      mod: 4,
+      newMod: 4,
+      partial: true,
+      completesPartial: false,
+    }));
+    expect(constitution).toEqual(expect.objectContaining({
+      selected: true,
+      applied: true,
+      mod: 3,
+      newMod: 4,
+      partial: false,
+      completesPartial: false,
+    }));
+  });
+
   it('uses raw imported partial boosts when previewing future standard boosts', () => {
     const actor = createMockActor();
     actor.class.slug = 'alchemist';
     actor.system.details.level.value = 8;
-    actor.system.abilities.dex.mod = 4;
+    actor.system.abilities.dex.mod = 4.5;
     actor.system.abilities.con.mod = 4;
     actor.abilities = {
-      str: { base: 0 },
-      dex: { base: 4.5 },
-      con: { base: 4 },
-      int: { base: 0 },
-      wis: { base: 0 },
-      cha: { base: 0 },
+      str: { mod: 0, base: 0 },
+      dex: { mod: 4.5, base: 4 },
+      con: { mod: 4, base: 4 },
+      int: { mod: 0, base: 0 },
+      wis: { mod: 0, base: 0 },
+      cha: { mod: 0, base: 0 },
     };
 
     const planner = new LevelPlanner(actor);

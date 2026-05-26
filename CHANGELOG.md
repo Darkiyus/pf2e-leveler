@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.4.18
+
+### Level Planner
+
+- **Imported partial ability boosts now read PF2e's raw modifiers** - Historical boost rows now use PF2e's raw actor ability modifiers before truncated base values and use level 1 boost history when reconstructing ambiguous level 5 partial boosts, so maxed creation attributes display as partial boosts instead of full boosts
+
 ## 3.4.17
 
 ### Level Planner

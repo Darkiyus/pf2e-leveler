@@ -110,16 +110,16 @@ describe('computeBuildState', () => {
     expect(state.attributes.str).toBe(4);
   });
 
-  test('preserves imported pending partial boosts from actor base modifiers', () => {
+  test('preserves imported pending partial boosts from actor raw modifiers', () => {
     mockActor.system.details.level.value = 5;
-    mockActor.system.abilities.str.mod = 4;
+    mockActor.system.abilities.str.mod = 4.5;
     mockActor.abilities = {
-      str: { base: 4.5 },
-      dex: { base: 0 },
-      con: { base: 0 },
-      int: { base: 0 },
-      wis: { base: 0 },
-      cha: { base: 0 },
+      str: { mod: 4.5, base: 4 },
+      dex: { mod: 0, base: 0 },
+      con: { mod: 0, base: 0 },
+      int: { mod: 0, base: 0 },
+      wis: { mod: 0, base: 0 },
+      cha: { mod: 0, base: 0 },
     };
 
     setLevelBoosts(plan, 5, ['str', 'dex', 'con', 'int']);

@@ -1,4 +1,4 @@
-import { ATTRIBUTES, PROFICIENCY_RANK_NAMES } from '../../constants.js';
+import { ATTRIBUTES, MIN_PLAN_LEVEL, PROFICIENCY_RANK_NAMES } from '../../constants.js';
 import { getGradualBoostGroupLevels } from '../../classes/progression.js';
 import { computeBuildState, computeSkillPickerState } from '../../plan/build-state.js';
 import { getMaxSkillRank } from '../../utils/pf2e-api.js';
@@ -6,6 +6,7 @@ import { ClassRegistry } from '../../classes/registry.js';
 import { annotateGuidanceBySlug, filterDisallowedForCurrentUser } from '../../access/content-guidance.js';
 import { getLanguageRarityMap, getLanguageMap, humanizeSkillLikeLabel } from '../character-wizard/skills-languages.js';
 import { getActiveSkillConfigEntry, getActiveSkillSlugs, isActiveSkillSlug, normalizeSkillSlug } from '../../utils/skill-slugs.js';
+import { getCreationData } from '../../creation/creation-store.js';
 
 export function buildAttributeContext(planner, levelData, choices) {
   const selectedBoosts = levelData.abilityBoosts ?? [];
@@ -51,15 +52,111 @@ export function buildAttributeContext(planner, levelData, choices) {
 
 function buildAppliedLevelAttributeBaseline(planner, actorLevel) {
   const raw = Object.fromEntries(ATTRIBUTES.map((key) => [key, getActorAbilityModifier(planner.actor, key)]));
+  const knownBeforeLevelCache = new Map();
 
   for (let level = actorLevel; level >= planner.selectedLevel; level--) {
+    const knownBeforeLevel = getKnownAttributeBaselineBeforeLevel(planner, level, knownBeforeLevelCache);
     for (const boost of getAppliedBoostsForLevel(planner, level)) {
       if (!ATTRIBUTES.includes(boost)) continue;
-      raw[boost] = reverseApplyAbilityBoost(raw[boost] ?? 0);
+      raw[boost] = reverseApplyAbilityBoost(raw[boost] ?? 0, knownBeforeLevel?.[boost]);
     }
   }
 
   return raw;
+}
+
+function getKnownAttributeBaselineBeforeLevel(planner, level, cache) {
+  if (cache.has(level)) return cache.get(level);
+
+  const raw = buildKnownInitialAttributeBaseline(planner);
+  if (!raw) {
+    cache.set(level, null);
+    return null;
+  }
+
+  for (let pastLevel = MIN_PLAN_LEVEL; pastLevel < level; pastLevel++) {
+    for (const boost of getAppliedBoostsForLevel(planner, pastLevel)) {
+      if (!ATTRIBUTES.includes(boost)) continue;
+      raw[boost] = applyAbilityBoost(raw[boost] ?? 0);
+    }
+  }
+
+  cache.set(level, raw);
+  return raw;
+}
+
+function buildKnownInitialAttributeBaseline(planner) {
+  const actor = planner.actor;
+  const creationData = getCreationData(actor) ?? {};
+  const raw = Object.fromEntries(ATTRIBUTES.map((key) => [key, 0]));
+  let hasEvidence = false;
+
+  const applyBoosts = (boosts, delta = 1) => {
+    for (const boost of boosts) {
+      if (!ATTRIBUTES.includes(boost)) continue;
+      raw[boost] += delta;
+      hasEvidence = true;
+    }
+  };
+
+  const ancestryChoiceBoosts = normalizeAbilityBoostList(creationData.boosts?.ancestry);
+  if (creationData.alternateAncestryBoosts === true) {
+    applyBoosts(ancestryChoiceBoosts.length ? ancestryChoiceBoosts : getSelectedBoostValues(actor?.ancestry?.system?.boosts));
+  } else {
+    applyBoosts(getFixedBoostValues(actor?.ancestry?.system?.boosts));
+    applyBoosts(ancestryChoiceBoosts.length ? ancestryChoiceBoosts : getSelectedBoostValues(actor?.ancestry?.system?.boosts));
+    applyBoosts(getFixedBoostValues(actor?.ancestry?.system?.flaws), -1);
+  }
+
+  const backgroundChoiceBoosts = normalizeAbilityBoostList(creationData.boosts?.background);
+  applyBoosts(getFixedBoostValues(actor?.background?.system?.boosts));
+  applyBoosts(backgroundChoiceBoosts.length ? backgroundChoiceBoosts : getSelectedBoostValues(actor?.background?.system?.boosts));
+
+  const classBoosts = getInitialClassBoosts(planner, creationData);
+  applyBoosts(classBoosts);
+
+  const creationFreeBoosts = normalizeAbilityBoostList(creationData.boosts?.free);
+  const actorFreeBoosts = normalizeActorBoostEntries(actor?.system?.build?.attributes?.boosts?.[1]);
+  applyBoosts(creationFreeBoosts.length ? creationFreeBoosts : actorFreeBoosts);
+
+  return hasEvidence ? raw : null;
+}
+
+function getInitialClassBoosts(planner, creationData) {
+  const creationClassBoosts = normalizeAbilityBoostList(creationData.boosts?.class);
+  if (creationClassBoosts.length > 0) return creationClassBoosts;
+
+  const keyAbility = planner.actor?.class?.system?.keyAbility ?? {};
+  const selected = normalizeAbilityBoostKey(keyAbility.selected);
+  if (ATTRIBUTES.includes(selected)) return [selected];
+
+  const systemValues = normalizeAbilityBoostList(keyAbility.value);
+  if (systemValues.length === 1) return systemValues;
+
+  const classDef = ClassRegistry.get(planner.plan?.classSlug);
+  const classValues = normalizeAbilityBoostList(classDef?.keyAbility);
+  return classValues.length === 1 ? classValues : [];
+}
+
+function getFixedBoostValues(boostObj) {
+  if (!boostObj || typeof boostObj !== 'object') return [];
+
+  const boosts = [];
+  for (const entry of Object.values(boostObj)) {
+    const values = normalizeAbilityBoostList(entry?.value);
+    if (values.length === 1) boosts.push(values[0]);
+  }
+  return boosts;
+}
+
+function getSelectedBoostValues(boostObj) {
+  if (!boostObj || typeof boostObj !== 'object') return [];
+
+  const boosts = [];
+  for (const entry of Object.values(boostObj)) {
+    boosts.push(...normalizeAbilityBoostList(entry?.selected));
+  }
+  return boosts;
 }
 
 function getAppliedBoostsForLevel(planner, level) {
@@ -69,9 +166,10 @@ function getAppliedBoostsForLevel(planner, level) {
   return (planner.plan?.levels?.[level]?.abilityBoosts ?? []).map((entry) => normalizeAbilityBoostKey(entry)).filter(Boolean);
 }
 
-function reverseApplyAbilityBoost(rawModifier) {
+function reverseApplyAbilityBoost(rawModifier, knownBeforeBoost = null) {
   const value = Number(rawModifier ?? 0);
   if (!Number.isFinite(value)) return 0;
+  if (value === 4 && Number(knownBeforeBoost) >= 4) return 4;
   return value > 4 ? value - 0.5 : value - 1;
 }
 
@@ -84,11 +182,13 @@ function applyAbilityBoost(rawModifier) {
 function getActorAbilityModifier(actor, attr) {
   const actorAbilities = actor?.abilities?.[attr] ?? null;
   const systemAbility = actor?.system?.abilities?.[attr] ?? null;
-  const base = actorAbilities?.base;
+  const actorMod = actorAbilities?.mod;
 
+  if (Number.isFinite(actorMod)) return Number(actorMod);
+  const systemMod = systemAbility?.mod;
+  if (Number.isFinite(systemMod)) return Number(systemMod);
+  const base = actorAbilities?.base;
   if (Number.isFinite(base)) return Number(base);
-  const mod = systemAbility?.mod;
-  if (Number.isFinite(mod)) return Number(mod);
   return 0;
 }
 
@@ -139,6 +239,15 @@ function normalizeActorBoostEntries(value) {
   }
 
   return flattened.map((entry) => normalizeAbilityBoostKey(entry)).filter(Boolean);
+}
+
+function normalizeAbilityBoostList(value) {
+  if (Array.isArray(value)) {
+    return value.map((entry) => normalizeAbilityBoostKey(entry)).filter((entry) => ATTRIBUTES.includes(entry));
+  }
+
+  const normalized = normalizeAbilityBoostKey(value);
+  return ATTRIBUTES.includes(normalized) ? [normalized] : [];
 }
 
 function normalizeAbilityBoostKey(value) {

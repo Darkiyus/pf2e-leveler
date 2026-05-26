@@ -788,12 +788,15 @@ function computeAttributes(actor, plan, atLevel, { raw = false } = {}) {
 function getActorAbilityModifier(actor, attr) {
   const actorAbilities = actor?.abilities?.[attr] ?? null;
   const systemAbility = actor?.system?.abilities?.[attr] ?? null;
+  const actorMod = actorAbilities?.mod;
+
+  if (Number.isFinite(actorMod)) return Number(actorMod);
+
+  const systemMod = systemAbility?.mod;
+  if (Number.isFinite(systemMod)) return Number(systemMod);
+
   const base = actorAbilities?.base;
-
   if (Number.isFinite(base)) return Number(base);
-
-  const mod = systemAbility?.mod;
-  if (Number.isFinite(mod)) return Number(mod);
 
   return 0;
 }
