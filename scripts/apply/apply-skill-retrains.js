@@ -1,5 +1,5 @@
 import { SKILL_ALIASES, normalizeSkillSlug } from '../utils/skill-slugs.js';
-import { getRankAfterSkillRetrain } from '../utils/skill-retrains.js';
+import { getRankAfterSkillRetrain, getReplacementRankAfterSkillRetrain } from '../utils/skill-retrains.js';
 
 export async function applySkillRetrains(actor, plan, level) {
   const retrains = plan?.levels?.[level]?.retrainedSkillIncreases ?? [];
@@ -20,17 +20,18 @@ export async function applySkillRetrains(actor, plan, level) {
     const currentOriginalRank = Number(actor.system?.skills?.[originalKey]?.rank ?? 0);
     const currentReplacementRank = Number(actor.system?.skills?.[replacementKey]?.rank ?? 0);
     const downgradedOriginalRank = getRankAfterSkillRetrain(currentOriginalRank, originalFromRank, originalToRank);
+    const upgradedReplacementRank = getReplacementRankAfterSkillRetrain(currentReplacementRank, originalFromRank, originalToRank, Math.min(replacementRank, originalToRank));
 
     if (downgradedOriginalRank < currentOriginalRank) {
       updates[`system.skills.${originalKey}.rank`] = downgradedOriginalRank;
     }
-    if (currentReplacementRank < replacementRank) {
-      updates[`system.skills.${replacementKey}.rank`] = replacementRank;
+    if (upgradedReplacementRank > currentReplacementRank) {
+      updates[`system.skills.${replacementKey}.rank`] = upgradedReplacementRank;
     }
 
     applied.push({
       original: { skill: originalSkill, rank: originalToRank },
-      replacement: { skill: replacementSkill, rank: replacementRank },
+      replacement: { skill: replacementSkill, rank: upgradedReplacementRank },
     });
   }
 

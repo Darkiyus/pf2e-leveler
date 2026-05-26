@@ -4,7 +4,7 @@
 
 ### Level Planner
 
-- **Downtime skill retraining now removes the original skill rank correctly** - Retraining an initial trained skill now subtracts that source rank from the old skill even when the old skill has since advanced, and applies updates to actors using PF2e short skill keys such as `ste` and `occ`
+- **Downtime skill retraining now moves one proficiency step correctly** - Retraining now lowers the old skill by the moved increase, raises the replacement skill by one matching step without jumping ranks, and applies updates to actors using PF2e short skill keys such as `ste` and `occ`
 - **Imported higher-level ability boosts now show correct baselines** - Opening the planner on an existing mid-level character now reconstructs already-applied boost baselines and preserves partial boost math instead of treating current stats as the level 5 starting point
 
 ## 3.4.16

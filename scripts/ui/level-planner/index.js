@@ -14,6 +14,7 @@ import { getDedicationAliasesFromDescription } from '../../utils/feat-aliases.js
 import { extractFeatSpellcastingMetadata, FEAT_SPELLCASTING_METADATA_VERSION } from '../../utils/spellcasting-support.js';
 import { localize } from '../../utils/i18n.js';
 import { getActiveSkillConfigEntry, getActiveSkillSlugs, isActiveSkillSlug, normalizeSkillSlug, SKILL_ALIASES } from '../../utils/skill-slugs.js';
+import { getReplacementRankAfterSkillRetrain } from '../../utils/skill-retrains.js';
 import { FeatPicker } from '../feat-picker.js';
 import { captureScrollState, restoreScrollState } from '../shared/scroll-state.js';
 import { scheduleBringApplicationToFront } from '../shared/window-focus.js';
@@ -1794,17 +1795,21 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const fromRank = Number.isFinite(Number(source.fromRank))
       ? Number(source.fromRank)
       : Math.max(0, Number(source.toRank ?? 1) - 1);
+    const sourceToRank = Number(source.toRank ?? 0);
+    const currentState = computeBuildState(this.actor, this.plan, this.selectedLevel);
+    const replacementFromRank = Number(currentState.skills?.[replacementSkill] ?? 0);
+    const replacementToRank = getReplacementRankAfterSkillRetrain(replacementFromRank, fromRank, sourceToRank, sourceToRank);
     const retrainEntry = {
       fromLevel: source.fromLevel,
       original: {
         skill: source.skill,
         fromRank,
-        toRank: source.toRank,
+        toRank: sourceToRank,
       },
       replacement: {
         skill: replacementSkill,
-        fromRank,
-        toRank: source.toRank,
+        fromRank: replacementFromRank,
+        toRank: replacementToRank,
       },
     };
     if (source.sourceType) retrainEntry.sourceType = source.sourceType;
@@ -1852,21 +1857,28 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!dialogClass?.prompt) return null;
     const currentState = computeBuildState(this.actor, this.plan, this.selectedLevel);
     const sourceSkill = normalizeSkillSlug(source.skill);
+    const sourceFromRank = Number.isFinite(Number(source.fromRank))
+      ? Number(source.fromRank)
+      : Math.max(0, Number(source.toRank ?? 1) - 1);
+    const sourceToRank = Number(source.toRank ?? 0);
     const choices = getActiveSkillSlugs()
-      .filter((skill) => skill !== sourceSkill && (currentState.skills?.[skill] ?? 0) < source.toRank)
+      .filter((skill) => skill !== sourceSkill)
       .map((skill) => {
         const fromRank = Number(currentState.skills?.[skill] ?? 0);
-        const toRank = Number(source.toRank ?? 0);
+        const toRank = getReplacementRankAfterSkillRetrain(fromRank, sourceFromRank, sourceToRank, sourceToRank);
         const fromRankName = getRankName(fromRank);
         const toRankName = getRankName(toRank);
         return {
           value: skill,
           label: humanizeSkillSlug(skill),
+          fromRank,
+          toRank,
           meta: `${titleCase(fromRankName)} -> ${titleCase(toRankName)}`,
           metaHtml: buildRankTransitionMarkup(fromRankName, toRankName),
           searchMeta: `${titleCase(fromRankName)} -> ${titleCase(toRankName)}`,
         };
-      });
+      })
+      .filter((choice) => choice.toRank > choice.fromRank);
     if (choices.length === 0) {
       ui.notifications?.warn?.('No eligible replacement skills available.');
       return null;

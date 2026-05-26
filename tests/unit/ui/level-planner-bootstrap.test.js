@@ -4638,6 +4638,37 @@ describe('LevelPlanner bootstrap from existing actor', () => {
     expect(rows.some((row) => !row.textContent.includes('Occultism') && row.hidden)).toBe(true);
     container.remove();
   });
+
+  it('stores skill retrain replacement ranks as one-step increases', async () => {
+    const actor = createMockActor();
+    actor.items = [];
+    actor.class.slug = 'alchemist';
+    actor.system.skills.stealth.rank = 3;
+    actor.system.skills.occultism.rank = 1;
+    const planner = new LevelPlanner(actor);
+    planner.plan = createPlan('alchemist');
+    planner.selectedLevel = 16;
+    const source = {
+      fromLevel: 15,
+      skill: 'stealth',
+      fromRank: 2,
+      toRank: 3,
+    };
+    planner._getSkillRetrainSources = jest.fn(() => [source]);
+    planner._promptRetrainSource = jest.fn(async () => source);
+    planner._promptSkillRetrainReplacement = jest.fn(async () => 'occultism');
+    planner._savePlanAndRender = jest.fn(async () => {});
+
+    await planner._openSkillRetrainPicker();
+
+    expect(planner.plan.levels[16].retrainedSkillIncreases).toEqual([
+      {
+        fromLevel: 15,
+        original: { skill: 'stealth', fromRank: 2, toRank: 3 },
+        replacement: { skill: 'occultism', fromRank: 1, toRank: 2 },
+      },
+    ]);
+  });
 });
 
 function formatTestMeta(category) {

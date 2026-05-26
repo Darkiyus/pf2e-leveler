@@ -189,6 +189,36 @@ describe('applySkillIncreases', () => {
     ]);
   });
 
+  test('retraining increases the replacement skill by one moved step', async () => {
+    mockActor.system = {
+      skills: {
+        stealth: { rank: 3 },
+        occultism: { rank: 1 },
+      },
+    };
+    const plan = {
+      levels: {
+        16: {
+          retrainedSkillIncreases: [{
+            fromLevel: 15,
+            original: { skill: 'stealth', fromRank: 2, toRank: 3 },
+            replacement: { skill: 'occultism', fromRank: 1, toRank: 3 },
+          }],
+        },
+      },
+    };
+
+    const result = await applySkillRetrains(mockActor, plan, 16);
+
+    expect(mockActor.update).toHaveBeenCalledWith({
+      'system.skills.stealth.rank': 2,
+      'system.skills.occultism.rank': 2,
+    });
+    expect(result).toEqual([
+      { original: { skill: 'stealth', rank: 3 }, replacement: { skill: 'occultism', rank: 2 } },
+    ]);
+  });
+
   test('applies Operatic Adventurer Performance scaling and Theater Lore at later levels', async () => {
     mockActor = {
       system: {
