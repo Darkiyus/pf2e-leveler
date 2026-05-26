@@ -5,6 +5,11 @@
 ### Level Planner
 
 - **Imported higher-level plans now keep historical skill increases fillable** - Skill increase sections for already-reached levels are shown again and read from reconstructed history instead of the actor's final ranks; a level 2-only `Starting Skills` dialog lets GMs and players backfill the character's level 1 trained skill choices that PF2e actor data cannot identify, capped to the class's starting skill allowance, with responsive selectable skill cards that stay within the Foundry prompt. Blank unknown historical slots remain optional without blocking validation
+- **Nested ancestry feat grants now count their final feat** - Cultural Adaptability can grant Natural Ambition, and Natural Ambition's selected class feat now feeds planner build state and saved grant previews so later feat prerequisites see the final class feat
+
+### Release
+
+- **Release packaging no longer depends on a removed version action** - GitHub Actions now extracts release tag versions inline instead of downloading `battila7/get-version-action`, keeping manifest stamping and release artifact uploads available
 
 ## 3.4.18
 
