@@ -44,6 +44,9 @@ describe('applyClassFeatureChoices', () => {
       choices: {
         blessing: 'Compendium.pf2e.classfeatures.Item.blessing-swiftness',
       },
+      choiceLabels: {
+        blessing: 'Blessing of Swiftness',
+      },
     }]);
   });
 });

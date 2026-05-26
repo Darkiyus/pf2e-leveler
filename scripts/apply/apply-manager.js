@@ -214,7 +214,7 @@ async function createLevelUpMessage(actor, level, applied) {
   }
 
   const classFeatureChoices = applied.classFeatureChoices
-    ?.map((entry) => `${entry.name}: ${Object.values(entry.choices ?? {}).join(', ')}`)
+    ?.map((entry) => `${entry.name}: ${Object.values(entry.choiceLabels ?? entry.choices ?? {}).join(', ')}`)
     .filter(Boolean) ?? [];
   if (classFeatureChoices.length) {
     sections.push(buildChatSection(game.i18n.localize('PF2E_LEVELER.SECTIONS.CLASS_FEATURES'), classFeatureChoices));

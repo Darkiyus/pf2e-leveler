@@ -170,6 +170,79 @@ describe('level planner grant previews', () => {
     ]);
   });
 
+  test('dedupes granted item previews when root and selected grants resolve the same item', async () => {
+    global.fromUuid = jest.fn(async (uuid) => {
+      if (uuid === 'feat-root') {
+        return {
+          uuid,
+          name: 'Barbarian Dedication',
+          system: {
+            rules: [
+              {
+                key: 'GrantItem',
+                uuid: '{item|flags.pf2e.rulesSelections.instinct}',
+              },
+              {
+                key: 'GrantItem',
+                uuid: 'action-rage-alias',
+              },
+            ],
+          },
+        };
+      }
+
+      if (uuid === 'feature-fury-instinct') {
+        return {
+          uuid,
+          name: 'Fury Instinct',
+          system: {
+            rules: [
+              {
+                key: 'GrantItem',
+                uuid: 'action-rage',
+              },
+            ],
+          },
+        };
+      }
+
+      if (uuid === 'action-rage') {
+        return {
+          uuid,
+          name: 'Rage',
+          slug: 'rage',
+          type: 'action',
+          system: { rules: [] },
+        };
+      }
+
+      if (uuid === 'action-rage-alias') {
+        return {
+          uuid,
+          name: 'Rage',
+          slug: 'rage',
+          type: 'action',
+          system: { rules: [] },
+        };
+      }
+
+      return null;
+    });
+
+    const preview = await buildFeatGrantPreview({
+      actor: { items: [] },
+      selectedLevel: 2,
+      plan: { levels: {} },
+    }, {
+      uuid: 'feat-root',
+      choices: {
+        instinct: 'feature-fury-instinct',
+      },
+    });
+
+    expect(preview.grantedItems.map((entry) => entry.name)).toEqual(['Fury Instinct', 'Rage']);
+  });
+
   test('includes synthetic skill fallback choice sets for granted feats with overlap prose', async () => {
     const originalConfig = global.CONFIG;
     global.CONFIG = {

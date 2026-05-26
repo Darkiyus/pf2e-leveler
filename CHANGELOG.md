@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.4.20
+
+### Level Planner
+
+- **Barbarian Dedication no longer duplicates instinct and substitute skill choices** - Multiclass dedication choice sets now prefer PF2e's authored instinct prompt over synthetic fallback prompts, keep fallback skill training prompts to one row, and de-duplicate granted item previews such as Rage when both the selected instinct and the dedication grant the same item
+- **Applied class feature choices now show readable labels** - Apply summaries resolve class feature choices such as Fury Instinct to their item names instead of leaking raw compendium UUIDs
+
 ## 3.4.19
 
 ### Level Planner

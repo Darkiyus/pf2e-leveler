@@ -13,6 +13,7 @@ export async function applyClassFeatureChoices(actor, plan, level) {
 
     const rulesSelections = normalizeClassFeatureRulesSelections(featureChoices);
     if (Object.keys(rulesSelections).length === 0) continue;
+    const choiceLabels = await resolveClassFeatureChoiceLabels(featureChoices, rulesSelections);
 
     updates.push({
       _id: item.id ?? item._id,
@@ -25,6 +26,7 @@ export async function applyClassFeatureChoices(actor, plan, level) {
       uuid: item.uuid ?? item.sourceId ?? item.flags?.core?.sourceId ?? featureKey,
       name: item.name ?? featureKey,
       choices: rulesSelections,
+      choiceLabels,
     });
   }
 
@@ -50,6 +52,32 @@ function normalizeClassFeatureRulesSelections(featureChoices) {
       .filter(([, value]) => typeof value === 'string' && value.length > 0)
       .map(([flag, value]) => [flag, value]),
   );
+}
+
+async function resolveClassFeatureChoiceLabels(featureChoices, rulesSelections) {
+  const entries = [];
+  for (const [flag, value] of Object.entries(rulesSelections ?? {})) {
+    const stored = featureChoices?.[flag];
+    const storedLabel = typeof stored === 'object' && stored !== null ? stored.label : null;
+    if (typeof storedLabel === 'string' && storedLabel.length > 0 && !looksLikeUuid(storedLabel)) {
+      entries.push([flag, storedLabel]);
+      continue;
+    }
+
+    entries.push([flag, await resolveChoiceLabel(value)]);
+  }
+  return Object.fromEntries(entries);
+}
+
+async function resolveChoiceLabel(value) {
+  const text = String(value ?? '');
+  if (!looksLikeUuid(text) || typeof fromUuid !== 'function') return text;
+  const item = await fromUuid(text).catch(() => null);
+  return item?.name ?? text;
+}
+
+function looksLikeUuid(value) {
+  return /^(?:Compendium|Actor)\./.test(String(value ?? ''));
 }
 
 function getFeatureMatchKeys(item) {

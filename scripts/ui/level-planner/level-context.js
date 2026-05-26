@@ -816,7 +816,8 @@ async function buildPlannerFeatChoiceSets(planner, feat) {
     ? await buildPlannerDedicationChoiceSetFallbacks(planner, feat, source)
     : [];
 
-  const specialChoiceSets = await buildPlannerSpecialChoiceSets(planner, feat, source, choiceSets);
+  const authoredOrFallbackChoiceSets = [...choiceSets, ...dedicationFallbackSets];
+  const specialChoiceSets = await buildPlannerSpecialChoiceSets(planner, feat, source, authoredOrFallbackChoiceSets);
   const combined = dedupePlannerChoiceSets([...choiceSets, ...dedicationFallbackSets, ...fallbackSets, ...specialChoiceSets]);
   syncPlannerChoiceSetSkillRules(feat, [...combined, ...(feat?.grantChoiceSets ?? [])]);
 
@@ -870,7 +871,9 @@ async function buildPlannerSpecialChoiceSets(planner, feat, source, parsedChoice
     special.push(buildPlannerLanguageChoiceSet({ rarities: textLanguageRarities }));
   }
 
-  const dedicationSubclassChoiceSet = await buildPlannerDedicationSubclassChoiceSet(planner, feat, source);
+  const dedicationSubclassChoiceSet = hasExistingDedicationSubclassChoiceSet(parsedChoiceSets, feat, source)
+    ? null
+    : await buildPlannerDedicationSubclassChoiceSet(planner, feat, source);
   if (dedicationSubclassChoiceSet) special.push(dedicationSubclassChoiceSet);
 
   const advancedMulticlassChoiceSet = await buildAdvancedMulticlassClassFeatChoiceSet(planner, feat, source, parsedChoiceSets);
@@ -1057,9 +1060,40 @@ async function buildPlannerDedicationSubclassChoiceSet(planner, feat, source) {
 }
 
 function inferDedicationSubclassPrompt(description) {
-  const match = String(description ?? '').match(/\b(?:choose|select)\s+(?:a|an|one|your)?\s*(school|bloodline|patron|order|doctrine|mystery|instinct|style|way|innovation|methodology|edge|study|mind|eidolon|racket)\b/u);
-  const label = match?.[1] ? match[1].replace(/\b\w/gu, (char) => char.toUpperCase()) : 'Option';
+  const kind = inferDedicationSubclassKind(description);
+  const label = kind ? kind.replace(/\b\w/gu, (char) => char.toUpperCase()) : 'Option';
   return `Select a ${label}.`;
+}
+
+function inferDedicationSubclassKind(description) {
+  const match = String(description ?? '').match(/\b(?:choose|select)\s+(?:a|an|one|your)?\s*(school|bloodline|patron|order|doctrine|mystery|instinct|style|way|innovation|methodology|edge|study|mind|eidolon|racket)\b/u);
+  return match?.[1] ?? null;
+}
+
+function hasExistingDedicationSubclassChoiceSet(choiceSets, feat, source) {
+  const description = String(source?.system?.description?.value ?? '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+  const kind = inferDedicationSubclassKind(description);
+  const archetypeSlug = getPlannerDedicationArchetypeSlug(feat, source);
+
+  return (choiceSets ?? []).some((choiceSet) => {
+    if (choiceSet?.syntheticType === 'dedication-subclass-choice') return true;
+    const label = `${choiceSet?.flag ?? ''} ${choiceSet?.prompt ?? ''}`.toLowerCase();
+    const labelMatches = (!!kind && label.includes(kind))
+      || (!!archetypeSlug && label.includes(archetypeSlug));
+    if (!labelMatches) return false;
+    const options = choiceSet?.options ?? [];
+    return options.length === 0 || options.some(isClassFeatureChoiceOption);
+  });
+}
+
+function isClassFeatureChoiceOption(option) {
+  const uuid = String(option?.uuid ?? option?.value ?? '').toLowerCase();
+  if (uuid.includes('.classfeatures.')) return true;
+  return ['classfeature', 'class-feature'].includes(normalizeChoiceOptionCategory(option?.category));
 }
 
 function hydratePlannerChoiceOptions(planner, entry, feat) {
@@ -1332,9 +1366,9 @@ async function collectGrantPreviewEntries({
     const granted = await fromUuid(resolvedUuid).catch(() => null);
     if (!granted) continue;
 
-    const dedupeKey = `${item.uuid ?? item.name}->${granted.uuid}`;
-    if (!seenGranted.has(dedupeKey)) {
-      seenGranted.add(dedupeKey);
+    const dedupeKeys = getGrantedItemPreviewDedupeKeys(granted);
+    if (!dedupeKeys.some((key) => seenGranted.has(key))) {
+      for (const key of dedupeKeys) seenGranted.add(key);
       grantedItems.push(buildGrantedItemPreviewEntry(granted, item.name));
     }
 
@@ -1362,6 +1396,19 @@ function buildGrantedItemPreviewEntry(item, sourceName) {
     traits: getItemTraitValues(item),
     sourceName,
   };
+}
+
+function getGrantedItemPreviewDedupeKeys(item) {
+  const keys = [];
+  const uuid = normalizePf2eCompendiumUuid(item?.uuid);
+  const slug = String(item?.slug ?? item?.system?.slug ?? '').trim().toLowerCase();
+  const name = String(item?.name ?? '').trim().toLowerCase();
+
+  if (uuid) keys.push(`uuid:${uuid}`);
+  if (slug) keys.push(`slug:${slug}`);
+  if (name) keys.push(`name:${name}`);
+
+  return keys.length > 0 ? keys : [`fallback:${item?.uuid ?? item?.name ?? ''}`];
 }
 
 function getItemTraitValues(item) {

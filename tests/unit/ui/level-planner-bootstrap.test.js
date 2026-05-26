@@ -2749,6 +2749,187 @@ describe('LevelPlanner bootstrap from existing actor', () => {
     }
   });
 
+  it('does not duplicate authored dedication subclass choices like barbarian instinct', async () => {
+    const originalConfig = global.CONFIG;
+    const originalFromUuid = global.fromUuid;
+    const originalPacks = game.packs;
+    const originalHas = game.i18n.has;
+    const originalLocalize = game.i18n.localize;
+
+    global.CONFIG = {
+      ...(originalConfig ?? {}),
+      PF2E: {
+        ...(originalConfig?.PF2E ?? {}),
+        skills: {
+          athletics: 'Athletics',
+          survival: 'Survival',
+          crafting: 'Crafting',
+        },
+      },
+    };
+
+    const actor = createMockActor({
+      items: [],
+      system: {
+        skills: {
+          ...createMockActor().system.skills,
+          athletics: { rank: 1, value: 1 },
+          survival: { rank: 0, value: 0 },
+        },
+      },
+    });
+    actor.class.slug = 'alchemist';
+
+    const planner = new LevelPlanner(actor);
+    planner.plan = createPlan('alchemist', { freeArchetype: true });
+    planner.selectedLevel = 2;
+    const createBarbarianDedicationEntry = () => ({
+      uuid: 'Compendium.pf2e.feats-srd.Item.barbarian-dedication',
+      slug: 'barbarian-dedication',
+      name: 'Barbarian Dedication',
+      level: 2,
+      traits: ['archetype', 'dedication', 'multiclass', 'barbarian'],
+      choices: {
+        instinct: 'Compendium.pf2e.classfeatures.Item.fury-instinct',
+      },
+    });
+    planner.plan.levels[2].archetypeFeats = [createBarbarianDedicationEntry()];
+
+    global.fromUuid = jest.fn(async (uuid) => {
+      if (uuid === 'Compendium.pf2e.feats-srd.Item.barbarian-dedication') {
+        return {
+          uuid,
+          name: 'Barbarian Dedication',
+          slug: 'barbarian-dedication',
+          system: {
+            description: {
+              value: '<p>You become trained in Athletics; if you were already trained in Athletics, you instead become trained in a skill of your choice.</p><p>Choose an instinct as you would if you were a barbarian.</p>',
+            },
+            rules: [
+              {
+                key: 'ChoiceSet',
+                flag: 'instinct',
+                prompt: 'PF2E.SpecificRule.Barbarian.Instinct.Prompt',
+                choices: {
+                  filter: ['item:tag:barbarian-instinct', { not: 'item:tag:class-archetype' }],
+                },
+              },
+              {
+                key: 'GrantItem',
+                uuid: '{item|flags.system.rulesSelections.instinct}',
+              },
+              {
+                key: 'GrantItem',
+                uuid: 'Compendium.pf2e.actionspf2e.Item.rage',
+              },
+              {
+                key: 'ActiveEffectLike',
+                mode: 'upgrade',
+                path: 'system.skills.athletics.rank',
+                value: 1,
+              },
+            ],
+            traits: { value: ['archetype', 'dedication', 'multiclass', 'barbarian'] },
+          },
+        };
+      }
+      if (uuid === 'Compendium.pf2e.classfeatures.Item.fury-instinct') {
+        return {
+          uuid,
+          name: 'Fury Instinct',
+          slug: 'fury-instinct',
+          system: {
+            description: { value: '<p>Your rage comes from a personal well within you.</p>' },
+            rules: [],
+            traits: { value: ['barbarian'], otherTags: ['barbarian-instinct'], rarity: 'common' },
+            category: 'classfeature',
+          },
+          type: 'feat',
+        };
+      }
+      if (uuid === 'Compendium.pf2e.actionspf2e.Item.rage') {
+        return {
+          uuid,
+          name: 'Rage',
+          slug: 'rage',
+          system: { rules: [] },
+          type: 'action',
+        };
+      }
+      return null;
+    });
+
+    game.packs = new Map([
+      ['pf2e.classfeatures', {
+        metadata: { label: 'Class Features', packageName: 'pf2e' },
+        title: 'Class Features',
+        collection: 'pf2e.classfeatures',
+        getDocuments: jest.fn(async () => [
+          {
+            uuid: 'Compendium.pf2e.classfeatures.Item.fury-instinct',
+            name: 'Fury Instinct',
+            img: 'fury.webp',
+            type: 'feat',
+            slug: 'fury-instinct',
+            system: {
+              traits: { value: ['barbarian'], otherTags: ['barbarian-instinct'], rarity: 'common' },
+              category: 'classfeature',
+              level: { value: 1 },
+              description: { value: '' },
+            },
+          },
+        ]),
+      }],
+      ['pf2e.feats-srd', {
+        metadata: { label: 'Feats', packageName: 'pf2e' },
+        title: 'Feats',
+        collection: 'pf2e.feats-srd',
+        getDocuments: jest.fn(async () => []),
+      }],
+    ]);
+    game.i18n.has = jest.fn((key) => key === 'PF2E.SpecificRule.Barbarian.Instinct.Prompt');
+    game.i18n.localize = jest.fn((key) => (key === 'PF2E.SpecificRule.Barbarian.Instinct.Prompt' ? 'Select an instinct.' : key));
+
+    try {
+      const context = await planner._buildLevelContext(ClassRegistry.get('alchemist'), planner._getVariantOptions());
+      const instinctSets = context.archetypeFeatChoiceSets.filter((entry) =>
+        String(entry.flag ?? '').toLowerCase().includes('instinct')
+        || String(entry.prompt ?? '').toLowerCase().includes('instinct'));
+      const fallbackSet = context.archetypeFeatChoiceSets.find((entry) => entry.flag === 'levelerSkillFallback1');
+
+      expect(instinctSets).toHaveLength(1);
+      expect(instinctSets[0]).toEqual(expect.objectContaining({
+        flag: 'instinct',
+        prompt: 'Select an instinct.',
+      }));
+      expect(fallbackSet.options).toEqual(expect.arrayContaining([
+        expect.objectContaining({ value: 'survival', disabled: false }),
+      ]));
+
+      planner.plan.levels[2].archetypeFeats = [];
+      planner.plan.levels[2].classFeats = [createBarbarianDedicationEntry()];
+      const classContext = await planner._buildLevelContext(ClassRegistry.get('alchemist'), planner._getVariantOptions());
+      const classInstinctSets = classContext.classFeatChoiceSets.filter((entry) =>
+        String(entry.flag ?? '').toLowerCase().includes('instinct')
+        || String(entry.prompt ?? '').toLowerCase().includes('instinct'));
+      const classFallbackSets = classContext.classFeatChoiceSets.filter((entry) => entry.flag?.startsWith('levelerSkillFallback'));
+
+      expect(classContext.classFeat.grantedItems.map((entry) => entry.name)).toEqual(['Fury Instinct', 'Rage']);
+      expect(classContext.classFeat.grantChoiceSets ?? []).toEqual([]);
+      expect(classInstinctSets).toHaveLength(1);
+      expect(classFallbackSets).toHaveLength(1);
+      expect(classFallbackSets[0].options).toEqual(expect.arrayContaining([
+        expect.objectContaining({ value: 'survival', disabled: false }),
+      ]));
+    } finally {
+      global.CONFIG = originalConfig;
+      global.fromUuid = originalFromUuid;
+      game.packs = originalPacks;
+      game.i18n.has = originalHas;
+      game.i18n.localize = originalLocalize;
+    }
+  });
+
   it('marks planner fallback skill-of-your-choice prompts as lore-capable training picks', async () => {
     const originalConfig = global.CONFIG;
     const originalFromUuid = global.fromUuid;

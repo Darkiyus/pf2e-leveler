@@ -123,6 +123,37 @@ describe('applyPlan', () => {
     }));
   });
 
+  test('summarizes class feature choices with labels instead of raw rulesSelection UUIDs', async () => {
+    applyClassFeatureChoices.mockResolvedValueOnce([{
+      name: 'Instinct',
+      choices: {
+        instinct: 'Compendium.pf2e.classfeatures.Item.k7M9jedvt31AJ5ZR',
+      },
+      choiceLabels: {
+        instinct: 'Fury Instinct',
+      },
+    }]);
+
+    const actor = {
+      name: 'Alcor',
+      testUserPermission: jest.fn(() => true),
+    };
+    const plan = {
+      levels: {
+        2: {},
+      },
+    };
+
+    await applyPlan(actor, plan, 2, 1);
+
+    expect(ChatMessage.create).toHaveBeenCalledWith(expect.objectContaining({
+      content: expect.stringContaining('Instinct: Fury Instinct'),
+    }));
+    expect(ChatMessage.create).toHaveBeenCalledWith(expect.objectContaining({
+      content: expect.not.stringContaining('Instinct: Compendium.pf2e.classfeatures.Item.k7M9jedvt31AJ5ZR'),
+    }));
+  });
+
   test('applies retraining separately from level-up choices', async () => {
     applyFeatRetrains.mockResolvedValueOnce([
       { original: { name: 'Old Feat' }, replacement: { name: 'New Feat', uuid: 'Compendium.pf2e.feats-srd.Item.new-feat' } },
