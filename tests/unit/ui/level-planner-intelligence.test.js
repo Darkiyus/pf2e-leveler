@@ -197,7 +197,7 @@ describe('LevelPlanner intelligence boost planner choices', () => {
     );
   });
 
-  it('marks imported past boosts as applied instead of previewing a new increase', () => {
+  it('marks imported past boosts as applied from their reconstructed baseline', () => {
     const actor = createMockActor();
     actor.class.slug = 'alchemist';
     actor.system.details.level.value = 5;
@@ -215,8 +215,102 @@ describe('LevelPlanner intelligence boost planner choices', () => {
     expect(strength).toEqual(expect.objectContaining({
       selected: true,
       applied: true,
+      mod: 3,
+      newMod: 4,
+    }));
+  });
+
+  it('reconstructs standard boost baselines for imported mid-level actors', () => {
+    const actor = createMockActor();
+    actor.class.slug = 'alchemist';
+    actor.system.details.level.value = 8;
+    actor.system.build.attributes.boosts[5] = ['dex', 'con'];
+    actor.system.abilities.dex.mod = 4;
+    actor.system.abilities.con.mod = 4;
+    actor.abilities = {
+      str: { base: 0 },
+      dex: { base: 4.5 },
+      con: { base: 4 },
+      int: { base: 0 },
+      wis: { base: 0 },
+      cha: { base: 0 },
+    };
+
+    const planner = new LevelPlanner(actor);
+    planner.selectedLevel = 5;
+
+    const choices = [{ type: 'abilityBoosts', count: 4 }];
+    const context = planner._buildAttributeContext(planner.plan.levels[5], choices);
+    const dexterity = context.find((entry) => entry.key === 'dex');
+    const constitution = context.find((entry) => entry.key === 'con');
+
+    expect(dexterity).toEqual(expect.objectContaining({
+      selected: true,
+      applied: true,
       mod: 4,
       newMod: 4,
+      partial: true,
+      completesPartial: false,
+    }));
+    expect(constitution).toEqual(expect.objectContaining({
+      selected: true,
+      applied: true,
+      mod: 3,
+      newMod: 4,
+      partial: false,
+      completesPartial: false,
+    }));
+  });
+
+  it('uses raw imported partial boosts when previewing future standard boosts', () => {
+    const actor = createMockActor();
+    actor.class.slug = 'alchemist';
+    actor.system.details.level.value = 8;
+    actor.system.abilities.dex.mod = 4;
+    actor.system.abilities.con.mod = 4;
+    actor.abilities = {
+      str: { base: 0 },
+      dex: { base: 4.5 },
+      con: { base: 4 },
+      int: { base: 0 },
+      wis: { base: 0 },
+      cha: { base: 0 },
+    };
+
+    const planner = new LevelPlanner(actor);
+    planner.plan = createPlan('alchemist');
+    setLevelBoosts(planner.plan, 10, ['dex', 'con']);
+    setLevelBoosts(planner.plan, 15, ['dex', 'con']);
+    const choices = [{ type: 'abilityBoosts', count: 4 }];
+
+    planner.selectedLevel = 10;
+    const level10 = planner._buildAttributeContext(planner.plan.levels[10], choices);
+    expect(level10.find((entry) => entry.key === 'dex')).toEqual(expect.objectContaining({
+      mod: 4,
+      newMod: 5,
+      partial: true,
+      completesPartial: true,
+    }));
+    expect(level10.find((entry) => entry.key === 'con')).toEqual(expect.objectContaining({
+      mod: 4,
+      newMod: 4,
+      partial: true,
+      completesPartial: false,
+    }));
+
+    planner.selectedLevel = 15;
+    const level15 = planner._buildAttributeContext(planner.plan.levels[15], choices);
+    expect(level15.find((entry) => entry.key === 'dex')).toEqual(expect.objectContaining({
+      mod: 5,
+      newMod: 5,
+      partial: true,
+      completesPartial: false,
+    }));
+    expect(level15.find((entry) => entry.key === 'con')).toEqual(expect.objectContaining({
+      mod: 4,
+      newMod: 5,
+      partial: true,
+      completesPartial: true,
     }));
   });
 

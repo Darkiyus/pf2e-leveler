@@ -447,6 +447,30 @@ describe('computeBuildState', () => {
     expect(afterRetrain.skills.occultism).toBe(PROFICIENCY_RANKS.TRAINED);
   });
 
+  test('initial trained skill retrains remove one rank from higher-rank old skills', () => {
+    mockActor.system.skills.athletics.rank = PROFICIENCY_RANKS.EXPERT;
+    mockActor.system.skills.occultism.rank = PROFICIENCY_RANKS.UNTRAINED;
+    addLevelSkillRetrain(plan, 8, {
+      fromLevel: 1,
+      sourceType: 'initialSkill',
+      original: {
+        skill: 'athletics',
+        fromRank: PROFICIENCY_RANKS.UNTRAINED,
+        toRank: PROFICIENCY_RANKS.TRAINED,
+      },
+      replacement: {
+        skill: 'occultism',
+        fromRank: PROFICIENCY_RANKS.UNTRAINED,
+        toRank: PROFICIENCY_RANKS.TRAINED,
+      },
+    });
+
+    const afterRetrain = computeBuildState(mockActor, plan, 8);
+
+    expect(afterRetrain.skills.athletics).toBe(PROFICIENCY_RANKS.TRAINED);
+    expect(afterRetrain.skills.occultism).toBe(PROFICIENCY_RANKS.TRAINED);
+  });
+
   test('computes class features for level', () => {
     const state = computeBuildState(mockActor, plan, 5);
     expect(state.classFeatures.has('field-discovery')).toBe(true);

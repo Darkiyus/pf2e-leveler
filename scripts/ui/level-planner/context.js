@@ -16,7 +16,7 @@ export function buildAttributeContext(planner, levelData, choices) {
   const actorLevel = Number(planner.actor?.system?.details?.level?.value ?? 1);
   const alreadyAppliedLevel = planner.selectedLevel <= actorLevel;
   const buildState = computeBuildState(planner.actor, planner.plan, planner.selectedLevel - 1);
-  const displayedRawAttributes = alreadyAppliedLevel && variantOptions.gradualBoosts
+  const displayedRawAttributes = alreadyAppliedLevel
     ? buildAppliedLevelAttributeBaseline(planner, actorLevel)
     : (buildState.rawAttributes ?? {});
 
@@ -26,9 +26,8 @@ export function buildAttributeContext(planner, levelData, choices) {
     const isPartial = mod >= 4;
     const hasPendingPartial = rawMod % 1 !== 0;
     const selected = selectedBoosts.includes(key);
-    const newMod = selected
-      ? (alreadyAppliedLevel && !variantOptions.gradualBoosts ? mod : mod + 1)
-      : mod;
+    const newRawMod = selected ? applyAbilityBoost(rawMod) : rawMod;
+    const newMod = Math.trunc(newRawMod);
     const partialLabel = !isPartial
       ? ''
       : hasPendingPartial
@@ -74,6 +73,12 @@ function reverseApplyAbilityBoost(rawModifier) {
   const value = Number(rawModifier ?? 0);
   if (!Number.isFinite(value)) return 0;
   return value > 4 ? value - 0.5 : value - 1;
+}
+
+function applyAbilityBoost(rawModifier) {
+  const value = Number(rawModifier ?? 0);
+  if (!Number.isFinite(value)) return 0;
+  return value >= 4 ? value + 0.5 : value + 1;
 }
 
 function getActorAbilityModifier(actor, attr) {

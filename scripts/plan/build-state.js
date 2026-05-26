@@ -9,6 +9,7 @@ import { getActiveSkillSlugs, isActiveSkillSlug, normalizeSkillSlug } from '../u
 import { getFeatLoreRules, getFeatSkillRules, PLAN_FEAT_KEYS } from '../utils/feat-skill-rules.js';
 import { isCompendiumUuidInCategory } from '../system-support/profiles.js';
 import { inferSf2eSpellcastingTraditionFromItem, normalizeSpellTradition } from '../utils/sf2e-spellcasting.js';
+import { getRankAfterSkillRetrain } from '../utils/skill-retrains.js';
 
 const CLASS_SUBCLASS_TYPES = {
   alchemist: 'research field',
@@ -873,7 +874,8 @@ function applyInitialSkillRetrains(skills, plan, atLevel) {
     const toRank = Number(original.toRank ?? PROFICIENCY_RANKS.TRAINED);
     const currentRank = Number(skills[skill] ?? PROFICIENCY_RANKS.UNTRAINED);
     if (!Number.isFinite(fromRank) || !Number.isFinite(toRank) || !Number.isFinite(currentRank)) continue;
-    if (currentRank <= toRank && currentRank > fromRank) skills[skill] = fromRank;
+    const downgradedRank = getRankAfterSkillRetrain(currentRank, fromRank, toRank);
+    if (downgradedRank < currentRank) skills[skill] = downgradedRank;
   }
 }
 

@@ -128,6 +128,67 @@ describe('applySkillIncreases', () => {
     ]);
   });
 
+  test('retraining updates PF2e short skill keys on the actor', async () => {
+    mockActor.system = {
+      skills: {
+        ste: { rank: 2 },
+        occ: { rank: 1 },
+      },
+    };
+    const plan = {
+      levels: {
+        8: {
+          retrainedSkillIncreases: [{
+            fromLevel: 3,
+            original: { skill: 'stealth', fromRank: 1, toRank: 2 },
+            replacement: { skill: 'occultism', fromRank: 1, toRank: 2 },
+          }],
+        },
+      },
+    };
+
+    const result = await applySkillRetrains(mockActor, plan, 8);
+
+    expect(mockActor.update).toHaveBeenCalledWith({
+      'system.skills.ste.rank': 1,
+      'system.skills.occ.rank': 2,
+    });
+    expect(result).toEqual([
+      { original: { skill: 'stealth', rank: 2 }, replacement: { skill: 'occultism', rank: 2 } },
+    ]);
+  });
+
+  test('retraining downgrades the old skill by the retrained rank amount', async () => {
+    mockActor.system = {
+      skills: {
+        athletics: { rank: 2 },
+        occultism: { rank: 0 },
+      },
+    };
+    const plan = {
+      levels: {
+        8: {
+          retrainedSkillIncreases: [{
+            fromLevel: 1,
+            sourceType: 'initialSkill',
+            original: { skill: 'athletics', fromRank: 0, toRank: 1 },
+            replacement: { skill: 'occultism', fromRank: 0, toRank: 1 },
+          }],
+        },
+      },
+    };
+
+    const result = await applySkillRetrains(mockActor, plan, 8);
+
+    expect(mockActor.update).toHaveBeenCalledWith({
+      'system.skills.athletics.rank': 1,
+      'system.skills.occultism.rank': 1,
+    });
+    expect(result).toEqual([
+      { original: { skill: 'athletics', rank: 1 }, replacement: { skill: 'occultism', rank: 1 } },
+    ]);
+  });
+
   test('applies Operatic Adventurer Performance scaling and Theater Lore at later levels', async () => {
     mockActor = {
       system: {
