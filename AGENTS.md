@@ -281,39 +281,18 @@ recommend splitting it along real responsibility boundaries.
 <claude-mem-context>
 # Memory Context
 
-# [pf2e-leveler] recent context, 2026-05-27 10:58am GMT+3
+# [pf2e-leveler] recent context, 2026-05-27 11:21am GMT+3
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (20,332t read) | 352,541t work | 94% savings
+Stats: 50 obs (17,563t read) | 274,187t work | 94% savings
 
 ### May 3, 2026
 S120 Feat retraining implementation for pf2e-leveler — Task 2 complete (validator + apply), Task 3 (planner UI) in progress (May 3 at 1:42 PM)
-### May 10, 2026
-1526 8:09a 🔵 pf2e-leveler Has Unit Tests for Sheet Integration Including isActorCharacterSheetApplication and Button Injection
-1535 8:24a ✅ Patch version bump and changelog entry for sheet-integration
-1538 " 🔵 pf2e-leveler module current version is 3.4.6, changelog exists
-1540 " 🔵 pf2e-leveler 3.4.6 changelog entry is the sheet-integration ApplicationV2 fix
-1542 8:25a ✅ pf2e-leveler bumped to 3.4.7 with HUD false-positive sheet-detection fix
 ### May 27, 2026
-6140 7:59a 🔵 Bug Identified: Duplicate Skill Selection During Background Step in Character Wizard
-6142 " 🔵 Root Cause Located: Skill Toggle Listener Fires During Background Step
-6144 8:00a 🔵 Synthetic Skill Choice Sets Generated from Background Item Descriptions
-6147 " 🔵 setBackground Clears and Rebuilds grantedFeatSections Including Skill Choice Sets
-6148 8:01a 🔵 Background Data Model Stores Background-Level ChoiceSet Selections in background.choices
-6149 " 🔴 TDD Failing Test Written: Background Native Skill ChoiceSets Incorrectly Added to grantedFeatSections
-6150 " 🔴 Fixed: Background Native Skill ChoiceSets Now Filtered from grantedFeatSections
-6151 8:02a 🔴 Bug Fix Verified: Targeted Test Passes, Full Suite Running
-6152 " 🔴 Fix Caused 6 Regressions: Scholar Background Assurance Constraint System Broken
-6153 " 🔴 Final Fix Verified: All 129 Tests Pass with Refined isNativeBackgroundSkillChoiceSet Guard
-6154 " 🔴 Full Test Suite and Lint Pass: Background Skill ChoiceSet Fix Fully Verified
-6155 8:03a 🔴 Complete Validation: 1438 Tests and Full ESLint Pass Confirm Clean Fix
-6156 " 🔵 Template Confirms Skills UI Correctly Gated to skills Step — Background Step Bug Was Only in grantedFeatSections
-6173 8:19a 🔵 SUBCLASS_TAGS constant maps PF2e class slugs to tag families
-6174 " 🔵 Complete SUBCLASS_TAGS list in scripts/constants.js
-6175 " 🟣 Added tests for subclass-granted skill duplicate detection in imported skill dialog
+6175 8:19a 🟣 Added tests for subclass-granted skill duplicate detection in imported skill dialog
 6176 " 🔵 All 3 duplicate-skill dialog tests pass without production code changes
 6177 8:20a ✅ Full test suite and lint pass after adding subclass skill duplicate tests
 6178 " 🟣 Subclass duplicate-skill test coverage added; full suite green at 1441 tests
@@ -343,6 +322,26 @@ S120 Feat retraining implementation for pf2e-leveler — Task 2 complete (valida
 6348 10:44a 🔴 All Three New Tests Pass — Green Phase Confirmed
 6349 " 🔴 Full Test Suite Green: 1445/1445 Tests Pass After build-state.js Fixes
 6350 " 🔵 Version Discrepancy: module.json at 3.4.24, package.json at 3.4.21 Before New Release
+6353 10:59a 🔵 pf2e-leveler Investigator Class Definition and Skill System Structure
+6355 " 🔵 Initial Skill Import Pipeline Function Map in build-state.js
+6357 11:00a 🔵 getImportedInitialSkillLimit Formula and Investigator Minimum Floor
+6358 " 🔵 Level-1 Dedication Skill Duplicate Fallback in Imported Starting Skill Dialog
+6360 " 🔴 Investigator trainedSkills Moved to Class Definition; Ancestry-Granted Skill Feats Now Detected
+6361 " 🟣 getActorClassItem Helper Added to build-state.js
+6363 11:01a 🔴 Tests Updated to Reflect Ancient Elf Heritage Grant Detection and Correct Investigator additional:4
+6364 " 🔵 Fix Ships as v3.4.24; getImportedInitialSkillLimit Called from context.js
+6365 " 🔵 Test Failure: INVESTIGATOR Not Registered in level-planner-bootstrap.test.js beforeAll
+6366 " 🔴 INVESTIGATOR Registered in level-planner-bootstrap.test.js to Fix Failing Test
+6367 " 🔴 All 185 Tests Pass After Investigator Skill Import Fixes
+6369 11:02a 🔴 Full Test Suite Passes After Investigator Skill Import Fix — 1445/1445 Green
+6370 " ✅ ESLint Passes Clean After v3.4.24 Changes
+6387 11:18a ✅ CHANGELOG patch version increment requested
+6388 " 🔵 Version mismatch between package.json and module.json in pf2e-leveler
+6389 " 🟣 pf2e-leveler 3.4.24: Investigator and background skill edge case fixes
+6390 " ✅ pf2e-leveler bumped to version 3.4.25 across all version files
+6391 " 🔵 package-lock.json still at 3.4.21 after version bump to 3.4.25
+6392 " ✅ package-lock.json synced to 3.4.25, all version files now consistent
+6393 11:19a 🔵 Key functions and tests for skill/boost planning in build-state.js
 
-Access 353k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 274k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

@@ -1,11 +1,16 @@
 # Changelog
 
+## 3.4.25
+
+### Level Planner
+
+- **Imported Investigator builds now recover starting skill and Intelligence edge cases** - Starting Skill Training now reads PF2e class item and class metadata for Investigator's four flexible class skills plus level 1 Intelligence, includes level 1 dedication skill grants such as Ancient Elf dedications when offering duplicate replacement skills, and preserves a level 5 partial Intelligence boost when planning the level 10 boost
+
 ## 3.4.24
 
 ### Level Planner
 
 - **Starting Skill Training no longer duplicates known background skill prompts** - Imported high-level actors now use PF2e's stored background `rulesSelections` to recognize selected background skill choices, keep the manual prompt only when that source data is missing, and still offer replacement skill selections when background, class, and subclass starting skill grants overlap
-- **Imported Investigator builds now recover starting skill and Intelligence edge cases** - Starting Skill Training now reads PF2e class item and class metadata for Investigator's four flexible class skills plus level 1 Intelligence, includes level 1 dedication skill grants such as Ancient Elf dedications when offering duplicate replacement skills, and preserves a level 5 partial Intelligence boost when planning the level 10 boost
 
 ## 3.4.23
 
