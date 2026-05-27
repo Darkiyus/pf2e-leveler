@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.4.21
+
+### Level Planner
+
+- **Imported starting skills now honor level 1 Intelligence and automatic grants** - Starting Skill Training now counts only flexible class skill picks plus the character's level 1 Intelligence bonus, shows fixed class, background, racket, and methodology skill grants as locked trained rows with their source names, and uses those grants when rebuilding historical skill ranks and retraining sources
+
 ## 3.4.20
 
 ### Level Planner
