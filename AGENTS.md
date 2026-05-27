@@ -281,36 +281,17 @@ recommend splitting it along real responsibility boundaries.
 <claude-mem-context>
 # Memory Context
 
-# [pf2e-leveler] recent context, 2026-05-27 8:25am GMT+3
+# [pf2e-leveler] recent context, 2026-05-27 10:58am GMT+3
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (20,724t read) | 492,859t work | 96% savings
+Stats: 50 obs (20,332t read) | 352,541t work | 94% savings
 
-### Apr 23, 2026
-590 4:06p 🔵 Chevron Feature Passes All Tests — 78/78 Green
-591 " ✅ Inline Label Row CSS Refined for Label/Select Flex Sizing
-592 4:07p 🔄 LEVEL_RANGE Filter Group Converted to Inline Label Layout in feat-picker
-593 4:09p 🟣 LEVEL_RANGE Filter Redesigned as Compact Min–Max Range Selector
-594 4:10p 🔄 Skill Filter Group Moved Earlier in feat-picker Sidebar Order
-595 4:11p 🔵 Final feat-picker.hbs Sidebar Structure Confirmed
-596 " 🔄 Utility Controls Moved After Skill Filter Group in feat-picker
-597 4:12p 🔵 Duplicate Patch Application Detected — write_file and apply_patch Both Fired
 ### May 3, 2026
-842 1:41p 🟣 Level Retrain Feature Requested for pf2e-leveler FoundryVTT Module
-843 " 🔵 pf2e-leveler Codebase Structure Mapped for Retrain Feature
-844 1:42p 🔵 Level Planner Architecture Deep-Dive: Key Integration Points for Retrain Feature
 S120 Feat retraining implementation for pf2e-leveler — Task 2 complete (validator + apply), Task 3 (planner UI) in progress (May 3 at 1:42 PM)
 ### May 10, 2026
-1519 8:05a 🔵 pf2e-hud-colors Module Breaks Level Icons in Foundry VTT v13 Title Bar
-1520 " 🔵 pf2e-leveler Sheet Integration Injects Header Buttons Using Legacy jQuery on renderCharacterSheetPF2e
-1521 8:06a 🔵 pf2e-hud-colors CSS Contains No Layout/Visibility Rules — Unlikely to Cause Icon Disappearance
-1522 " 🔵 pf2e-hud-colors CSS Fully Scoped to [id^=pf2e-hud] — Definitively Ruled Out as Cause of Missing Level Icons
-1523 8:07a 🔵 pf2e-hud Module Has renderActorSheet Hook in TokenPF2eHUD and Uses libWrapper — Most Likely Root Cause
-1524 8:08a 🔵 TokenPF2eHUD #onRenderActorSheet Handler Is Definitively Benign — Only Closes HUD, Never Touches Sheet DOM
-1525 " 🔵 pf2e-leveler Sheet Button Injection: Complete Logic Confirmed — isPF2eHudElement Guard Uses [class*="pf2e-hud"] Substring Match
 1526 8:09a 🔵 pf2e-leveler Has Unit Tests for Sheet Integration Including isActorCharacterSheetApplication and Button Injection
 1535 8:24a ✅ Patch version bump and changelog entry for sheet-integration
 1538 " 🔵 pf2e-leveler module current version is 3.4.6, changelog exists
@@ -344,6 +325,24 @@ S120 Feat retraining implementation for pf2e-leveler — Task 2 complete (valida
 6184 " 🟣 Complete unstaged diff: context.js bugfix + 177 new test lines covering all skill conflict scenarios
 6185 " 🟣 Full suite green at 1443 tests after context.js bugfix and 3 new skill conflict test scenarios
 6186 8:22a 🔵 Full change set breakdown: staged vs unstaged across all three modified files
+6187 8:25a 🔵 Bug Identified in Sheet Integration Background Selection Flow
+6188 " 🔵 Version Mismatch Between package.json and module.json
+6189 " 🔵 Active Work on level-planner/context.js and Associated Tests
+6190 " 🔴 Fixed: Starting Skill Training Duplicates Background Skill Prompts — Release 3.4.24
+6191 8:26a ✅ 3.4.24 Changes Verified: All 88 Level Planner Bootstrap Tests Pass
+6338 10:39a 🔵 pf2e-leveler v3.4.21 Investigation Session Started — Skill/Fallback Focus
+6339 " 🔵 pf2e-leveler Skill Computation Pipeline Architecture in build-state.js
+6340 10:40a 🔵 ensure.js Builds Dynamic Class Definitions from FoundryVTT Actor Data
+6341 " 🔵 Imported Initial Skill Dialog Architecture: ChoiceSets, Fallbacks, and Duplicate Detection
+6342 10:41a 🟣 TDD Red Phase: Two New Failing Tests Added to build-state.test.js
+6343 10:42a 🟣 TDD Red Phase: Three New Failing Tests Covering Duplicate Skill Grant Edge Cases
+6344 " 🔵 Three Confirmed Bugs Found via Red Test Runs
+6345 10:43a 🔴 Three Production Bug Fixes Applied to build-state.js
+6346 " 🔴 isPlannedBoostReflectedOnActor and extractSkillGrantsFromRules Added to build-state.js
+6347 " 🔴 isPlannedBoostReflectedOnActor Simplified: Fractional Modifier Check for Level-5 Pending Partial Boosts
+6348 10:44a 🔴 All Three New Tests Pass — Green Phase Confirmed
+6349 " 🔴 Full Test Suite Green: 1445/1445 Tests Pass After build-state.js Fixes
+6350 " 🔵 Version Discrepancy: module.json at 3.4.24, package.json at 3.4.21 Before New Release
 
-Access 493k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 353k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

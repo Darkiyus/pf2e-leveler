@@ -4,6 +4,10 @@ export const INVESTIGATOR = {
   compendiumUuid: 'Compendium.pf2e.classes.Item.Investigator',
   keyAbility: ['int'],
   hp: 8,
+  trainedSkills: {
+    fixed: ['society'],
+    additional: 4,
+  },
 
   featSchedule: {
     class: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20],

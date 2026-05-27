@@ -766,8 +766,8 @@ function computeAttributes(actor, plan, atLevel, { raw = false } = {}) {
   const boosts = getAllPlannedBoosts(plan, atLevel);
   for (const [levelKey, boostList] of Object.entries(boosts)) {
     const level = Number(levelKey);
-    if (Number.isFinite(actorLevel) && level <= actorLevel) continue;
     for (const attr of boostList) {
+      if (isPlannedBoostReflectedOnActor(actor, attr, level, actorLevel)) continue;
       if (attrs[attr] >= 4) {
         attrs[attr] += 0.5;
       } else {
@@ -799,6 +799,21 @@ function getActorAbilityModifier(actor, attr) {
   if (Number.isFinite(base)) return Number(base);
 
   return 0;
+}
+
+function isPlannedBoostReflectedOnActor(actor, attr, boostLevel, actorLevel) {
+  if (!Number.isFinite(actorLevel)) return false;
+  if (boostLevel < actorLevel) return true;
+  if (boostLevel > actorLevel) return false;
+
+  const actorBoosts = actor?.system?.build?.attributes?.boosts ?? {};
+  const actorBoostsAtLevel = new Set(normalizeAbilityBoostList(actorBoosts[boostLevel]));
+  if (actorBoostsAtLevel.has(attr)) return true;
+
+  const currentModifier = getActorAbilityModifier(actor, attr);
+  if (boostLevel === 5 && Number.isFinite(currentModifier) && currentModifier % 1 !== 0) return true;
+
+  return false;
 }
 
 function computeSkills(actor, plan, atLevel, classDef) {
@@ -884,7 +899,10 @@ export function getImportedInitialSkillTraining(plan) {
 }
 
 export function getImportedInitialSkillLimit(actor, classDef = null) {
-  const additional = Number(actor?.class?.system?.trainedSkills?.additional ?? classDef?.trainedSkills?.additional ?? 0);
+  const actorClass = getActorClassItem(actor, classDef);
+  const actorAdditional = Number(actorClass?.system?.trainedSkills?.additional ?? 0);
+  const classAdditional = Number(classDef?.trainedSkills?.additional ?? 0);
+  const additional = Math.max(actorAdditional, classAdditional);
   const flexibleClassPicks = Number.isFinite(additional) && additional > 0 ? additional : 0;
   return flexibleClassPicks + Math.max(0, getLevelOneIntModifier(actor));
 }
@@ -897,13 +915,14 @@ export function getAutomaticInitialSkillTrainingEntries(actor, plan = null, clas
   const skills = new Map();
   const classDefs = Array.isArray(classDef) ? classDef.filter(Boolean) : [classDef].filter(Boolean);
   const classSlugs = getTrackedClassSlugs(actor, plan, classDefs);
+  const actorClass = getActorClassItem(actor, classDefs[0] ?? null);
 
-  addInitialSkillList(skills, actor?.class?.system?.trainedSkills?.value, getSourceLabel(actor?.class, 'Class'));
+  addInitialSkillList(skills, actorClass?.system?.trainedSkills?.value, getSourceLabel(actorClass, 'Class'));
   for (const entry of classDefs) {
     addInitialSkillList(skills, entry?.trainedSkills?.fixed, getSourceLabel(entry, 'Class'));
   }
 
-  for (const item of getAutomaticInitialSkillItems(actor, classSlugs)) {
+  for (const item of getAutomaticInitialSkillItems(actor, classSlugs, plan)) {
     const sourceLabel = getSourceLabel(item, 'Automatic');
     addInitialSkillList(skills, item?.system?.trainedSkills?.value, sourceLabel);
     addInitialSkillRuleTraining(skills, item, sourceLabel);
@@ -916,13 +935,15 @@ export function getAutomaticInitialSkillTrainingEntries(actor, plan = null, clas
 export function getInitialSkillSourceItems(actor, plan = null, classDef = null) {
   const classDefs = Array.isArray(classDef) ? classDef.filter(Boolean) : [classDef].filter(Boolean);
   const classSlugs = getTrackedClassSlugs(actor, plan, classDefs);
-  return getAutomaticInitialSkillItems(actor, classSlugs);
+  return getAutomaticInitialSkillItems(actor, classSlugs, plan);
 }
 
 function getTrackedClassSlugs(actor, plan, classDefs) {
   const slugs = new Set([
     actor?.class?.slug,
     actor?.class?.system?.slug,
+    getActorClassItem(actor)?.slug,
+    getActorClassItem(actor)?.system?.slug,
     plan?.classSlug,
     plan?.dualClassSlug,
     ...classDefs.map((entry) => entry?.slug),
@@ -932,7 +953,7 @@ function getTrackedClassSlugs(actor, plan, classDefs) {
     .filter(Boolean);
 }
 
-function getAutomaticInitialSkillItems(actor, classSlugs) {
+function getAutomaticInitialSkillItems(actor, classSlugs, plan = null) {
   const items = [];
   const seen = new Set();
   const addItem = (item) => {
@@ -945,10 +966,29 @@ function getAutomaticInitialSkillItems(actor, classSlugs) {
 
   addItem(actor?.background);
   for (const item of getOwnedItems(actor)) {
-    if (isBackgroundItem(item) || isInitialSubclassItem(item, classSlugs)) addItem(item);
+    if (isBackgroundItem(item) || isInitialSubclassItem(item, classSlugs) || isInitialSkillSourceFeatItem(item, actor, plan)) addItem(item);
   }
 
   return items;
+}
+
+function isInitialSkillSourceFeatItem(item, actor, plan) {
+  if (String(item?.type ?? item?.itemType ?? '').trim().toLowerCase() !== 'feat') return false;
+  if (extractSkillGrantsFromRules(item?.system?.rules ?? [], item).length === 0) return false;
+  if (getEffectivePlannedFeatsForLevel(plan, 1, 1).some((feat) => matchesFeatIdentity(item, feat))) return true;
+  return isGrantedByInitialAncestryOrHeritage(item, actor);
+}
+
+function isGrantedByInitialAncestryOrHeritage(item, actor) {
+  const grantedById = String(item?.flags?.pf2e?.grantedBy?.id ?? '').trim();
+  if (!grantedById) return false;
+
+  const source = getOwnedItems(actor).find((ownedItem) => String(ownedItem?._id ?? ownedItem?.id ?? '').trim() === grantedById);
+  const sourceType = String(source?.type ?? source?.itemType ?? '').trim().toLowerCase();
+  if (!['ancestry', 'heritage'].includes(sourceType)) return false;
+
+  const sourceLevel = Number(source?.system?.level?.value ?? 1);
+  return !Number.isFinite(sourceLevel) || sourceLevel <= 1;
 }
 
 function isBackgroundItem(item) {
@@ -979,7 +1019,14 @@ function addInitialSkillList(target, rawSkills, sourceLabel) {
 }
 
 function addInitialSkillRuleTraining(target, item, sourceLabel) {
-  for (const rule of item?.system?.rules ?? []) {
+  for (const skill of extractSkillGrantsFromRules(item?.system?.rules ?? [], item)) {
+    addInitialSkillEntry(target, skill, sourceLabel);
+  }
+}
+
+function extractSkillGrantsFromRules(rules, item = null) {
+  const skills = [];
+  for (const rule of rules ?? []) {
     if (rule?.key !== 'ActiveEffectLike') continue;
     if (!matchesRuleAtLevel(rule, 1)) continue;
 
@@ -991,9 +1038,10 @@ function addInitialSkillRuleTraining(target, item, sourceLabel) {
 
     const value = evaluateRuleNumericValue(rule.value, 1, item);
     if (Number.isFinite(value) && value >= PROFICIENCY_RANKS.TRAINED) {
-      addInitialSkillEntry(target, skill, sourceLabel);
+      skills.push(skill);
     }
   }
+  return skills;
 }
 
 function addExplicitDescriptionTraining(target, html, sourceLabel) {
@@ -2263,6 +2311,16 @@ function getOwnedItems(actor) {
   if (Array.isArray(actor.items.contents)) return actor.items.contents;
   if (typeof actor.items.filter === 'function') return actor.items.filter(() => true);
   return Array.from(actor.items);
+}
+
+function getActorClassItem(actor, classDef = null) {
+  if (actor?.class) return actor.class;
+
+  const expectedSlug = String(classDef?.slug ?? '').trim().toLowerCase();
+  const classItems = getOwnedItems(actor).filter((item) => String(item?.type ?? item?.itemType ?? '').trim().toLowerCase() === 'class');
+  if (!expectedSlug) return classItems[0] ?? null;
+
+  return classItems.find((item) => String(item?.slug ?? item?.system?.slug ?? '').trim().toLowerCase() === expectedSlug) ?? classItems[0] ?? null;
 }
 
 function isEquippedItem(item) {

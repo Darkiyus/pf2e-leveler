@@ -134,6 +134,30 @@ describe('computeBuildState', () => {
     expect(level10State.rawAttributes.str).toBe(5);
   });
 
+  test('applies current imported ability boost after previous pending partial boost', () => {
+    mockActor.system.details.level.value = 10;
+    mockActor.system.abilities.int.mod = 4.5;
+    mockActor.abilities = {
+      str: { mod: 0, base: 0 },
+      dex: { mod: 0, base: 0 },
+      con: { mod: 0, base: 0 },
+      int: { mod: 4.5, base: 4 },
+      wis: { mod: 0, base: 0 },
+      cha: { mod: 0, base: 0 },
+    };
+
+    setLevelBoosts(plan, 5, ['int', 'dex', 'con', 'wis']);
+    setLevelBoosts(plan, 10, ['int', 'dex', 'con', 'wis']);
+
+    const beforeLevel10 = computeBuildState(mockActor, plan, 9);
+    const level10State = computeBuildState(mockActor, plan, 10);
+
+    expect(beforeLevel10.attributes.int).toBe(4);
+    expect(beforeLevel10.rawAttributes.int).toBe(4.5);
+    expect(level10State.attributes.int).toBe(5);
+    expect(level10State.rawAttributes.int).toBe(5);
+  });
+
   test('does not reapply past planned boosts that are already reflected on the actor', () => {
     mockActor.system.details.level.value = 14;
     mockActor.system.abilities.dex.mod = 5;
@@ -483,6 +507,23 @@ describe('computeBuildState', () => {
     mockActor.system.build.attributes.boosts[1] = ['int'];
 
     expect(getImportedInitialSkillLimit(mockActor, ROGUE)).toBe(8);
+  });
+
+  test('imported Investigator starting skill allowance uses four flexible class picks', () => {
+    delete mockActor.class;
+    mockActor.items = [
+      {
+        type: 'class',
+        name: 'Investigator',
+        system: {
+          slug: 'investigator',
+          trainedSkills: { value: ['society'], additional: 4 },
+        },
+      },
+    ];
+    mockActor.system.abilities.int.mod = 4;
+
+    expect(getImportedInitialSkillLimit(mockActor, INVESTIGATOR)).toBe(8);
   });
 
   test('historical skill state applies automatic initial background and subclass skill grants', () => {

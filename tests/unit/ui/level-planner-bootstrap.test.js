@@ -2,6 +2,7 @@ import { LevelPlanner } from '../../../scripts/ui/level-planner/index.js';
 import { PLAN_STATUS } from '../../../scripts/constants.js';
 import { ClassRegistry } from '../../../scripts/classes/registry.js';
 import { ALCHEMIST } from '../../../scripts/classes/alchemist.js';
+import { INVESTIGATOR } from '../../../scripts/classes/investigator.js';
 import { getPlan, savePlan } from '../../../scripts/plan/plan-store.js';
 import { createPlan } from '../../../scripts/plan/plan-model.js';
 import { computeBuildState } from '../../../scripts/plan/build-state.js';
@@ -29,6 +30,7 @@ describe('LevelPlanner bootstrap from existing actor', () => {
   beforeAll(() => {
     ClassRegistry.clear();
     ClassRegistry.register(ALCHEMIST);
+    ClassRegistry.register(INVESTIGATOR);
   });
 
   beforeEach(() => {
@@ -1578,6 +1580,100 @@ describe('LevelPlanner bootstrap from existing actor', () => {
     expect(content).toContain('Field Discovery - Skill Choices');
     expect(content).toContain('Select a replacement skill (Crafting already granted)');
     expect(content).toContain('data-initial-skill-choice-flag="duplicateSkillFallback_Compendium.pf2e.classfeatures.Item.field-discovery_crafting"');
+  });
+
+  it('offers a replacement initial skill when an ancient elf dedication duplicates background and subclass skills', async () => {
+    const actor = createMockActor({
+      system: {
+        details: {
+          level: { value: 8 },
+          xp: { value: 0, max: 1000 },
+        },
+      },
+      background: {
+        uuid: 'Compendium.pf2e.backgrounds-srd.Item.artisan',
+        name: 'Artisan',
+        type: 'background',
+        system: {
+          trainedSkills: { value: ['crafting'] },
+        },
+      },
+    });
+    actor.class.slug = 'investigator';
+    actor.class.name = 'Investigator';
+    actor.class.system.trainedSkills = { value: ['society'], additional: 4 };
+    actor.items = [
+      actor.background,
+      {
+        uuid: 'Compendium.pf2e.classfeatures.Item.alchemical-sciences',
+        name: 'Alchemical Sciences',
+        type: 'feat',
+        system: {
+          traits: { otherTags: ['investigator-methodology'] },
+          rules: [
+            {
+              key: 'ActiveEffectLike',
+              path: 'system.skills.crafting.rank',
+              value: 1,
+            },
+          ],
+        },
+      },
+      {
+        _id: 'ancientElfHeritage',
+        uuid: 'Compendium.pf2e.heritages.Item.ancient-elf',
+        name: 'Ancient Elf (Alchemist Dedication)',
+        type: 'heritage',
+        system: {
+          slug: 'ancient-elf',
+        },
+      },
+      {
+        uuid: 'Compendium.pf2e.feats-srd.Item.alchemist-dedication',
+        name: 'Alchemist Dedication',
+        type: 'feat',
+        system: {
+          traits: { value: ['archetype', 'dedication', 'multiclass', 'alchemist'] },
+          rules: [
+            {
+              key: 'ActiveEffectLike',
+              path: 'system.skills.crafting.rank',
+              value: 1,
+            },
+          ],
+        },
+        flags: {
+          pf2e: {
+            grantedBy: {
+              id: 'ancientElfHeritage',
+              onDelete: 'cascade',
+            },
+          },
+        },
+      },
+    ];
+
+    if (!ClassRegistry.has('investigator')) ClassRegistry.register(INVESTIGATOR);
+    const plan = createPlan('investigator');
+    const planner = new LevelPlanner(actor);
+    planner.plan = {
+      ...plan,
+      importedFromActor: {
+        actorLevel: 8,
+        hideHistoricalSkillIncreases: true,
+        initialSkills: [],
+      },
+    };
+    const prompt = jest.fn(async (config) => ({ skills: [], choiceSelections: {} }));
+    global.foundry.applications.api.DialogV2 = { prompt };
+
+    await planner._openImportedInitialSkillDialog();
+
+    const content = prompt.mock.calls[0][0].content;
+    expect(content).toContain('Alchemical Sciences - Skill Choices');
+    expect(content).toContain('data-initial-skill-choice-flag="duplicateSkillFallback_Compendium.pf2e.classfeatures.Item.alchemical-sciences_crafting"');
+    expect(content).toContain('Alchemist Dedication - Skill Choices');
+    expect(content).toContain('data-initial-skill-choice-flag="duplicateSkillFallback_Compendium.pf2e.feats-srd.Item.alchemist-dedication_crafting"');
   });
 
   it('keeps imported starting skill dialog content within the Foundry prompt width', () => {
