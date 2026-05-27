@@ -1,6 +1,6 @@
 import { ATTRIBUTES, MIN_PLAN_LEVEL, PROFICIENCY_RANK_NAMES } from '../../constants.js';
 import { getGradualBoostGroupLevels } from '../../classes/progression.js';
-import { computeBuildState, computeSkillPickerState, getAutomaticInitialSkillTraining, getImportedInitialSkillLimit, getImportedInitialSkillTraining, isImportedHistoricalSkillLevel } from '../../plan/build-state.js';
+import { computeBuildState, computeSkillPickerState, getAutomaticInitialSkillTrainingEntries, getImportedInitialSkillLimit, getImportedInitialSkillTraining, isImportedHistoricalSkillLevel } from '../../plan/build-state.js';
 import { getMaxSkillRank } from '../../utils/pf2e-api.js';
 import { ClassRegistry } from '../../classes/registry.js';
 import { annotateGuidanceBySlug, filterDisallowedForCurrentUser } from '../../access/content-guidance.js';
@@ -474,20 +474,21 @@ export function shouldShowImportedInitialSkillButton(planner, level) {
 }
 
 export function buildImportedInitialSkillContext(planner) {
-  const automatic = getAutomaticInitialSkillSet(planner);
+  const automatic = getAutomaticInitialSkillMap(planner);
   const selected = new Set(getHistoricalInitialSkillTraining(planner).filter((skill) => !automatic.has(skill)));
   const limit = getImportedInitialSkillLimit(planner.actor, ClassRegistry.get(planner.plan?.classSlug));
   const count = selected.size;
   const limitReached = limit > 0 && count >= limit;
   return getActiveSkillSlugs().map((slug) => {
-    const isAutomatic = automatic.has(slug);
+    const automaticEntry = automatic.get(slug);
+    const isAutomatic = !!automaticEntry;
     return {
       slug,
       label: localizeSkillSlug(slug),
       selected: isAutomatic || selected.has(slug),
       disabled: isAutomatic || (!selected.has(slug) && limitReached),
       automatic: isAutomatic,
-      sourceLabel: isAutomatic ? 'Automatic' : null,
+      sourceLabel: automaticEntry?.sourceLabel ?? null,
       rankName: PROFICIENCY_RANK_NAMES[1],
     };
   });
@@ -515,8 +516,15 @@ function getHistoricalInitialSkillTraining(planner) {
 }
 
 function getAutomaticInitialSkillSet(planner) {
+  return new Set(getAutomaticInitialSkillMap(planner).keys());
+}
+
+function getAutomaticInitialSkillMap(planner) {
   const classDef = ClassRegistry.get(planner.plan?.classSlug);
-  return new Set(getAutomaticInitialSkillTraining(planner.actor, planner.plan, classDef));
+  return new Map(
+    getAutomaticInitialSkillTrainingEntries(planner.actor, planner.plan, classDef)
+      .map((entry) => [entry.skill, entry]),
+  );
 }
 
 function buildHistoricalLoreRanks(planner, upToLevel) {

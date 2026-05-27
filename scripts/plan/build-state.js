@@ -890,22 +890,27 @@ export function getImportedInitialSkillLimit(actor, classDef = null) {
 }
 
 export function getAutomaticInitialSkillTraining(actor, plan = null, classDef = null) {
-  const skills = new Set();
+  return getAutomaticInitialSkillTrainingEntries(actor, plan, classDef).map((entry) => entry.skill);
+}
+
+export function getAutomaticInitialSkillTrainingEntries(actor, plan = null, classDef = null) {
+  const skills = new Map();
   const classDefs = Array.isArray(classDef) ? classDef.filter(Boolean) : [classDef].filter(Boolean);
   const classSlugs = getTrackedClassSlugs(actor, plan, classDefs);
 
-  addInitialSkillList(skills, actor?.class?.system?.trainedSkills?.value);
+  addInitialSkillList(skills, actor?.class?.system?.trainedSkills?.value, getSourceLabel(actor?.class, 'Class'));
   for (const entry of classDefs) {
-    addInitialSkillList(skills, entry?.trainedSkills?.fixed);
+    addInitialSkillList(skills, entry?.trainedSkills?.fixed, getSourceLabel(entry, 'Class'));
   }
 
   for (const item of getAutomaticInitialSkillItems(actor, classSlugs)) {
-    addInitialSkillList(skills, item?.system?.trainedSkills?.value);
-    addInitialSkillRuleTraining(skills, item);
-    addExplicitDescriptionTraining(skills, item?.system?.description?.value ?? item?.description ?? '');
+    const sourceLabel = getSourceLabel(item, 'Automatic');
+    addInitialSkillList(skills, item?.system?.trainedSkills?.value, sourceLabel);
+    addInitialSkillRuleTraining(skills, item, sourceLabel);
+    addExplicitDescriptionTraining(skills, item?.system?.description?.value ?? item?.description ?? '', sourceLabel);
   }
 
-  return [...skills].sort((a, b) => a.localeCompare(b));
+  return [...skills.values()].sort((a, b) => a.skill.localeCompare(b.skill));
 }
 
 function getTrackedClassSlugs(actor, plan, classDefs) {
@@ -960,14 +965,14 @@ function getItemOtherTags(item) {
     .filter(Boolean);
 }
 
-function addInitialSkillList(target, rawSkills) {
+function addInitialSkillList(target, rawSkills, sourceLabel) {
   for (const rawSkill of Array.isArray(rawSkills) ? rawSkills : []) {
     const skill = normalizeSkillSlug(rawSkill);
-    if (isActiveSkillSlug(skill)) target.add(skill);
+    addInitialSkillEntry(target, skill, sourceLabel);
   }
 }
 
-function addInitialSkillRuleTraining(target, item) {
+function addInitialSkillRuleTraining(target, item, sourceLabel) {
   for (const rule of item?.system?.rules ?? []) {
     if (rule?.key !== 'ActiveEffectLike') continue;
     if (!matchesRuleAtLevel(rule, 1)) continue;
@@ -977,14 +982,15 @@ function addInitialSkillRuleTraining(target, item) {
     if (!match) continue;
 
     const skill = normalizeSkillSlug(match[1]);
-    if (!isActiveSkillSlug(skill)) continue;
 
     const value = evaluateRuleNumericValue(rule.value, 1, item);
-    if (Number.isFinite(value) && value >= PROFICIENCY_RANKS.TRAINED) target.add(skill);
+    if (Number.isFinite(value) && value >= PROFICIENCY_RANKS.TRAINED) {
+      addInitialSkillEntry(target, skill, sourceLabel);
+    }
   }
 }
 
-function addExplicitDescriptionTraining(target, html) {
+function addExplicitDescriptionTraining(target, html, sourceLabel) {
   const description = String(html ?? '')
     .replace(/<[^>]+>/g, ' ')
     .replace(/\s+/g, ' ')
@@ -996,9 +1002,23 @@ function addExplicitDescriptionTraining(target, html) {
   for (const clause of clauses) {
     if (/\b(?:your\s+choice\s+of|choice\s+of|skill\s+of\s+your\s+choice|chosen\s+skill|skill\s+you\s+chose)\b/u.test(clause)) continue;
     for (const skill of getActiveSkillSlugs()) {
-      if (skillNameAppearsInClause(skill, clause)) target.add(skill);
+      if (skillNameAppearsInClause(skill, clause)) addInitialSkillEntry(target, skill, sourceLabel);
     }
   }
+}
+
+function addInitialSkillEntry(target, rawSkill, sourceLabel) {
+  const skill = normalizeSkillSlug(rawSkill);
+  if (!isActiveSkillSlug(skill) || target.has(skill)) return;
+  target.set(skill, {
+    skill,
+    sourceLabel: sourceLabel || 'Automatic',
+  });
+}
+
+function getSourceLabel(source, fallback) {
+  const name = String(source?.name ?? '').trim();
+  return name || fallback;
 }
 
 function skillNameAppearsInClause(skill, clause) {

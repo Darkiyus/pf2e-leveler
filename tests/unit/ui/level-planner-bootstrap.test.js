@@ -1237,7 +1237,7 @@ describe('LevelPlanner bootstrap from existing actor', () => {
     expect(content).toContain('Crafting');
     expect(content).toContain('data-imported-initial-skill-automatic="true"');
     expect(content).toContain('data-imported-initial-skill-automatic-input="true"');
-    expect(content).toContain('Automatic');
+    expect(content).toContain('Alchemist');
     expect(content).toContain('data-imported-initial-skills');
     expect(content).toContain('pf2e-leveler imported-initial-skills-dialog');
     expect(content).toContain('imported-initial-skill-card');
