@@ -538,7 +538,7 @@ export async function buildInitialSkillChoiceSetsAndFallbacks(planner) {
   const activeSkillSlugs = getActiveSkillSlugs();
 
   // Track skills encountered from previous items to detect duplicates between background/subclass
-  const encounteredSkills = new Set(automaticSkills);
+  const encounteredSkills = getFixedInitialSkillSet(planner, classDef);
   let fallbackIndex = 0;
 
   for (const item of sourceItems) {
@@ -555,10 +555,10 @@ export async function buildInitialSkillChoiceSetsAndFallbacks(planner) {
     fallbackIndex += itemFallbacks.length;
 
     // Check for duplicate skills granted by this item that were already encountered from previous items
-    const grantedSkills = extractGrantedSkillsFromRules(itemRules);
+    const grantedSkills = extractInitialSkillGrantsFromItem(item, itemRules);
     for (const skill of grantedSkills) {
       // If this skill was already granted by a previous item (not this one), create a fallback
-      if (encounteredSkills.has(skill) && !automaticSkills.has(skill)) {
+      if (encounteredSkills.has(skill)) {
         const flag = `duplicateSkillFallback_${itemUuid}_${skill}`;
         const selectedValue = storedChoices?.[flag] ?? null;
         const availableSkills = activeSkillSlugs.filter((slug) =>
@@ -591,12 +591,29 @@ export async function buildInitialSkillChoiceSetsAndFallbacks(planner) {
   return { choiceSets, fallbacks };
 }
 
+function getFixedInitialSkillSet(planner, classDef = null) {
+  const skills = new Set();
+  addInitialSkillGrantsToSet(skills, planner.actor?.class?.system?.trainedSkills?.value);
+  for (const entry of Array.isArray(classDef) ? classDef.filter(Boolean) : [classDef].filter(Boolean)) {
+    addInitialSkillGrantsToSet(skills, entry?.trainedSkills?.fixed);
+  }
+  return skills;
+}
+
+function addInitialSkillGrantsToSet(target, rawSkills) {
+  for (const rawSkill of Array.isArray(rawSkills) ? rawSkills : []) {
+    const skill = normalizeSkillSlug(rawSkill);
+    if (isActiveSkillSlug(skill)) target.add(skill);
+  }
+}
+
 async function extractInitialSkillChoiceSets(item, rules, storedChoices, activeSkillSlugs, sourceName) {
   const choiceSets = [];
   const itemUuid = item?.uuid ?? null;
 
   for (const rule of rules) {
     if (rule?.key !== 'ChoiceSet') continue;
+    if (isNativeBackgroundSkillChoiceRule(item, rule)) continue;
 
     const options = await resolveChoiceSetSkillOptions(rule, activeSkillSlugs);
     if (options.length === 0) continue;
@@ -621,6 +638,20 @@ async function extractInitialSkillChoiceSets(item, rules, storedChoices, activeS
   }
 
   return choiceSets;
+}
+
+function isNativeBackgroundSkillChoiceRule(item, rule) {
+  return String(item?.type ?? item?.itemType ?? '').trim().toLowerCase() === 'background'
+    && String(rule?.prompt ?? '') === 'PF2E.SpecificRule.Prompt.Skill'
+    && hasStoredBackgroundSkillChoice(item, rule);
+}
+
+function hasStoredBackgroundSkillChoice(item, rule) {
+  const flag = rule?.flag ?? rule?.rollOption;
+  if (!flag) return false;
+  const rawSkill = item?.flags?.pf2e?.rulesSelections?.[flag]
+    ?? item?.flags?.system?.rulesSelections?.[flag];
+  return isActiveSkillSlug(normalizeSkillSlug(rawSkill));
 }
 
 async function resolveChoiceSetSkillOptions(rule, activeSkillSlugs) {
@@ -708,6 +739,13 @@ function hasSkillFallbackText(description) {
     /for each of (?:these|those) skills in which you were already trained,?\s+you instead become trained in a skill of your choice\.?/,
     /if you were already trained in both,?\s+you become trained in a skill of your choice\.?/,
   ].some((pattern) => pattern.test(description));
+}
+
+function extractInitialSkillGrantsFromItem(item, rules) {
+  const skills = new Set();
+  addInitialSkillGrantsToSet(skills, item?.system?.trainedSkills?.value);
+  addInitialSkillGrantsToSet(skills, extractGrantedSkillsFromRules(rules));
+  return [...skills];
 }
 
 function extractGrantedSkillsFromRules(rules) {

@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.4.24
+
+### Level Planner
+
+- **Starting Skill Training no longer duplicates known background skill prompts** - Imported high-level actors now use PF2e's stored background `rulesSelections` to recognize selected background skill choices, keep the manual prompt only when that source data is missing, and still offer replacement skill selections when background, class, and subclass starting skill grants overlap
+
 ## 3.4.23
 
 ### Level Planner

@@ -281,65 +281,69 @@ recommend splitting it along real responsibility boundaries.
 <claude-mem-context>
 # Memory Context
 
-# [pf2e-leveler] recent context, 2026-04-23 4:09pm GMT+3
+# [pf2e-leveler] recent context, 2026-05-27 8:25am GMT+3
 
-Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision
+Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (17,737t read) | 616,036t work | 97% savings
+Stats: 50 obs (20,724t read) | 492,859t work | 96% savings
 
 ### Apr 23, 2026
-544 3:34p 🔵 Spell Picker Task 3 Approved: Spec Compliant
-545 " 🔵 Spell Picker Task 3 Spec Compliance Review — All Three Files Read
-546 " 🔵 Spell Picker Task 3 — All 29 Tests Pass
-547 " 🔵 Agent Pool Hard Limit: 6 Concurrent Threads Maximum
-548 3:35p 🔵 Spell Picker Task 3 Code Quality Review Initiated
-549 " 🔵 SpellPicker Task 3: Architecture and Fast-Path Publication Sync
-550 " 🔵 SpellPicker Task 3: Template Structure Verified
-551 " 🔵 SpellPicker Task 3: Test Suite Coverage Assessment
-552 3:36p 🔵 Critical Bug Confirmed: Rarity Chip Toggle Fires Twice, Cancels Itself
-553 " 🔵 picker-utils.js Shared Utility Layer Confirmed Robust
-554 " 🔵 SpellPicker Event Delegation Confirmed Superior to FeatPicker Pattern
-556 " 🔵 Spell-Picker Tests Pass Clean; ESLint Zero Errors; Prettier HBS Attribute Block Known Limitation
-557 " 🔵 _publicationFilterInitialized Flag Is Dead State in Both Pickers
-555 " 🔵 Task 3 Code Quality Review Agent Timed Out (120s)
-558 3:37p 🔵 FeatPicker Has No Fast-Path _updateList — SpellPicker's Fast Path Is a New Capability
-559 " 🔵 Publication Filtering Describe Block Covers OR Logic and DOM Click Path
-560 " 🔵 Spell Picker Task 3 Code Quality Review: Approved with Minor Caveats
-561 3:38p ✅ Picker Redesign: Task 4 (Shared CSS Density Pass) Started
-563 " 🔵 Task 4 picker tests: 4 compact-styling tests failing pre-implementation
-564 " 🔵 jsdom getComputedStyle returning 16px vertical spacing on picker-search-row
-565 " 🔵 CSS file update alone cannot fix jsdom computed style — inline injection required
-566 " 🔵 Inline style attributes on picker-search-row not reflected by jsdom getComputedStyle
-567 " 🔵 jsdom does read inline styles when element attached to body — styles are correct, test setup must be the issue
-562 3:43p 🔵 Subagent timeout in pf2e-leveler session
-571 " 🔵 jest config lives in jest.config.js not package.json — setupFilesAfterFramework typo is inert
-572 " 🔵 jsdom returns 8px for all four spacing props despite inline style="margin:0;padding:4px" — UA stylesheet overriding inline styles
-573 " 🔴 Compact styling tests pass after switching from inline template-literal styles to post-render JS style assignment
-574 " 🟣 Task 4 complete: shared compact picker styling for feat and spell pickers
-568 3:44p 🟣 Compact picker-shell styling added to feat and spell pickers
-569 " 🟣 Collapsible publications section added to feat and spell picker sidebars
-570 " 🔵 JS source files modified beyond what subagent reported
-575 3:53p 🔵 buildPublicationFilterSectionState extracted to shared picker-utils.js
-576 " 🔄 Removed _publicationFilterInitialized flag and duplicate test assignments
-577 " 🔵 Test failure after duplicate-assignment cleanup: activeCount returns 0 instead of 1
-578 3:54p 🔴 Test fix: createFeat doesn't propagate publicationTitle, must be set post-construction
-579 " 🔵 Full test suite green after all cleanup: 73 suites, 1061 tests pass
-580 4:02p 🟣 Chevron Indicator for Collapsed Sections
-581 " 🔵 Existing Collapsed Section Toggle Infrastructure in pf2e-leveler
-582 " 🔵 picker__section-toggle Button Structure — No Chevron Icon Present
-583 4:03p 🔄 feat-picker OPTIONS Group Restructured to Inline Label Layout
-584 " 🟣 CSS Added for Inline Label Layout Modifiers in Picker Filter Groups
-585 4:04p 🔵 feat-picker Tests Pass Clean After OPTIONS Group Restructure
-586 " 🔄 Sort Filter Groups Converted to Inline Label Layout in Both Pickers
-587 " 🔵 Both Picker Test Suites Pass After Sort Group Inline Label Refactor
-588 4:05p 🔵 Test Files Contain Hardcoded Section Toggle HTML — Must Update When Chevrons Added
-589 4:06p 🟣 Chevron Icons Added to Collapsible Section Toggles in feat-picker and spell-picker
-590 " 🔵 Chevron Feature Passes All Tests — 78/78 Green
+590 4:06p 🔵 Chevron Feature Passes All Tests — 78/78 Green
 591 " ✅ Inline Label Row CSS Refined for Label/Select Flex Sizing
 592 4:07p 🔄 LEVEL_RANGE Filter Group Converted to Inline Label Layout in feat-picker
 593 4:09p 🟣 LEVEL_RANGE Filter Redesigned as Compact Min–Max Range Selector
+594 4:10p 🔄 Skill Filter Group Moved Earlier in feat-picker Sidebar Order
+595 4:11p 🔵 Final feat-picker.hbs Sidebar Structure Confirmed
+596 " 🔄 Utility Controls Moved After Skill Filter Group in feat-picker
+597 4:12p 🔵 Duplicate Patch Application Detected — write_file and apply_patch Both Fired
+### May 3, 2026
+842 1:41p 🟣 Level Retrain Feature Requested for pf2e-leveler FoundryVTT Module
+843 " 🔵 pf2e-leveler Codebase Structure Mapped for Retrain Feature
+844 1:42p 🔵 Level Planner Architecture Deep-Dive: Key Integration Points for Retrain Feature
+S120 Feat retraining implementation for pf2e-leveler — Task 2 complete (validator + apply), Task 3 (planner UI) in progress (May 3 at 1:42 PM)
+### May 10, 2026
+1519 8:05a 🔵 pf2e-hud-colors Module Breaks Level Icons in Foundry VTT v13 Title Bar
+1520 " 🔵 pf2e-leveler Sheet Integration Injects Header Buttons Using Legacy jQuery on renderCharacterSheetPF2e
+1521 8:06a 🔵 pf2e-hud-colors CSS Contains No Layout/Visibility Rules — Unlikely to Cause Icon Disappearance
+1522 " 🔵 pf2e-hud-colors CSS Fully Scoped to [id^=pf2e-hud] — Definitively Ruled Out as Cause of Missing Level Icons
+1523 8:07a 🔵 pf2e-hud Module Has renderActorSheet Hook in TokenPF2eHUD and Uses libWrapper — Most Likely Root Cause
+1524 8:08a 🔵 TokenPF2eHUD #onRenderActorSheet Handler Is Definitively Benign — Only Closes HUD, Never Touches Sheet DOM
+1525 " 🔵 pf2e-leveler Sheet Button Injection: Complete Logic Confirmed — isPF2eHudElement Guard Uses [class*="pf2e-hud"] Substring Match
+1526 8:09a 🔵 pf2e-leveler Has Unit Tests for Sheet Integration Including isActorCharacterSheetApplication and Button Injection
+1535 8:24a ✅ Patch version bump and changelog entry for sheet-integration
+1538 " 🔵 pf2e-leveler module current version is 3.4.6, changelog exists
+1540 " 🔵 pf2e-leveler 3.4.6 changelog entry is the sheet-integration ApplicationV2 fix
+1542 8:25a ✅ pf2e-leveler bumped to 3.4.7 with HUD false-positive sheet-detection fix
+### May 27, 2026
+6140 7:59a 🔵 Bug Identified: Duplicate Skill Selection During Background Step in Character Wizard
+6142 " 🔵 Root Cause Located: Skill Toggle Listener Fires During Background Step
+6144 8:00a 🔵 Synthetic Skill Choice Sets Generated from Background Item Descriptions
+6147 " 🔵 setBackground Clears and Rebuilds grantedFeatSections Including Skill Choice Sets
+6148 8:01a 🔵 Background Data Model Stores Background-Level ChoiceSet Selections in background.choices
+6149 " 🔴 TDD Failing Test Written: Background Native Skill ChoiceSets Incorrectly Added to grantedFeatSections
+6150 " 🔴 Fixed: Background Native Skill ChoiceSets Now Filtered from grantedFeatSections
+6151 8:02a 🔴 Bug Fix Verified: Targeted Test Passes, Full Suite Running
+6152 " 🔴 Fix Caused 6 Regressions: Scholar Background Assurance Constraint System Broken
+6153 " 🔴 Final Fix Verified: All 129 Tests Pass with Refined isNativeBackgroundSkillChoiceSet Guard
+6154 " 🔴 Full Test Suite and Lint Pass: Background Skill ChoiceSet Fix Fully Verified
+6155 8:03a 🔴 Complete Validation: 1438 Tests and Full ESLint Pass Confirm Clean Fix
+6156 " 🔵 Template Confirms Skills UI Correctly Gated to skills Step — Background Step Bug Was Only in grantedFeatSections
+6173 8:19a 🔵 SUBCLASS_TAGS constant maps PF2e class slugs to tag families
+6174 " 🔵 Complete SUBCLASS_TAGS list in scripts/constants.js
+6175 " 🟣 Added tests for subclass-granted skill duplicate detection in imported skill dialog
+6176 " 🔵 All 3 duplicate-skill dialog tests pass without production code changes
+6177 8:20a ✅ Full test suite and lint pass after adding subclass skill duplicate tests
+6178 " 🟣 Subclass duplicate-skill test coverage added; full suite green at 1441 tests
+6179 " 🔵 Broader staged changes reveal prior production code edit in context.js alongside test work
+6180 " 🔵 context.js extractInitialSkillChoiceSets skips native background skill rules explicitly
+6181 " 🔵 isNativeBackgroundSkillChoiceRule detects background skill prompts by item type + rule prompt string
+6182 8:21a 🟣 Added test for background ChoiceSet skill prompt shown when no prior selection exists
+6183 " 🔴 isNativeBackgroundSkillChoiceRule now requires a stored selection before suppressing background skill prompts
+6184 " 🟣 Complete unstaged diff: context.js bugfix + 177 new test lines covering all skill conflict scenarios
+6185 " 🟣 Full suite green at 1443 tests after context.js bugfix and 3 new skill conflict test scenarios
+6186 8:22a 🔵 Full change set breakdown: staged vs unstaged across all three modified files
 
-Access 616k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 493k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

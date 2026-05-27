@@ -1303,6 +1303,283 @@ describe('LevelPlanner bootstrap from existing actor', () => {
     expect(savePlan).toHaveBeenCalledWith(actor, planner.plan);
   });
 
+  it('does not duplicate native background skill prompts in the imported starting skill dialog', async () => {
+    const actor = createMockActor({
+      system: {
+        details: {
+          level: { value: 8 },
+          xp: { value: 0, max: 1000 },
+        },
+      },
+      background: {
+        uuid: 'Compendium.pf2e.backgrounds-srd.Item.animal-wrangler',
+        name: 'Animal Wrangler',
+        type: 'background',
+        flags: {
+          pf2e: {
+            rulesSelections: {
+              skill: 'athletics',
+            },
+          },
+        },
+        system: {
+          rules: [
+            {
+              key: 'ChoiceSet',
+              flag: 'skill',
+              prompt: 'PF2E.SpecificRule.Prompt.Skill',
+              choices: [
+                { value: 'athletics', label: 'Athletics' },
+                { value: 'nature', label: 'Nature' },
+              ],
+            },
+            {
+              key: 'ActiveEffectLike',
+              path: 'system.skills.{item|flags.pf2e.rulesSelections.skill}.rank',
+              value: 1,
+            },
+          ],
+        },
+      },
+    });
+    actor.class.slug = 'alchemist';
+    actor.class.system.trainedSkills = { value: ['crafting'], additional: 3 };
+    actor.items = [];
+
+    const planner = new LevelPlanner(actor);
+    planner.plan = {
+      ...createPlan('alchemist'),
+      importedFromActor: {
+        actorLevel: 8,
+        hideHistoricalSkillIncreases: true,
+        initialSkills: ['athletics'],
+      },
+    };
+    const prompt = jest.fn(async (config) => ({ skills: ['athletics'], choiceSelections: {} }));
+    global.foundry.applications.api.DialogV2 = { prompt };
+
+    await planner._openImportedInitialSkillDialog();
+
+    const content = prompt.mock.calls[0][0].content;
+    expect(content).toContain('Starting Skill Training');
+    expect(content).not.toContain('Animal Wrangler - Skill Choices');
+    expect(content).not.toContain('PF2E.SpecificRule.Prompt.Skill');
+  });
+
+  it('keeps native background skill prompts in the imported starting skill dialog when no stored selection exists', async () => {
+    const actor = createMockActor({
+      system: {
+        details: {
+          level: { value: 8 },
+          xp: { value: 0, max: 1000 },
+        },
+      },
+      background: {
+        uuid: 'Compendium.pf2e.backgrounds-srd.Item.animal-wrangler',
+        name: 'Animal Wrangler',
+        type: 'background',
+        system: {
+          rules: [
+            {
+              key: 'ChoiceSet',
+              flag: 'skill',
+              prompt: 'PF2E.SpecificRule.Prompt.Skill',
+              choices: [
+                { value: 'athletics', label: 'Athletics' },
+                { value: 'nature', label: 'Nature' },
+              ],
+            },
+            {
+              key: 'ActiveEffectLike',
+              path: 'system.skills.{item|flags.pf2e.rulesSelections.skill}.rank',
+              value: 1,
+            },
+          ],
+        },
+      },
+    });
+    actor.class.slug = 'alchemist';
+    actor.class.system.trainedSkills = { value: ['crafting'], additional: 3 };
+    actor.items = [actor.background];
+
+    const planner = new LevelPlanner(actor);
+    planner.plan = {
+      ...createPlan('alchemist'),
+      importedFromActor: {
+        actorLevel: 8,
+        hideHistoricalSkillIncreases: true,
+        initialSkills: [],
+      },
+    };
+    const prompt = jest.fn(async (config) => ({ skills: [], choiceSelections: {} }));
+    global.foundry.applications.api.DialogV2 = { prompt };
+
+    await planner._openImportedInitialSkillDialog();
+
+    const content = prompt.mock.calls[0][0].content;
+    expect(content).toContain('Animal Wrangler - Skill Choices');
+    expect(content).toContain('PF2E.SpecificRule.Prompt.Skill');
+    expect(content).toContain('data-initial-skill-choice-flag="skill"');
+  });
+
+  it('offers a replacement initial skill when background and class grant the same skill', async () => {
+    const actor = createMockActor({
+      system: {
+        details: {
+          level: { value: 8 },
+          xp: { value: 0, max: 1000 },
+        },
+      },
+      background: {
+        uuid: 'Compendium.pf2e.backgrounds-srd.Item.warrior',
+        name: 'Warrior',
+        type: 'background',
+        system: {
+          trainedSkills: { value: ['athletics'] },
+          rules: [
+            {
+              key: 'ActiveEffectLike',
+              path: 'system.skills.athletics.rank',
+              value: 1,
+            },
+          ],
+        },
+      },
+    });
+    actor.class.slug = 'fighter';
+    actor.class.name = 'Fighter';
+    actor.class.system.trainedSkills = { value: ['athletics'], additional: 3 };
+    actor.items = [actor.background];
+
+    const planner = new LevelPlanner(actor);
+    planner.plan = {
+      ...createPlan('fighter'),
+      importedFromActor: {
+        actorLevel: 8,
+        hideHistoricalSkillIncreases: true,
+        initialSkills: [],
+      },
+    };
+    const prompt = jest.fn(async (config) => ({ skills: [], choiceSelections: {} }));
+    global.foundry.applications.api.DialogV2 = { prompt };
+
+    await planner._openImportedInitialSkillDialog();
+
+    const content = prompt.mock.calls[0][0].content;
+    expect(content).toContain('Warrior - Skill Choices');
+    expect(content).toContain('Select a replacement skill (Athletics already granted)');
+    expect(content).toContain('data-initial-skill-choice-flag="duplicateSkillFallback_Compendium.pf2e.backgrounds-srd.Item.warrior_athletics"');
+  });
+
+  it('offers a replacement initial skill when background and subclass grant the same skill', async () => {
+    const actor = createMockActor({
+      system: {
+        details: {
+          level: { value: 8 },
+          xp: { value: 0, max: 1000 },
+        },
+      },
+      background: {
+        uuid: 'Compendium.pf2e.backgrounds-srd.Item.field-medic',
+        name: 'Field Medic',
+        type: 'background',
+        system: {
+          trainedSkills: { value: ['medicine'] },
+        },
+      },
+    });
+    actor.class.slug = 'alchemist';
+    actor.class.name = 'Alchemist';
+    actor.class.system.trainedSkills = { value: ['crafting'], additional: 3 };
+    actor.items = [
+      actor.background,
+      {
+        uuid: 'Compendium.pf2e.classfeatures.Item.chirurgeon',
+        name: 'Chirurgeon',
+        type: 'feat',
+        system: {
+          traits: { otherTags: ['alchemist-research-field'] },
+          rules: [
+            {
+              key: 'ActiveEffectLike',
+              path: 'system.skills.medicine.rank',
+              value: 1,
+            },
+          ],
+        },
+      },
+    ];
+
+    const planner = new LevelPlanner(actor);
+    planner.plan = {
+      ...createPlan('alchemist'),
+      importedFromActor: {
+        actorLevel: 8,
+        hideHistoricalSkillIncreases: true,
+        initialSkills: [],
+      },
+    };
+    const prompt = jest.fn(async (config) => ({ skills: [], choiceSelections: {} }));
+    global.foundry.applications.api.DialogV2 = { prompt };
+
+    await planner._openImportedInitialSkillDialog();
+
+    const content = prompt.mock.calls[0][0].content;
+    expect(content).toContain('Chirurgeon - Skill Choices');
+    expect(content).toContain('Select a replacement skill (Medicine already granted)');
+    expect(content).toContain('data-initial-skill-choice-flag="duplicateSkillFallback_Compendium.pf2e.classfeatures.Item.chirurgeon_medicine"');
+  });
+
+  it('offers a replacement initial skill when subclass and class grant the same skill', async () => {
+    const actor = createMockActor({
+      system: {
+        details: {
+          level: { value: 8 },
+          xp: { value: 0, max: 1000 },
+        },
+      },
+    });
+    actor.class.slug = 'alchemist';
+    actor.class.name = 'Alchemist';
+    actor.class.system.trainedSkills = { value: ['crafting'], additional: 3 };
+    actor.items = [
+      {
+        uuid: 'Compendium.pf2e.classfeatures.Item.field-discovery',
+        name: 'Field Discovery',
+        type: 'feat',
+        system: {
+          traits: { otherTags: ['alchemist-research-field'] },
+          rules: [
+            {
+              key: 'ActiveEffectLike',
+              path: 'system.skills.crafting.rank',
+              value: 1,
+            },
+          ],
+        },
+      },
+    ];
+
+    const planner = new LevelPlanner(actor);
+    planner.plan = {
+      ...createPlan('alchemist'),
+      importedFromActor: {
+        actorLevel: 8,
+        hideHistoricalSkillIncreases: true,
+        initialSkills: [],
+      },
+    };
+    const prompt = jest.fn(async (config) => ({ skills: [], choiceSelections: {} }));
+    global.foundry.applications.api.DialogV2 = { prompt };
+
+    await planner._openImportedInitialSkillDialog();
+
+    const content = prompt.mock.calls[0][0].content;
+    expect(content).toContain('Field Discovery - Skill Choices');
+    expect(content).toContain('Select a replacement skill (Crafting already granted)');
+    expect(content).toContain('data-initial-skill-choice-flag="duplicateSkillFallback_Compendium.pf2e.classfeatures.Item.field-discovery_crafting"');
+  });
+
   it('keeps imported starting skill dialog content within the Foundry prompt width', () => {
     const css = readFileSync('styles/level-planner.css', 'utf8');
 
