@@ -9,7 +9,7 @@ import {
   setLevelSkillIncrease,
   togglePlanApparition,
 } from '../../plan/plan-model.js';
-import { applyActorSkillRankRules, applyPlannedLevelSkillRankRules, computeBuildState, computeSkillPickerState, getImportedInitialSkillTraining, isImportedHistoricalSkillLevel } from '../../plan/build-state.js';
+import { applyActorSkillRankRules, applyPlannedLevelSkillRankRules, computeBuildState, computeSkillPickerState, getImportedInitialSkillChoiceTraining, getImportedInitialSkillTraining, isImportedHistoricalSkillLevel } from '../../plan/build-state.js';
 import { ClassRegistry } from '../../classes/registry.js';
 import { normalizeLoreSkillName, slugifyLoreSkillName } from '../character-wizard/skills-languages.js';
 import { getMaxSkillRank } from '../../utils/pf2e-api.js';
@@ -506,7 +506,10 @@ function getHistoricalSelectableSkillRank(planner, slug) {
 }
 
 function getHistoricalInitialSkillTraining(planner) {
-  const skills = new Set(getImportedInitialSkillTraining(planner.plan));
+  const skills = new Set([
+    ...getImportedInitialSkillTraining(planner.plan),
+    ...getImportedInitialSkillChoiceTraining(planner.plan),
+  ]);
   const creationData = getCreationData(planner.actor);
   for (const rawSkill of creationData?.skills ?? []) {
     const skill = normalizeSkillSlug(rawSkill);

@@ -1,6 +1,6 @@
 import { ATTRIBUTES, MIN_PLAN_LEVEL, PROFICIENCY_RANK_NAMES, SKILLS } from '../../constants.js';
 import { getGradualBoostGroupLevels } from '../../classes/progression.js';
-import { computeBuildState, computeSkillPickerState, getAutomaticInitialLoreTraining, getAutomaticInitialSkillTrainingEntries, getImportedInitialSkillLimit, getImportedInitialSkillTraining, getInitialSkillSourceItems, getIntelligenceBenefitCount, isImportedHistoricalSkillLevel } from '../../plan/build-state.js';
+import { computeBuildState, computeSkillPickerState, getAutomaticInitialLoreTraining, getAutomaticInitialSkillTrainingEntries, getImportedInitialSkillChoiceTraining, getImportedInitialSkillLimit, getImportedInitialSkillTraining, getInitialSkillSourceItems, getIntelligenceBenefitCount, isImportedHistoricalSkillLevel } from '../../plan/build-state.js';
 import { getMaxSkillRank } from '../../utils/pf2e-api.js';
 import { ClassRegistry } from '../../classes/registry.js';
 import { annotateGuidanceBySlug, filterDisallowedForCurrentUser } from '../../access/content-guidance.js';
@@ -569,7 +569,7 @@ export function shouldShowImportedInitialSkillButton(planner, level) {
 
 export function buildImportedInitialSkillContext(planner) {
   const automatic = getAutomaticInitialSkillMap(planner);
-  const selected = new Set(getHistoricalInitialSkillTraining(planner).filter((skill) => !automatic.has(skill)));
+  const selected = new Set(getManualHistoricalInitialSkillTraining(planner).filter((skill) => !automatic.has(skill)));
   const limit = getImportedInitialSkillLimit(planner.actor, ClassRegistry.get(planner.plan?.classSlug));
   const count = selected.size;
   const limitReached = limit > 0 && count >= limit;
@@ -591,7 +591,7 @@ export function buildImportedInitialSkillContext(planner) {
 export function buildImportedInitialSkillSummary(planner) {
   const limit = getImportedInitialSkillLimit(planner.actor, ClassRegistry.get(planner.plan?.classSlug));
   const automatic = getAutomaticInitialSkillSet(planner);
-  const count = getHistoricalInitialSkillTraining(planner).filter((skill) => !automatic.has(skill)).length;
+  const count = getManualHistoricalInitialSkillTraining(planner).filter((skill) => !automatic.has(skill)).length;
   return {
     importedInitialSkillCount: count,
     importedInitialSkillLimit: limit,
@@ -600,6 +600,14 @@ export function buildImportedInitialSkillSummary(planner) {
 }
 
 function getHistoricalInitialSkillTraining(planner) {
+  const skills = new Set(getManualHistoricalInitialSkillTraining(planner));
+  for (const skill of getImportedInitialSkillChoiceTraining(planner.plan)) {
+    if (isActiveSkillSlug(skill)) skills.add(skill);
+  }
+  return [...skills].sort((a, b) => a.localeCompare(b));
+}
+
+function getManualHistoricalInitialSkillTraining(planner) {
   const skills = new Set(getImportedInitialSkillTraining(planner.plan));
   const creationData = getCreationData(planner.actor);
   for (const rawSkill of creationData?.skills ?? []) {

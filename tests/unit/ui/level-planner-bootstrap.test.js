@@ -1776,7 +1776,7 @@ describe('LevelPlanner bootstrap from existing actor', () => {
 
       fallbackSelects[1].value = 'athletics';
       fallbackSelects[1].dispatchEvent(new Event('change', { bubbles: true }));
-      expect(container.querySelector('[data-imported-initial-skill-count]').textContent).toBe('3');
+      expect(container.querySelector('[data-imported-initial-skill-count]').textContent).toBe('1');
       expect(container.querySelector('input[name="importedInitialSkills"][value="athletics"]').checked).toBe(true);
       expect(container.querySelector('input[name="importedInitialSkills"][value="athletics"]').disabled).toBe(true);
       return config.ok.callback(null, null, { element: container });
@@ -1791,7 +1791,7 @@ describe('LevelPlanner bootstrap from existing actor', () => {
     expect(content).toContain('<span data-imported-initial-skill-count>0</span>/8');
     expect(content.match(/Select a replacement skill \(Crafting already (?:trained|granted)\)/g)).toHaveLength(2);
     expect(content).not.toContain('duplicateSkillFallback_Compendium.pf2e.feats-srd.Item.alchemist-dedication_crafting');
-    expect(planner.plan.importedFromActor.initialSkills).toEqual(['acrobatics', 'athletics', 'medicine']);
+    expect(planner.plan.importedFromActor.initialSkills).toEqual(['medicine']);
     expect(Object.values(planner.plan.importedFromActor.initialSkillChoices)).toEqual(['acrobatics', 'athletics']);
   });
 

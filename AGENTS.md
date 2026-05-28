@@ -281,13 +281,13 @@ recommend splitting it along real responsibility boundaries.
 <claude-mem-context>
 # Memory Context
 
-# [pf2e-leveler] recent context, 2026-05-28 1:37pm GMT+3
+# [pf2e-leveler] recent context, 2026-05-28 1:48pm GMT+3
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (21,242t read) | 291,990t work | 93% savings
+Stats: 50 obs (20,315t read) | 234,093t work | 91% savings
 
 ### May 3, 2026
 S834 Free Heart Background: Prompt for untrained skill replacement when background grants an already-trained skill (May 3 at 1:42 PM)
@@ -295,19 +295,7 @@ S120 Feat retraining implementation for pf2e-leveler — Task 2 complete (valida
 ### May 28, 2026
 S835 Free Heart Background: Prompt for untrained skill replacement when background grants an already-trained skill (May 28 at 7:52 AM)
 S836 Free Heart Background: Prompt for untrained skill replacement when background grants an already-trained skill (May 28 at 7:57 AM)
-6874 9:54a 🔵 Full Test Suite Passes for 3.4.30 Release
-6906 10:08a ⚖️ Extend Feat Fix to Cover "Additional Lore" Feats Like Operatic Adventurer
-6908 10:09a 🔵 getDerivedFeatLoreRules Already Covers Operatic Adventurer; Fix Was Broader Than Initially Stated
-6909 " 🟣 Test Added for Same-Level Derived Feat Lore in Skill Increase Picker (Operatic Adventurer)
-6910 " ✅ CHANGELOG Updated to Reflect Broader Same-Level Lore Fix Scope
-6981 12:30p 🔵 pf2e-leveler Initial Skill Import System Architecture
-6982 " 🔵 Initial Skill Import Dialog: Duplicate-Skill Fallback Detection Architecture
-6983 12:31p 🔵 `getImportedInitialSkillLimit` Has No Class-Specific Branching
-6984 12:32p 🔵 INVESTIGATOR Class Definition and Rule Extraction Discrepancy Between context.js and build-state.js
-6986 " 🔵 Initial Skill Dialog Selection Normalization: Fallback Choices Count Against Flexible Pick Limit
-6988 12:33p 🔵 Two Divergent `reverseApplyAbilityBoost` Implementations
-6991 12:34p 🔴 Fixed `getLevelOneIntModifier` Over-Subtracting INT When Modifier Sits at the Ability Score Cap Boundary
-6993 " 🔴 Prevent Duplicate Fallback Prompts When Description-Text and Rule-Based Detection Both Fire
+6993 12:34p 🔴 Prevent Duplicate Fallback Prompts When Description-Text and Rule-Based Detection Both Fire
 6994 " 🔴 Test Mock Actor Missing `abilities`/`build` Properties for INT Boost Test
 6996 12:35p ✅ All Tests Green — Preparing Changelog Entry for v3.4.31
 6997 " ✅ pf2e-leveler Released as v3.4.31
@@ -345,6 +333,18 @@ S836 Free Heart Background: Prompt for untrained skill replacement when backgrou
 7059 1:35p 🟣 Test Expanded: Manually-Checked Skill Cards Should Also Disable That Skill in Fallback Dropdowns
 7060 " 🟣 Bidirectional Skill Card / Fallback Dropdown Sync Implemented
 7061 1:36p 🟣 Full Bootstrap Suite Passes After Bidirectional Sync: 92/92 Tests, Lint Clean
+7064 1:38p 🔵 CHANGELOG.md v3.4.31 Entry Is Incomplete — Does Not Reflect Full Dialog Overhaul Done This Session
+7065 " ✅ Version Bumped to 3.4.32 — New Changelog Entry Added for Starting Skill Dialog Overhaul
+7066 1:39p ✅ v3.4.32 Version Consistency Verified — Module Manifest Test Passes
+7068 " ✅ All Changes Committed — Working Tree Clean at v3.4.32
+7070 1:46p ⚖️ Reconsidering Whether Dedication Fallback Skills Count Toward 0/8 Starting Skill Limit
+7071 " 🔵 importedFromActor.initialSkills Data Model Governs 0/8 Starting Skill Counter
+7072 1:47p 🔴 Dedication Fallback Replacement Skills No Longer Count Against 0/8 Starting Skill Limit
+7073 " 🔵 Test Failure: importedInitialSkillCount Still Includes Fallback Choice Skills After Refactor
+7074 " 🔴 Dialog Live Count Fixed: Fallback-Locked Inputs Excluded from checkedCount
+7075 " ✅ All Related Test Suites Pass After Dedication Fallback Skill Refactor
+7076 1:48p ✅ CHANGELOG v3.4.32 Updated to Reflect Correct Fallback Skill Behavior
+7077 " ✅ Full Test Suite Passes After Dedication Fallback Skill Refactor — 1474/1474
 
-Access 292k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 234k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

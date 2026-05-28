@@ -8,7 +8,7 @@ import {
   getFeatGrantCompletion,
   getFeatGrantSelections,
 } from '../../plan/feat-grants.js';
-import { computeBuildState, computeSkillPickerState, getAutomaticInitialSkillTraining, getImportedInitialSkillTraining } from '../../plan/build-state.js';
+import { computeBuildState, computeSkillPickerState, getAutomaticInitialSkillTraining, getImportedInitialSkillChoiceTraining, getImportedInitialSkillTraining } from '../../plan/build-state.js';
 import { isCantripExpansionFeat } from '../../plan/spellbook-feats.js';
 import { loadCompendium, loadCompendiumCategory, loadDeities, loadTaggedClassFeatures } from '../character-wizard/loaders.js';
 import { extractGrantedTrainedSkills, normalizePf2eCompendiumUuid, parseChoiceSets } from '../character-wizard/choice-sets.js';
@@ -201,7 +201,10 @@ export function buildSkillRetrainSources(planner, level) {
 function buildInitialSkillRetrainSources(planner) {
   const creationData = getCreationData(planner.actor);
   const creationSkills = Array.isArray(creationData?.skills) ? creationData.skills : [];
-  const importedInitialSkills = getImportedInitialSkillTraining(planner.plan);
+  const importedInitialSkills = [
+    ...getImportedInitialSkillTraining(planner.plan),
+    ...getImportedInitialSkillChoiceTraining(planner.plan),
+  ];
   const classDef = ClassRegistry.get(planner.plan?.classSlug);
   const automaticInitialSkills = getAutomaticInitialSkillTraining(planner.actor, planner.plan, classDef);
   const sources = [];
@@ -1075,7 +1078,10 @@ function getFreeHeartBackgroundPriorSkillRanks(planner, background) {
   }
 
   const creationData = getCreationData(planner.actor);
-  const initialSkillTraining = new Set(getImportedInitialSkillTraining(planner.plan));
+  const initialSkillTraining = new Set([
+    ...getImportedInitialSkillTraining(planner.plan),
+    ...getImportedInitialSkillChoiceTraining(planner.plan),
+  ]);
   for (const rawSkill of creationData?.skills ?? []) {
     const skill = normalizeSkillSlug(rawSkill);
     if (isActiveSkillSlug(skill)) initialSkillTraining.add(skill);

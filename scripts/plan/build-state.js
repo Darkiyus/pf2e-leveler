@@ -925,6 +925,15 @@ export function getImportedInitialSkillTraining(plan) {
   return [...skills].sort((a, b) => a.localeCompare(b));
 }
 
+export function getImportedInitialSkillChoiceTraining(plan) {
+  const skills = new Set();
+  for (const rawSkill of Object.values(plan?.importedFromActor?.initialSkillChoices ?? {})) {
+    const skill = normalizeSkillSlug(rawSkill);
+    if (isActiveSkillSlug(skill)) skills.add(skill);
+  }
+  return [...skills].sort((a, b) => a.localeCompare(b));
+}
+
 export function getImportedInitialSkillLimit(actor, classDef = null) {
   const actorClass = getActorClassItem(actor, classDef);
   const actorAdditional = Number(actorClass?.system?.trainedSkills?.additional ?? 0);

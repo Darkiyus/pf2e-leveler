@@ -3110,6 +3110,7 @@ function buildInitialSkillChoiceSetSections(choiceSets) {
 
 function readImportedInitialSkillDialogSelection(root) {
   const skills = Array.from(root?.querySelectorAll?.('input[name="importedInitialSkills"]:checked') ?? [])
+    .filter((input) => input.dataset.importedInitialSkillFallbackLocked !== 'true')
     .map((input) => input.value);
 
   const choiceSelections = {};
@@ -3146,12 +3147,6 @@ function normalizeImportedInitialSkillSelection(value, limit, excludedSkills = [
   for (const rawSkill of rawSkills) {
     const skill = normalizeSkillSlug(rawSkill);
     if (excluded.has(skill)) continue;
-    if (isActiveSkillSlug(skill)) selected.add(skill);
-  }
-
-  for (const choiceValue of Object.values(choiceSelections)) {
-    const skill = normalizeSkillSlug(choiceValue);
-    if (selected.has(skill)) continue;
     if (isActiveSkillSlug(skill)) selected.add(skill);
   }
 
@@ -3237,7 +3232,8 @@ function syncImportedInitialSkillDialog(root) {
     }
   }
 
-  const checkedCount = manualInputs.filter((input) => input.checked).length;
+  const checkedCount = manualInputs.filter((input) =>
+    input.checked && input.dataset.importedInitialSkillFallbackLocked !== 'true').length;
   const limitReached = limit > 0 && checkedCount >= limit;
 
   for (const input of inputs) {
