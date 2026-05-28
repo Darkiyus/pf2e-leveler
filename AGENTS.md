@@ -281,13 +281,13 @@ recommend splitting it along real responsibility boundaries.
 <claude-mem-context>
 # Memory Context
 
-# [pf2e-leveler] recent context, 2026-05-28 8:37am GMT+3
+# [pf2e-leveler] recent context, 2026-05-28 8:48am GMT+3
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (16,349t read) | 246,180t work | 93% savings
+Stats: 50 obs (16,306t read) | 758,989t work | 98% savings
 
 ### May 3, 2026
 S834 Free Heart Background: Prompt for untrained skill replacement when background grants an already-trained skill (May 3 at 1:42 PM)
@@ -295,23 +295,7 @@ S120 Feat retraining implementation for pf2e-leveler — Task 2 complete (valida
 ### May 28, 2026
 S835 Free Heart Background: Prompt for untrained skill replacement when background grants an already-trained skill (May 28 at 7:52 AM)
 S836 Free Heart Background: Prompt for untrained skill replacement when background grants an already-trained skill (May 28 at 7:57 AM)
-6722 8:17a 🔴 Added getGradualActorBoostForLevel to Reconstruct Per-Level Display From Group Bucket
-6723 " ✅ Full Suite Green: 1462 Tests, 86 Suites, Lint Clean After Gradual Boost Display Fix
-6724 8:18a 🔵 Potential Double-Counting Bug: getGradualActorBoostForLevel May Double-Apply Group Boosts in Baseline Reconstruction
-6725 " 🔵 Double-Counting Masked by buildReconstructedCurrentRawAttributes Correction Step
-6726 8:19a 🔵 New Partial Boost Test Fails: buildKnownInitialAttributeBaseline Returns null Without Ancestry/Background Setup
-6727 8:20a 🟣 buildKnownInitialAttributeBaseline Enhanced to Read PF2e Stored Build Boosts
-6728 " 🔴 Apply Manager Persists Choice Selections via flags.pf2e.rulesSelections When Applying Feats
-6729 " 🔵 createLevelUpMessage Includes Skill Grants From Lore Rules in 'Skill Increase' Section
-6730 8:21a 🟣 New Test for Free Heart Background Choice Summary in Chat Message - TDD Red Phase
-6731 " 🔵 Confirmed Red: Chat Message Shows Feat UUID Link But Not Choice Label
-6732 8:22a 🟣 buildAppliedFeatChatEntries Added to Resolve Item Choice Labels in Chat Message
-6733 " 🔴 Chat Message Format Mismatch: Implementation Produces Parenthetical Format Not Colon Format
-6734 " 🔴 Test Expectation Relaxed to Match Actual Parenthetical Format
-6735 " 🟣 Apply Manager Chat Message Now Shows Free Heart Background Choice Labels
-6736 " ✅ All Apply-Related Tests Pass After Chat Message Enhancement
-6737 " ✅ ESLint Clean After Apply Manager Chat Message Enhancement
-6738 " ✅ Full Suite Green: 1464 Tests Across 86 Suites After Complete Session's Work
+6738 8:22a ✅ Full Suite Green: 1464 Tests Across 86 Suites After Complete Session's Work
 6739 8:23a 🔵 boostCount and selectedBoostCount Correctly Scale for Gradual Boost Levels
 6740 " 🔵 _migratePlan Initializes abilityBoosts Arrays for All Gradual Boost Levels Before Backfill Runs
 6741 8:24a 🔵 Gradual Boost Architecture Summary: Complete Implementation Map
@@ -345,6 +329,22 @@ S836 Free Heart Background: Prompt for untrained skill replacement when backgrou
 6770 8:34a ✅ intelligence.test.js 39/39 and Lint Clean After pendingPartial Addition
 6771 " ✅ pf2e-leveler 3.4.28 Final: 1467 Tests, 86 Suites, Lint Clean — Ready to Commit
 6772 " ✅ Final Code Review Confirmed: pendingPartial Field and Template Display Correct
+6773 8:37a 🔵 Open User Question: Levels 7 and 8 Not Showing +4(partial) for Gradual Boosts
+6774 8:38a 🔵 Levels 7-8 pendingPartial=false Bug: buildAppliedLevelAttributeBaseline Cannot Detect Fractional Raw From Integer Actor Mod
+6775 " 🔴 Fixed buildAppliedLevelAttributeBaseline to Use Reconstructed Raw for Pending Partial Detection
+6776 8:39a ✅ pf2e-leveler 3.4.28 Final: 1468 Tests, 86 Suites Pass After Applied-Level Partial Fix
+6777 8:41a 🔵 buildAppliedLevelAttributeBaseline Change Preserves All Existing Test Semantics
+6778 " 🟣 Additional Test Confirms pendingPartial Display for Current Standard Boost Level
+6779 8:42a 🔵 Object-Shaped PF2e Boost Buckets Not Handled by buildKnownInitialAttributeBaseline
+6781 8:43a 🔴 normalizeActorBoostEntries Extended to Handle Array-Valued Slot Objects
+6782 8:44a 🔴 index.js normalizeActorBoostEntries Also Patched for Array-Value Slot Format
+6783 " ✅ 42 Intelligence Tests, 92 Bootstrap Tests Pass; Lint Clean After All normalizeActorBoostEntries Fixes
+6785 " ✅ pf2e-leveler 3.4.28 Final Verified: 1470 Tests, 86 Suites, Lint Clean
+6788 8:45a ✅ Final Code Review Confirms All pendingPartial and normalizeActorBoostEntries Diffs Are Correct
+6792 8:47a ✅ CHANGELOG Patch Version Increment Requested
+6793 8:48a 🔵 pf2e-leveler Project State: Version 3.4.28 with Uncommitted Level-Planner Changes
+6794 " ✅ pf2e-leveler Bumped from 3.4.28 to 3.4.29
+6795 " ✅ pf2e-leveler 3.4.29 Full Test Suite Passes: 1470/1470
 
-Access 246k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 759k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

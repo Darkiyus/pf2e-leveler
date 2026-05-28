@@ -141,7 +141,7 @@ function buildKnownInitialAttributeBaseline(planner) {
   };
 
   const ancestryChoiceBoosts = normalizeAbilityBoostList(creationData.boosts?.ancestry);
-  const actorAncestryBoosts = normalizeAbilityBoostList(actorBuildBoosts.ancestry);
+  const actorAncestryBoosts = normalizeStoredBoostBucket(actorBuildBoosts.ancestry);
   if (creationData.alternateAncestryBoosts === true) {
     applyBoosts(ancestryChoiceBoosts.length ? ancestryChoiceBoosts : actorAncestryBoosts.length ? actorAncestryBoosts : getSelectedBoostValues(actor?.ancestry?.system?.boosts));
   } else {
@@ -155,7 +155,7 @@ function buildKnownInitialAttributeBaseline(planner) {
   }
 
   const backgroundChoiceBoosts = normalizeAbilityBoostList(creationData.boosts?.background);
-  const actorBackgroundBoosts = normalizeAbilityBoostList(actorBuildBoosts.background);
+  const actorBackgroundBoosts = normalizeStoredBoostBucket(actorBuildBoosts.background);
   if (actorBackgroundBoosts.length) {
     applyBoosts(actorBackgroundBoosts);
   } else {
@@ -177,7 +177,7 @@ function getInitialClassBoosts(planner, creationData) {
   const creationClassBoosts = normalizeAbilityBoostList(creationData.boosts?.class);
   if (creationClassBoosts.length > 0) return creationClassBoosts;
 
-  const actorClassBoosts = normalizeAbilityBoostList(planner.actor?.system?.build?.attributes?.boosts?.class);
+  const actorClassBoosts = normalizeStoredBoostBucket(planner.actor?.system?.build?.attributes?.boosts?.class);
   if (actorClassBoosts.length > 0) return actorClassBoosts;
 
   const keyAbility = planner.actor?.class?.system?.keyAbility ?? {};
@@ -272,6 +272,9 @@ function getActorAbilityModifier(actor, attr) {
 }
 
 function normalizeActorBoostEntries(value) {
+  if (typeof value === 'string') {
+    return [normalizeAbilityBoostKey(value)].filter(Boolean);
+  }
   if (Array.isArray(value)) {
     return value.map((entry) => normalizeAbilityBoostKey(entry)).filter(Boolean);
   }
@@ -307,6 +310,7 @@ function normalizeActorBoostEntries(value) {
       continue;
     }
     if (typeof entry.value === 'string') flattened.push(entry.value);
+    if (Array.isArray(entry.value)) flattened.push(...entry.value);
     if (entry && typeof entry === 'object') {
       for (const [key, nested] of Object.entries(entry)) {
         if (!normalizeAbilityBoostKey(key)) continue;
@@ -318,6 +322,10 @@ function normalizeActorBoostEntries(value) {
   }
 
   return flattened.map((entry) => normalizeAbilityBoostKey(entry)).filter(Boolean);
+}
+
+function normalizeStoredBoostBucket(value) {
+  return normalizeActorBoostEntries(value).filter((entry) => ATTRIBUTES.includes(entry));
 }
 
 function normalizeAbilityBoostList(value) {

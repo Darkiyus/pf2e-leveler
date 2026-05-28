@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.4.29
+
+### Level Planner
+
+- **Standard partial boost labels now read PF2e object-shaped history** - Non-gradual level 10 rows now show pending level 5 half-steps as `+4(partial)` before selection, even when PF2e stores creation and boost history as keyed objects instead of arrays
+
 ## 3.4.28
 
 ### Level Planner

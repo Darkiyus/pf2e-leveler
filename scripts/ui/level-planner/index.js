@@ -3387,6 +3387,9 @@ function backfillGradualBoostGroup(plan, level, boosts) {
 }
 
 function normalizeActorBoostEntries(value) {
+  if (typeof value === 'string') {
+    return [normalizeAbilityBoostKey(value)].filter(Boolean);
+  }
   if (Array.isArray(value)) {
     return value.map((entry) => normalizeAbilityBoostKey(entry)).filter(Boolean);
   }
@@ -3413,6 +3416,9 @@ function normalizeActorBoostEntries(value) {
     }
     if (typeof entry.value === 'string') {
       flattened.push(entry.value);
+    }
+    if (Array.isArray(entry.value)) {
+      flattened.push(...entry.value);
     }
   }
 

@@ -517,6 +517,100 @@ describe('LevelPlanner intelligence boost planner choices', () => {
     }));
   });
 
+  it('shows hidden standard partial boosts on the current boost level before selection', () => {
+    const actor = createMockActor();
+    actor.class.slug = 'alchemist';
+    actor.system.details.level.value = 10;
+    actor.system.build.attributes.boosts = {
+      ancestry: ['dex', 'con'],
+      background: ['dex', 'con'],
+      class: 'dex',
+      1: ['dex', 'con', 'cha', 'wis'],
+      5: ['dex', 'con', 'int', 'cha'],
+      10: [],
+      15: [],
+      20: [],
+    };
+    actor.system.abilities.dex.mod = 4;
+    actor.abilities = {
+      str: { mod: 0, base: 0 },
+      dex: { mod: 4, base: 4 },
+      con: { mod: 4, base: 4 },
+      int: { mod: 1, base: 1 },
+      wis: { mod: 1, base: 1 },
+      cha: { mod: 2, base: 2 },
+    };
+
+    const planner = new LevelPlanner(actor);
+    planner.plan = createPlan('alchemist');
+    planner.selectedLevel = 10;
+
+    const choices = [{ type: 'abilityBoosts', count: 4 }];
+    const context = planner._buildAttributeContext(planner.plan.levels[10], choices);
+
+    expect(context.find((entry) => entry.key === 'dex')).toEqual(expect.objectContaining({
+      mod: 4,
+      selected: false,
+      pendingPartial: true,
+      completesPartial: true,
+    }));
+  });
+
+  it('reads object-shaped PF2e creation boost buckets when showing current partial boosts', () => {
+    const actor = createMockActor();
+    actor.class.slug = 'alchemist';
+    actor.system.details.level.value = 10;
+    actor.system.build.attributes.boosts = {
+      ancestry: {
+        0: { value: ['dex'] },
+        1: { value: ['con'] },
+      },
+      background: {
+        0: { selected: 'dex' },
+        1: { selected: 'con' },
+      },
+      class: { value: 'dex' },
+      1: {
+        0: { value: 'dex' },
+        1: { value: 'con' },
+        2: { value: 'cha' },
+        3: { value: 'wis' },
+      },
+      5: {
+        0: { value: 'dex' },
+        1: { value: 'con' },
+        2: { value: 'int' },
+        3: { value: 'cha' },
+      },
+      10: [],
+      15: [],
+      20: [],
+    };
+    actor.system.abilities.dex.mod = 4;
+    actor.abilities = {
+      str: { mod: 0, base: 0 },
+      dex: { mod: 4, base: 4 },
+      con: { mod: 4, base: 4 },
+      int: { mod: 1, base: 1 },
+      wis: { mod: 1, base: 1 },
+      cha: { mod: 2, base: 2 },
+    };
+
+    const planner = new LevelPlanner(actor);
+    planner.plan = createPlan('alchemist');
+    planner.selectedLevel = 10;
+
+    const choices = [{ type: 'abilityBoosts', count: 4 }];
+    const context = planner._buildAttributeContext(planner.plan.levels[10], choices);
+
+    expect(context.find((entry) => entry.key === 'dex')).toEqual(expect.objectContaining({
+      mod: 4,
+      selected: false,
+      pendingPartial: true,
+      completesPartial: true,
+    }));
+  });
+
   it('preserves hidden gradual partial boosts when previewing the next gradual set', () => {
     const actor = createMockActor();
     actor.class.slug = 'alchemist';
