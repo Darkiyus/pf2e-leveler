@@ -1215,12 +1215,14 @@ function skillNameAppearsInClause(skill, clause) {
 function getLevelOneIntModifier(actor) {
   let intMod = getActorAbilityModifier(actor, 'int');
   const boosts = actor?.system?.build?.attributes?.boosts ?? {};
+  const hasLevelOneIntBoost = normalizeAbilityBoostList(boosts[1]).includes('int');
 
   for (const [levelKey, boostList] of Object.entries(boosts)) {
     const level = Number(levelKey);
     if (!Number.isInteger(level) || level <= 1) continue;
     for (const boost of normalizeAbilityBoostList(boostList)) {
       if (boost !== 'int') continue;
+      if (hasLevelOneIntBoost && intMod === 4) continue;
       intMod = reverseApplyAbilityBoost(intMod);
     }
   }

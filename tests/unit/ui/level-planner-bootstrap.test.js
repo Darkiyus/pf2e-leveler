@@ -1680,6 +1680,14 @@ describe('LevelPlanner bootstrap from existing actor', () => {
     actor.class.slug = 'investigator';
     actor.class.name = 'Investigator';
     actor.class.system.trainedSkills = { value: ['society'], additional: 4 };
+    actor.system.abilities ??= {};
+    actor.system.abilities.int ??= {};
+    actor.system.abilities.int.mod = 4;
+    actor.system.build ??= {};
+    actor.system.build.attributes ??= {};
+    actor.system.build.attributes.boosts ??= {};
+    actor.system.build.attributes.boosts[1] = ['int'];
+    actor.system.build.attributes.boosts[5] = ['int'];
     actor.items = [
       actor.background,
       {
@@ -1688,6 +1696,9 @@ describe('LevelPlanner bootstrap from existing actor', () => {
         type: 'feat',
         system: {
           traits: { otherTags: ['investigator-methodology'] },
+          description: {
+            value: 'You become trained in Crafting. If you were already trained in Crafting, you instead become trained in a skill of your choice.',
+          },
           rules: [
             {
               key: 'ActiveEffectLike',
@@ -1712,6 +1723,9 @@ describe('LevelPlanner bootstrap from existing actor', () => {
         type: 'feat',
         system: {
           traits: { value: ['archetype', 'dedication', 'multiclass', 'alchemist'] },
+          description: {
+            value: 'You become trained in Crafting. If you were already trained in Crafting, you instead become trained in a skill of your choice.',
+          },
           rules: [
             {
               key: 'ActiveEffectLike',
@@ -1749,9 +1763,9 @@ describe('LevelPlanner bootstrap from existing actor', () => {
 
     const content = prompt.mock.calls[0][0].content;
     expect(content).toContain('Alchemical Sciences - Skill Choices');
-    expect(content).toContain('data-initial-skill-choice-flag="duplicateSkillFallback_Compendium.pf2e.classfeatures.Item.alchemical-sciences_crafting"');
     expect(content).toContain('Alchemist Dedication - Skill Choices');
-    expect(content).toContain('data-initial-skill-choice-flag="duplicateSkillFallback_Compendium.pf2e.feats-srd.Item.alchemist-dedication_crafting"');
+    expect(content).toContain('<span data-imported-initial-skill-count>0</span>/8');
+    expect(content.match(/Select a replacement skill \(Crafting already (?:trained|granted)\)/g)).toHaveLength(2);
   });
 
   it('keeps imported starting skill dialog content within the Foundry prompt width', () => {

@@ -281,13 +281,13 @@ recommend splitting it along real responsibility boundaries.
 <claude-mem-context>
 # Memory Context
 
-# [pf2e-leveler] recent context, 2026-05-28 10:00am GMT+3
+# [pf2e-leveler] recent context, 2026-05-28 12:29pm GMT+3
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (16,091t read) | 818,620t work | 98% savings
+Stats: 50 obs (15,784t read) | 851,889t work | 98% savings
 
 ### May 3, 2026
 S834 Free Heart Background: Prompt for untrained skill replacement when background grants an already-trained skill (May 3 at 1:42 PM)
@@ -295,10 +295,6 @@ S120 Feat retraining implementation for pf2e-leveler — Task 2 complete (valida
 ### May 28, 2026
 S835 Free Heart Background: Prompt for untrained skill replacement when background grants an already-trained skill (May 28 at 7:52 AM)
 S836 Free Heart Background: Prompt for untrained skill replacement when background grants an already-trained skill (May 28 at 7:57 AM)
-6756 8:29a 🔵 createMockActor Sets items as Non-Iterable Mock Object — for...of Fails
-6757 " 🟣 New Test: Gradual Boost Partial Display Preserved When Previewing Next Gradual Set
-6758 8:30a 🔴 Fixed getAppliedBoostsForLevel Order: Gradual Lookup Must Run Before Direct Bucket Lookup
-6760 " ✅ pf2e-leveler Bumped to Version 3.4.28 With 4-Item CHANGELOG
 6761 8:31a ✅ Version 3.4.28 Confirmed Across All Files, Lint Clean, Tests Running
 6762 " ✅ pf2e-leveler 3.4.28 Fully Verified and Ready to Commit
 6763 8:32a ✅ Session Complete: pf2e-leveler 3.4.28 Ready for Commit
@@ -345,6 +341,10 @@ S836 Free Heart Background: Prompt for untrained skill replacement when backgrou
 6871 " ✅ pf2e-leveler Bumped to 3.4.30 with Free Heart Lore Fix Changelog Entry
 6873 " 🔵 ESLint Passes Clean on 3.4.30 Release Candidate
 6874 " 🔵 Full Test Suite Passes for 3.4.30 Release
+6906 10:08a ⚖️ Extend Feat Fix to Cover "Additional Lore" Feats Like Operatic Adventurer
+6908 10:09a 🔵 getDerivedFeatLoreRules Already Covers Operatic Adventurer; Fix Was Broader Than Initially Stated
+6909 " 🟣 Test Added for Same-Level Derived Feat Lore in Skill Increase Picker (Operatic Adventurer)
+6910 " ✅ CHANGELOG Updated to Reflect Broader Same-Level Lore Fix Scope
 
-Access 819k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 852k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

@@ -547,6 +547,16 @@ describe('computeBuildState', () => {
     expect(getImportedInitialSkillLimit(mockActor, INVESTIGATOR)).toBe(8);
   });
 
+  test('imported starting skill allowance preserves level 1 Intelligence when later boosts are partial', () => {
+    mockActor.class.slug = 'investigator';
+    mockActor.class.system.trainedSkills = { value: ['society'], additional: 4 };
+    mockActor.system.abilities.int.mod = 4;
+    mockActor.system.build.attributes.boosts[1] = ['int'];
+    mockActor.system.build.attributes.boosts[5] = ['int'];
+
+    expect(getImportedInitialSkillLimit(mockActor, INVESTIGATOR)).toBe(8);
+  });
+
   test('historical skill state applies automatic initial background and subclass skill grants', () => {
     mockActor.class.slug = 'rogue';
     mockActor.class.system.trainedSkills = { value: ['stealth'], additional: 7 };

@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.4.31
+
+### Level Planner
+
+- **Investigator starting skills now preserve level 1 Intelligence partials** - Imported high-level Investigators that began with `+4` Intelligence and later received a partial Intelligence boost now keep the correct `4 + Int` starting skill limit, showing `0/8` instead of `0/7`
+- **Duplicate starting skill replacements no longer double prompt** - Initial skill grants with PF2e fallback wording and duplicate-grant detection now produce one replacement prompt per source skill, preventing cases such as Alchemist Dedication's Crafting grant from offering two extra free skills
+
 ## 3.4.30
 
 ### Level Planner
