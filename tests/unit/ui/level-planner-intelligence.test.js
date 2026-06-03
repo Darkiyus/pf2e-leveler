@@ -752,6 +752,32 @@ describe('LevelPlanner intelligence boost planner choices', () => {
     });
   });
 
+  it('counts current-level Intelligence bonus choices when an imported partial completes', () => {
+    const actor = createMockActor();
+    actor.class.slug = 'alchemist';
+    actor.system.details.level.value = 10;
+    actor.system.abilities.int.mod = 4;
+    actor.abilities = {
+      str: { mod: 0, base: 0 },
+      dex: { mod: 0, base: 0 },
+      con: { mod: 0, base: 0 },
+      int: { mod: 4, base: 4.5 },
+      wis: { mod: 0, base: 0 },
+      cha: { mod: 0, base: 0 },
+    };
+
+    const planner = new LevelPlanner(actor);
+    planner.plan = createPlan('alchemist');
+    setLevelBoosts(planner.plan, 5, ['int']);
+    setLevelBoosts(planner.plan, 10, ['int']);
+    planner.selectedLevel = 10;
+
+    expect(planner._buildIntelligenceBenefitContext(10)).toEqual({
+      count: 1,
+      gainsSingle: true,
+    });
+  });
+
   it('uses historical skill state for imported past Intelligence bonus choices', () => {
     const actor = createMockActor();
     actor.class.slug = 'alchemist';

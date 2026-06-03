@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.4.42
+
+### Level Planner
+
+- **Free Heart Martial Disciple now preserves skill-feat choices** - Background skill choices that drive a granted skill feat can still choose an already-trained authored skill, so Martial Disciple can select Athletics for Quick Jump while still offering the replacement trained skill separately
+- **Partial Intelligence boosts now grant bonuses when they complete** - Intelligence boosts that complete an imported partial modifier now show the bonus trained skill and language at the correct level instead of waiting for the next partial boost
+
 ## 3.4.41
 
 ### Level Planner

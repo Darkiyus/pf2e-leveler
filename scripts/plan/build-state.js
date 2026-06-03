@@ -907,8 +907,8 @@ export function getIntelligenceBenefitCount(actor, plan, level) {
 
   const before = computeBuildState(actor, plan, level - 1);
   const after = computeBuildState(actor, plan, level);
-  const beforeInt = before.attributes.int ?? 0;
-  const afterInt = after.attributes.int ?? 0;
+  const beforeInt = Math.trunc(before.rawAttributes?.int ?? before.attributes.int ?? 0);
+  const afterInt = Math.trunc(after.rawAttributes?.int ?? after.attributes.int ?? 0);
   return Math.max(0, afterInt - beforeInt);
 }
 

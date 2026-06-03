@@ -982,20 +982,37 @@ async function buildFreeHeartBackgroundChoiceSets(planner, feat, source, parsedC
   syncFreeHeartBackgroundLoreRules(feat, selectedBackground);
   const wizard = createPlannerChoiceWizard(planner);
   const backgroundChoiceSets = await parseChoiceSets(wizard, selectedBackground.system?.rules ?? [], feat?.choices ?? {}, selectedBackground);
-  choiceSets.push(...backgroundChoiceSets.map((choiceSet) => ({
-    ...choiceSet,
-    sourceName: selectedBackground.name,
-    ...((choiceSet?.options ?? []).every((option) => isActiveSkillSlug(option?.value))
-      ? { grantsSkillTraining: true, widenWhenAllOptionsBlocked: true }
-      : {}),
-  })));
+  choiceSets.push(...backgroundChoiceSets.map((choiceSet) => {
+    const isSkillChoiceSet = (choiceSet?.options ?? []).every((option) => isActiveSkillSlug(option?.value));
+    const drivesGrant = isSkillChoiceSet && backgroundChoiceSetDrivesGrant(selectedBackground, choiceSet?.flag);
+    return {
+      ...choiceSet,
+      sourceName: selectedBackground.name,
+      ...(isSkillChoiceSet
+        ? {
+            grantsSkillTraining: true,
+            widenWhenAllOptionsBlocked: !drivesGrant,
+            allowTrainedSkillSelection: drivesGrant,
+          }
+        : {}),
+    };
+  }));
 
-  const fallbackChoiceSets = buildFreeHeartBackgroundSkillFallbackChoiceSets(planner, feat, selectedBackground, fixedSkillRules);
+  const fallbackChoiceSets = buildFreeHeartBackgroundSkillFallbackChoiceSets(planner, feat, selectedBackground, fixedSkillRules, backgroundChoiceSets);
   if (fallbackChoiceSets.length > 0) {
     removeFreeHeartBackgroundOverlappedSkillRules(feat, fallbackChoiceSets.map((choiceSet) => choiceSet.replacedSkill));
     choiceSets.push(...fallbackChoiceSets);
   }
   return choiceSets;
+}
+
+function backgroundChoiceSetDrivesGrant(background, flag) {
+  const normalizedFlag = String(flag ?? '').trim().toLowerCase();
+  if (!normalizedFlag) return false;
+  const needle = `rulesselections.${normalizedFlag}`;
+  return (background?.system?.rules ?? []).some((rule) =>
+    rule?.key === 'GrantItem'
+    && String(rule?.uuid ?? '').toLowerCase().includes(needle));
 }
 
 async function resolveSelectedFreeHeartBackground(feat) {
@@ -1021,10 +1038,16 @@ async function syncFreeHeartBackgroundSkillRules(feat, background) {
   return rules;
 }
 
-function buildFreeHeartBackgroundSkillFallbackChoiceSets(planner, feat, background, fixedSkillRules) {
-  const grantedSkills = [...new Set((fixedSkillRules ?? [])
+function buildFreeHeartBackgroundSkillFallbackChoiceSets(planner, feat, background, fixedSkillRules, backgroundChoiceSets = []) {
+  const grantedSkillSet = new Set((fixedSkillRules ?? [])
     .map((rule) => normalizeSkillSlug(rule?.skill))
-    .filter((skill) => isActiveSkillSlug(skill)))];
+    .filter((skill) => isActiveSkillSlug(skill)));
+  for (const choiceSet of backgroundChoiceSets ?? []) {
+    if (!backgroundChoiceSetDrivesGrant(background, choiceSet?.flag)) continue;
+    const selectedSkill = normalizeSkillSlug(feat?.choices?.[choiceSet?.flag]);
+    if (isActiveSkillSlug(selectedSkill)) grantedSkillSet.add(selectedSkill);
+  }
+  const grantedSkills = [...grantedSkillSet];
   if (grantedSkills.length === 0) return [];
 
   const priorSkills = getFreeHeartBackgroundPriorSkillRanks(planner, background);
@@ -1952,8 +1975,9 @@ function decoratePlannerSkillChoiceOptions(planner, entry, feat, options) {
     const selectedHere = value === selected;
     const trainedBeforeLevel = (priorState.skills?.[value] ?? 0) >= 1;
     const selectedByIntBonus = selectedIntSkills.has(value);
+    const blocksTrainedSkill = entry?.allowTrainedSkillSelection !== true;
     const disabled = !selectedHere
-      && (trainedBeforeLevel || selectedByIntBonus || selectedElsewhere.has(value) || blockedSkills.has(value));
+      && ((blocksTrainedSkill && trainedBeforeLevel) || selectedByIntBonus || selectedElsewhere.has(value) || blockedSkills.has(value));
 
     return {
       ...option,
