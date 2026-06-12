@@ -37,6 +37,7 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     super();
     this.actor = actor;
     this.category = category;
+    this.freeArchetypeSlot = options.freeArchetypeSlot === true || category === 'archetype';
     this.targetLevel = targetLevel;
     this.buildState = buildState;
     this.onSelect = onSelect;
@@ -245,7 +246,10 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
           ),
         ]
       : categoryFeats;
-    annotateGuidance(this.allFeats);
+    annotateGuidance(this.allFeats, {
+      freeArchetype: this.freeArchetypeSlot,
+      ignoreCategoryDefaultDisallowed: this.category === 'class' && !this.freeArchetypeSlot,
+    });
     this._showSkillFilter = this._featsHaveSkillRelevance();
   }
 

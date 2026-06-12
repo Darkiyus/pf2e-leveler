@@ -1843,7 +1843,7 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         });
         await this._savePlanAndRender();
       },
-      { preset },
+      { preset, freeArchetypeSlot: source.category === 'archetypeFeats' },
     );
     picker.render(true);
   }
@@ -2111,7 +2111,7 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         }
         await this._savePlanAndRender();
       },
-      { preset },
+      { preset, freeArchetypeSlot: category === 'archetypeFeats' },
     );
     picker.render(true);
   }

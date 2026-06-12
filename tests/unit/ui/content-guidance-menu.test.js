@@ -1,12 +1,17 @@
 import { ContentGuidanceMenu } from '../../../scripts/ui/content-guidance-menu.js';
 
 jest.mock('../../../scripts/access/content-guidance.js', () => ({
-  buildGuidanceEntry: jest.fn((status, exclusive = false) => {
+  buildGuidanceEntry: jest.fn((status, exclusive = false, freeArchetypeExclusive = false) => {
     const normalizedStatus = status && status !== 'default' ? status : null;
     const normalizedExclusive = exclusive === true && normalizedStatus !== 'disallowed';
-    if (!normalizedStatus && !normalizedExclusive) return null;
-    if (!normalizedExclusive) return normalizedStatus;
-    return normalizedStatus ? { status: normalizedStatus, exclusive: true } : { exclusive: true };
+    const normalizedFreeArchetypeExclusive = freeArchetypeExclusive === true && normalizedStatus !== 'disallowed';
+    if (!normalizedStatus && !normalizedExclusive && !normalizedFreeArchetypeExclusive) return null;
+    if (!normalizedExclusive && !normalizedFreeArchetypeExclusive) return normalizedStatus;
+    return {
+      ...(normalizedStatus ? { status: normalizedStatus } : {}),
+      ...(normalizedExclusive ? { exclusive: true } : {}),
+      ...(normalizedFreeArchetypeExclusive ? { freeArchetypeExclusive: true } : {}),
+    };
   }),
   CATEGORY_DEFAULT_POLICIES: { ALLOWED: 'allowed', DISALLOWED: 'disallowed' },
   getContentGuidance: jest.fn(() => ({})),
@@ -17,10 +22,14 @@ jest.mock('../../../scripts/access/content-guidance.js', () => ({
     return normalized ? `source-title:${normalized}` : null;
   }),
   normalizeGuidanceEntry: jest.fn((entry) => {
-    if (typeof entry === 'string') return { status: entry === 'default' ? null : entry, exclusive: false };
-    if (!entry || typeof entry !== 'object') return { status: null, exclusive: false };
+    if (typeof entry === 'string') return { status: entry === 'default' ? null : entry, exclusive: false, freeArchetypeExclusive: false };
+    if (!entry || typeof entry !== 'object') return { status: null, exclusive: false, freeArchetypeExclusive: false };
     const status = entry.status && entry.status !== 'default' ? entry.status : null;
-    return { status, exclusive: entry.exclusive === true && status !== 'disallowed' };
+    return {
+      status,
+      exclusive: entry.exclusive === true && status !== 'disallowed',
+      freeArchetypeExclusive: entry.freeArchetypeExclusive === true && status !== 'disallowed',
+    };
   }),
 }));
 
@@ -362,18 +371,34 @@ describe('ContentGuidanceMenu', () => {
     expect(menu._buildBulkExclusiveActions().find((action) => action.exclusive === true)).toEqual(expect.objectContaining({
       className: 'tag--exclusive',
     }));
+    expect(menu._buildBulkFreeArchetypeExclusiveActions().find((action) => action.freeArchetypeExclusive === true)).toEqual(expect.objectContaining({
+      className: 'tag--free-archetype-exclusive',
+    }));
   });
 
-  test('exclusive flag can be combined with suggested guidance', () => {
+  test('exclusive modes stay mutually exclusive and preserve suggested guidance', () => {
     const menu = new ContentGuidanceMenu();
     menu._draft = {
       'medic-dedication': 'recommended',
     };
 
     menu._setGuidanceExclusive('medic-dedication', true);
+    menu._setGuidanceFreeArchetypeExclusive('medic-dedication', true);
 
     expect(menu._draft).toEqual({
-      'medic-dedication': { status: 'recommended', exclusive: true },
+      'medic-dedication': {
+        status: 'recommended',
+        freeArchetypeExclusive: true,
+      },
+    });
+
+    menu._setGuidanceExclusive('medic-dedication', true);
+
+    expect(menu._draft).toEqual({
+      'medic-dedication': {
+        status: 'recommended',
+        exclusive: true,
+      },
     });
   });
 

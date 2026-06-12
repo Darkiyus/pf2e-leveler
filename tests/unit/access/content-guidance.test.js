@@ -179,6 +179,57 @@ describe('content guidance source rules', () => {
     expect(unrelated.guidanceExclusiveFiltered).toBe(true);
   });
 
+  test('free archetype exclusive guidance only gates free archetype contexts', () => {
+    global._testSettings['pf2e-leveler'].gmContentGuidance = {
+      'Compendium.test.feats.Item.acrobat-dedication': { status: 'recommended', exclusive: true, freeArchetypeExclusive: true },
+    };
+
+    const buildItems = () => [
+      {
+        uuid: 'Compendium.test.feats.Item.acrobat-dedication',
+        type: 'feat',
+        name: 'Acrobat Dedication',
+        slug: 'acrobat-dedication',
+        system: { category: 'class', traits: { value: ['archetype', 'dedication', 'acrobat'] } },
+      },
+      {
+        uuid: 'Compendium.test.feats.Item.contortionist',
+        type: 'feat',
+        name: 'Contortionist',
+        slug: 'contortionist',
+        system: { category: 'class', traits: { value: ['archetype', 'acrobat'] } },
+      },
+      {
+        uuid: 'Compendium.test.feats.Item.wizard-dedication',
+        type: 'feat',
+        name: 'Wizard Dedication',
+        slug: 'wizard-dedication',
+        system: { category: 'class', traits: { value: ['archetype', 'dedication', 'multiclass', 'wizard'] } },
+      },
+    ];
+
+    const [classDedication, classFollowup, classWizard] = annotateGuidance(buildItems());
+    expect(classDedication.isExclusive).toBe(false);
+    expect(classDedication.isFreeArchetypeExclusive).toBe(false);
+    expect(classFollowup.isExclusive).toBe(false);
+    expect(classFollowup.isFreeArchetypeExclusive).toBe(false);
+    expect(classWizard.isDisallowed).toBe(false);
+    expect(classWizard.guidanceExclusiveFiltered).toBe(false);
+    expect(classWizard.guidanceFreeArchetypeExclusiveFiltered).toBe(false);
+    expect(classWizard.guidanceSelectionBlocked).toBe(false);
+
+    const [freeDedication, freeFollowup, freeWizard] = annotateGuidance(buildItems(), {
+      freeArchetype: true,
+    });
+    expect(freeDedication.isFreeArchetypeExclusive).toBe(true);
+    expect(freeDedication.isRecommended).toBe(true);
+    expect(freeFollowup.isFreeArchetypeExclusive).toBe(true);
+    expect(freeFollowup.isDisallowed).toBe(false);
+    expect(freeWizard.isDisallowed).toBe(true);
+    expect(freeWizard.guidanceFreeArchetypeExclusiveFiltered).toBe(true);
+    expect(freeWizard.guidanceSelectionBlocked).toBe(true);
+  });
+
   test('exclusive source guidance filters non-exclusive items in the same list', () => {
     global._testSettings['pf2e-leveler'].gmContentGuidance = {
       'source-title:pathfinder player core': { status: 'allowed', exclusive: true },

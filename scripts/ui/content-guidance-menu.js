@@ -122,6 +122,8 @@ export class ContentGuidanceMenu extends HandlebarsApplicationMixin(ApplicationV
       isNotRecommended: resolved.status === 'not-recommended',
       isDisallowed: resolved.status === 'disallowed',
       isExclusive: resolved.exclusive === true,
+      isFreeArchetypeExclusive: resolved.freeArchetypeExclusive === true,
+      showFreeArchetypeExclusiveControls: this.activeCategory === 'classArchetypes',
       guidanceInherited: resolved.inherited,
     };
     });
@@ -277,6 +279,16 @@ export class ContentGuidanceMenu extends HandlebarsApplicationMixin(ApplicationV
       });
     });
 
+    root.querySelectorAll('[data-action="toggle-free-archetype-exclusive-guidance"]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const uuid = btn.dataset.uuid;
+        if (!uuid) return;
+        const current = normalizeGuidanceEntry(this._draft[uuid]);
+        this._setGuidanceFreeArchetypeExclusive(uuid, !current.freeArchetypeExclusive);
+        this._rerenderPreservingScroll();
+      });
+    });
+
     root.querySelectorAll('[data-action="viewGuidanceItem"]').forEach((btn) => {
       btn.addEventListener('click', async () => {
         const uuid = btn.dataset.uuid;
@@ -304,6 +316,17 @@ export class ContentGuidanceMenu extends HandlebarsApplicationMixin(ApplicationV
         const scopeValue = btn.dataset.scopeValue;
         if (!scopeType || !scopeValue) return;
         this._applyBulkExclusive(scopeType, scopeValue, exclusive);
+        this._rerenderPreservingScroll();
+      });
+    });
+
+    root.querySelectorAll('[data-action="bulk-free-archetype-exclusive-guidance"]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const freeArchetypeExclusive = btn.dataset.freeArchetypeExclusive === 'true';
+        const scopeType = btn.dataset.scopeType;
+        const scopeValue = btn.dataset.scopeValue;
+        if (!scopeType || !scopeValue) return;
+        this._applyBulkFreeArchetypeExclusive(scopeType, scopeValue, freeArchetypeExclusive);
         this._rerenderPreservingScroll();
       });
     });
@@ -397,6 +420,17 @@ export class ContentGuidanceMenu extends HandlebarsApplicationMixin(ApplicationV
     }
   }
 
+  _applyBulkFreeArchetypeExclusive(scopeType, scopeValue, freeArchetypeExclusive) {
+    const items = this._getActiveBulkItems();
+    const uuids = items
+      .filter((item) => this._matchesBulkScope(item, scopeType, scopeValue))
+      .map((item) => item.uuid);
+
+    for (const uuid of uuids) {
+      this._setGuidanceFreeArchetypeExclusive(uuid, freeArchetypeExclusive);
+    }
+  }
+
   _matchesBulkScope(item, scopeType, scopeValue) {
     if (!item) return false;
     if (scopeType === 'rarity') {
@@ -420,23 +454,23 @@ export class ContentGuidanceMenu extends HandlebarsApplicationMixin(ApplicationV
 
   _resolveDraftStatus(item) {
     const direct = normalizeGuidanceEntry(item?.uuid ? this._draft?.[item.uuid] : null);
-    if (direct.status || direct.exclusive) return { ...direct, inherited: false };
+    if (direct.status || direct.exclusive || direct.freeArchetypeExclusive) return { ...direct, inherited: false };
 
     const sourceKey = getSourceGuidanceKey(item?.publicationTitle ?? item?.name ?? '');
     const inherited = normalizeGuidanceEntry(sourceKey ? this._draft?.[sourceKey] : null);
-    if (inherited.status || inherited.exclusive) {
+    if (inherited.status || inherited.exclusive || inherited.freeArchetypeExclusive) {
       return { ...inherited, inherited: item?.uuid !== sourceKey };
     }
 
     if (sourceKey && this._getCategoryDefaultPolicy('sources') === CATEGORY_DEFAULT_POLICIES.DISALLOWED) {
-      return { status: 'disallowed', exclusive: false, inherited: item?.uuid !== sourceKey };
+      return { status: 'disallowed', exclusive: false, freeArchetypeExclusive: false, inherited: item?.uuid !== sourceKey };
     }
 
     if (this._getCategoryDefaultPolicy(this.activeCategory) === CATEGORY_DEFAULT_POLICIES.DISALLOWED) {
-      return { status: 'disallowed', exclusive: false, inherited: true };
+      return { status: 'disallowed', exclusive: false, freeArchetypeExclusive: false, inherited: true };
     }
 
-    return { status: null, exclusive: false, inherited: false };
+    return { status: null, exclusive: false, freeArchetypeExclusive: false, inherited: false };
   }
 
   async _loadSourceItems() {
@@ -526,6 +560,8 @@ export class ContentGuidanceMenu extends HandlebarsApplicationMixin(ApplicationV
           bulkScopeValue: item.ancestrySlug ? String(item.ancestrySlug).toLowerCase() : 'versatile',
           bulkActions: this._buildBulkActions(),
           bulkExclusiveActions: this._buildBulkExclusiveActions(),
+          bulkFreeArchetypeExclusiveActions: this._getActiveFreeArchetypeExclusiveActions(),
+          showFreeArchetypeExclusiveActions: this.activeCategory === 'classArchetypes',
         });
       }
       groups.get(key).items.push(item);
@@ -542,6 +578,8 @@ export class ContentGuidanceMenu extends HandlebarsApplicationMixin(ApplicationV
       scopeValue: rarity,
       actions: this._buildBulkActions(),
       exclusiveActions: this._buildBulkExclusiveActions(),
+      freeArchetypeExclusiveActions: this._getActiveFreeArchetypeExclusiveActions(),
+      showFreeArchetypeExclusiveActions: this.activeCategory === 'classArchetypes',
     }));
   }
 
@@ -567,6 +605,27 @@ export class ContentGuidanceMenu extends HandlebarsApplicationMixin(ApplicationV
         className: '',
       },
     ];
+  }
+
+  _buildBulkFreeArchetypeExclusiveActions() {
+    return [
+      {
+        freeArchetypeExclusive: true,
+        label: game.i18n.localize('PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.BULK_FREE_ARCHETYPE_EXCLUSIVE'),
+        className: 'tag--free-archetype-exclusive',
+      },
+      {
+        freeArchetypeExclusive: false,
+        label: game.i18n.localize('PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.BULK_CLEAR_FREE_ARCHETYPE_EXCLUSIVE'),
+        className: '',
+      },
+    ];
+  }
+
+  _getActiveFreeArchetypeExclusiveActions() {
+    return this.activeCategory === 'classArchetypes'
+      ? this._buildBulkFreeArchetypeExclusiveActions()
+      : [];
   }
 
   _getBulkActionClass(status) {
@@ -603,14 +662,21 @@ export class ContentGuidanceMenu extends HandlebarsApplicationMixin(ApplicationV
 
   _setGuidanceStatus(uuid, status) {
     const current = normalizeGuidanceEntry(this._draft?.[uuid]);
-    const entry = buildGuidanceEntry(status, current.exclusive);
+    const entry = buildGuidanceEntry(status, current.exclusive, current.freeArchetypeExclusive);
     if (entry) this._draft[uuid] = entry;
     else delete this._draft[uuid];
   }
 
   _setGuidanceExclusive(uuid, exclusive) {
     const current = normalizeGuidanceEntry(this._draft?.[uuid]);
-    const entry = buildGuidanceEntry(current.status, exclusive);
+    const entry = buildGuidanceEntry(current.status, exclusive, exclusive ? false : current.freeArchetypeExclusive);
+    if (entry) this._draft[uuid] = entry;
+    else delete this._draft[uuid];
+  }
+
+  _setGuidanceFreeArchetypeExclusive(uuid, freeArchetypeExclusive) {
+    const current = normalizeGuidanceEntry(this._draft?.[uuid]);
+    const entry = buildGuidanceEntry(current.status, freeArchetypeExclusive ? false : current.exclusive, freeArchetypeExclusive);
     if (entry) this._draft[uuid] = entry;
     else delete this._draft[uuid];
   }

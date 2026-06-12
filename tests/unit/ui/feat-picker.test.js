@@ -64,7 +64,9 @@ describe('FeatPicker prerequisite enforcement', () => {
     };
   }
 
-  function applyPlayerGuidance(guidance) {
+  function applyPlayerGuidance(guidance, {
+    playerDisallowedContentMode = PLAYER_DISALLOWED_CONTENT_MODES.UNSELECTABLE,
+  } = {}) {
     const originalIsGM = game.user.isGM;
     const originalSettings = global._testSettings;
     global._testSettings = {
@@ -72,7 +74,7 @@ describe('FeatPicker prerequisite enforcement', () => {
       'pf2e-leveler': {
         ...(originalSettings?.['pf2e-leveler'] ?? {}),
         gmContentGuidance: guidance,
-        playerDisallowedContentMode: PLAYER_DISALLOWED_CONTENT_MODES.UNSELECTABLE,
+        playerDisallowedContentMode,
       },
     };
     game.user.isGM = false;
@@ -1865,6 +1867,94 @@ describe('FeatPicker prerequisite enforcement', () => {
       expect(picker.close).toHaveBeenCalled();
     } finally {
       restoreGuidance();
+    }
+  });
+
+  test('free archetype exclusive guidance is ignored by class feat pickers but enforced in free archetype pickers', async () => {
+    const restoreGuidance = applyPlayerGuidance({
+      'acrobat-dedication-uuid': { exclusive: true, freeArchetypeExclusive: true },
+      'category-default:classArchetypes': 'disallowed',
+    }, {
+      playerDisallowedContentMode: PLAYER_DISALLOWED_CONTENT_MODES.HIDDEN,
+    });
+    const acrobatDedication = createFeat({
+      name: 'Acrobat Dedication',
+      uuid: 'acrobat-dedication-uuid',
+      slug: 'acrobat-dedication',
+    });
+    acrobatDedication.type = 'feat';
+    acrobatDedication.system.category = 'class';
+    acrobatDedication.system.traits.value = ['archetype', 'dedication', 'acrobat'];
+
+    const contortionist = createFeat({
+      name: 'Contortionist',
+      uuid: 'contortionist-uuid',
+      slug: 'contortionist',
+    });
+    contortionist.type = 'feat';
+    contortionist.system.category = 'class';
+    contortionist.system.level.value = 4;
+    contortionist.system.traits.value = ['archetype', 'acrobat'];
+
+    const wizardDedication = createFeat({
+      name: 'Wizard Dedication',
+      uuid: 'wizard-dedication-uuid',
+      slug: 'wizard-dedication',
+    });
+    wizardDedication.type = 'feat';
+    wizardDedication.system.category = 'class';
+    wizardDedication.system.traits.value = ['archetype', 'dedication', 'multiclass', 'wizard'];
+
+    jest.spyOn(featCache, 'getCachedFeats').mockReturnValue([]);
+    jest.spyOn(featCache, 'loadFeats').mockResolvedValue([
+      acrobatDedication,
+      contortionist,
+      wizardDedication,
+    ]);
+
+    try {
+      const classPicker = new FeatPicker(
+        createActor(),
+        'class',
+        4,
+        createBuildState({ level: 4 }),
+        jest.fn(),
+      );
+      await classPicker._initializeFeats();
+      await classPicker._prepareContext();
+
+      expect(classPicker.filteredFeats.find((feat) => feat.uuid === 'acrobat-dedication-uuid')).toEqual(expect.objectContaining({
+        isFreeArchetypeExclusive: false,
+        guidanceSelectionBlocked: false,
+        isDisallowed: false,
+      }));
+      expect(classPicker.filteredFeats.find((feat) => feat.uuid === 'wizard-dedication-uuid')).toEqual(expect.objectContaining({
+        guidanceSelectionBlocked: false,
+        isDisallowed: false,
+      }));
+
+      const freeArchetypePicker = new FeatPicker(
+        createActor(),
+        'archetype',
+        4,
+        createBuildState({ level: 4 }),
+        jest.fn(),
+      );
+      await freeArchetypePicker._initializeFeats();
+      await freeArchetypePicker._prepareContext();
+
+      expect(freeArchetypePicker.filteredFeats.find((feat) => feat.uuid === 'acrobat-dedication-uuid')).toEqual(expect.objectContaining({
+        isFreeArchetypeExclusive: true,
+        guidanceSelectionBlocked: false,
+      }));
+      expect(freeArchetypePicker.filteredFeats.find((feat) => feat.uuid === 'contortionist-uuid')).toEqual(expect.objectContaining({
+        isFreeArchetypeExclusive: true,
+        guidanceSelectionBlocked: false,
+      }));
+      expect(freeArchetypePicker.filteredFeats.find((feat) => feat.uuid === 'wizard-dedication-uuid')).toBeUndefined();
+    } finally {
+      restoreGuidance();
+      jest.restoreAllMocks();
     }
   });
 

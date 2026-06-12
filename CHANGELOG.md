@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.5.1
+
+### Content Guidance
+
+- **Free archetype exclusives now stay scoped to free archetype slots** - Class feat pickers no longer inherit free archetype exclusivity, and player-side filtering keeps unrelated dedications visible for normal class feat choices even when the Class Archetypes guidance tab uses an allowlist default
+- **Exclusive guidance modes now stay separate** - Switching a class archetype between Exclusive and FA Exclusive clears the other mode so stale dual markings cannot accidentally narrow the wrong picker
+
 ## 3.5.0
 
 ### Character Creation

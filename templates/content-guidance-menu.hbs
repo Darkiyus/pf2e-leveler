@@ -114,6 +114,21 @@
             </button>
             {{/each}}
           </div>
+          {{#if this.showFreeArchetypeExclusiveActions}}
+          <div class="guidance-bulk__actions guidance-bulk__actions--filter">
+            {{#each this.freeArchetypeExclusiveActions}}
+            <button
+              type="button"
+              class="compendium-manager__button compendium-manager__button--small guidance-bulk__button {{this.className}}"
+              data-action="bulk-free-archetype-exclusive-guidance"
+              data-scope-type="{{../scopeType}}"
+              data-scope-value="{{../scopeValue}}"
+              data-free-archetype-exclusive="{{this.freeArchetypeExclusive}}">
+              {{this.label}}
+            </button>
+            {{/each}}
+          </div>
+          {{/if}}
         </div>
         {{/each}}
       </section>
@@ -151,6 +166,21 @@
                 </button>
                 {{/each}}
               </div>
+              {{#if this.showFreeArchetypeExclusiveActions}}
+              <div class="guidance-bulk__actions guidance-bulk__actions--filter">
+                {{#each this.bulkFreeArchetypeExclusiveActions}}
+                <button
+                  type="button"
+                  class="compendium-manager__button compendium-manager__button--small guidance-bulk__button {{this.className}}"
+                  data-action="bulk-free-archetype-exclusive-guidance"
+                  data-scope-type="{{../bulkScopeType}}"
+                  data-scope-value="{{../bulkScopeValue}}"
+                  data-free-archetype-exclusive="{{this.freeArchetypeExclusive}}">
+                  {{this.label}}
+                </button>
+                {{/each}}
+              </div>
+              {{/if}}
             </div>
           </div>
             {{#each this.items}}
@@ -165,6 +195,7 @@
                 {{#if this.isAllowed}}<span class="tag tag--allowed tag--tiny"><i class="fa-solid fa-check"></i> {{localize "PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.BADGE_ALLOWED"}}</span>{{/if}}
                 {{#if this.isRecommended}}<span class="tag tag--recommended tag--tiny"><i class="fa-solid fa-star"></i> {{localize "PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.BADGE_SUGGESTED"}}</span>{{/if}}
                 {{#if this.isExclusive}}<span class="tag tag--exclusive tag--tiny"><i class="fa-solid fa-filter"></i> {{localize "PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.BADGE_EXCLUSIVE"}}</span>{{/if}}
+                {{#if this.showFreeArchetypeExclusiveControls}}{{#if this.isFreeArchetypeExclusive}}<span class="tag tag--free-archetype-exclusive tag--tiny"><i class="fa-solid fa-layer-group"></i> {{localize "PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.BADGE_FREE_ARCHETYPE_EXCLUSIVE"}}</span>{{/if}}{{/if}}
                 {{#if this.isNotRecommended}}<span class="tag tag--muted tag--tiny"><i class="fa-solid fa-triangle-exclamation"></i> {{localize "PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.BADGE_NOT_RECOMMENDED"}}</span>{{/if}}
                 {{#if this.isDisallowed}}<span class="tag tag--disallowed tag--tiny"><i class="fa-solid fa-ban"></i> {{localize "PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.BADGE_DISALLOWED"}}</span>{{/if}}
                 {{#if this.guidanceInherited}}<span class="tag tag--info tag--tiny">{{localize "PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.BADGE_INHERITED"}}</span>{{/if}}
@@ -189,6 +220,16 @@
                 data-tooltip="{{localize "PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.BADGE_EXCLUSIVE"}}">
                 <i class="fa-solid fa-filter" style="{{#unless this.isExclusive}}opacity: 0.35;{{/unless}}"></i>
               </button>
+              {{#if this.showFreeArchetypeExclusiveControls}}
+              <button
+                type="button"
+                class="guidance-item__toggle {{#if this.isFreeArchetypeExclusive}}is-active is-free-archetype-exclusive{{/if}}"
+                data-action="toggle-free-archetype-exclusive-guidance"
+                data-uuid="{{this.uuid}}"
+                data-tooltip="{{localize "PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.BADGE_FREE_ARCHETYPE_EXCLUSIVE"}}">
+                <i class="fa-solid fa-layer-group" style="{{#unless this.isFreeArchetypeExclusive}}opacity: 0.35;{{/unless}}"></i>
+              </button>
+              {{/if}}
               <button
                 type="button"
                 class="guidance-item__toggle"
@@ -222,6 +263,7 @@
               {{#if this.isAllowed}}<span class="tag tag--allowed tag--tiny"><i class="fa-solid fa-check"></i> {{localize "PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.BADGE_ALLOWED"}}</span>{{/if}}
               {{#if this.isRecommended}}<span class="tag tag--recommended tag--tiny"><i class="fa-solid fa-star"></i> {{localize "PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.BADGE_SUGGESTED"}}</span>{{/if}}
               {{#if this.isExclusive}}<span class="tag tag--exclusive tag--tiny"><i class="fa-solid fa-filter"></i> {{localize "PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.BADGE_EXCLUSIVE"}}</span>{{/if}}
+              {{#if this.showFreeArchetypeExclusiveControls}}{{#if this.isFreeArchetypeExclusive}}<span class="tag tag--free-archetype-exclusive tag--tiny"><i class="fa-solid fa-layer-group"></i> {{localize "PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.BADGE_FREE_ARCHETYPE_EXCLUSIVE"}}</span>{{/if}}{{/if}}
               {{#if this.isNotRecommended}}<span class="tag tag--muted tag--tiny"><i class="fa-solid fa-triangle-exclamation"></i> {{localize "PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.BADGE_NOT_RECOMMENDED"}}</span>{{/if}}
               {{#if this.isDisallowed}}<span class="tag tag--disallowed tag--tiny"><i class="fa-solid fa-ban"></i> {{localize "PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.BADGE_DISALLOWED"}}</span>{{/if}}
               {{#if this.guidanceInherited}}<span class="tag tag--info tag--tiny">{{localize "PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.BADGE_INHERITED"}}</span>{{/if}}
@@ -246,6 +288,16 @@
               data-tooltip="{{localize "PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.BADGE_EXCLUSIVE"}}">
               <i class="fa-solid fa-filter" style="{{#unless this.isExclusive}}opacity: 0.35;{{/unless}}"></i>
             </button>
+            {{#if this.showFreeArchetypeExclusiveControls}}
+            <button
+              type="button"
+              class="guidance-item__toggle {{#if this.isFreeArchetypeExclusive}}is-active is-free-archetype-exclusive{{/if}}"
+              data-action="toggle-free-archetype-exclusive-guidance"
+              data-uuid="{{this.uuid}}"
+              data-tooltip="{{localize "PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.BADGE_FREE_ARCHETYPE_EXCLUSIVE"}}">
+              <i class="fa-solid fa-layer-group" style="{{#unless this.isFreeArchetypeExclusive}}opacity: 0.35;{{/unless}}"></i>
+            </button>
+            {{/if}}
             <button
               type="button"
               class="guidance-item__toggle"

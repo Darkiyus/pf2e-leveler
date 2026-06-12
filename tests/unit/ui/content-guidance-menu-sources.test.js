@@ -1,12 +1,17 @@
 import { ContentGuidanceMenu } from '../../../scripts/ui/content-guidance-menu.js';
 
 jest.mock('../../../scripts/access/content-guidance.js', () => ({
-  buildGuidanceEntry: jest.fn((status, exclusive = false) => {
+  buildGuidanceEntry: jest.fn((status, exclusive = false, freeArchetypeExclusive = false) => {
     const normalizedStatus = status && status !== 'default' ? status : null;
     const normalizedExclusive = exclusive === true && normalizedStatus !== 'disallowed';
-    if (!normalizedStatus && !normalizedExclusive) return null;
-    if (!normalizedExclusive) return normalizedStatus;
-    return normalizedStatus ? { status: normalizedStatus, exclusive: true } : { exclusive: true };
+    const normalizedFreeArchetypeExclusive = freeArchetypeExclusive === true && normalizedStatus !== 'disallowed';
+    if (!normalizedStatus && !normalizedExclusive && !normalizedFreeArchetypeExclusive) return null;
+    if (!normalizedExclusive && !normalizedFreeArchetypeExclusive) return normalizedStatus;
+    return {
+      ...(normalizedStatus ? { status: normalizedStatus } : {}),
+      ...(normalizedExclusive ? { exclusive: true } : {}),
+      ...(normalizedFreeArchetypeExclusive ? { freeArchetypeExclusive: true } : {}),
+    };
   }),
   CATEGORY_DEFAULT_POLICIES: { ALLOWED: 'allowed', DISALLOWED: 'disallowed' },
   getContentGuidance: jest.fn(() => ({})),
@@ -14,10 +19,14 @@ jest.mock('../../../scripts/access/content-guidance.js', () => ({
   getCategoryDefaultGuidanceKey: jest.fn((categoryKey) => `category-default:${categoryKey}`),
   getSourceGuidanceKey: jest.fn((title) => `source-title:${String(title ?? '').trim().toLowerCase().replace(/\s+/g, ' ')}`),
   normalizeGuidanceEntry: jest.fn((entry) => {
-    if (typeof entry === 'string') return { status: entry === 'default' ? null : entry, exclusive: false };
-    if (!entry || typeof entry !== 'object') return { status: null, exclusive: false };
+    if (typeof entry === 'string') return { status: entry === 'default' ? null : entry, exclusive: false, freeArchetypeExclusive: false };
+    if (!entry || typeof entry !== 'object') return { status: null, exclusive: false, freeArchetypeExclusive: false };
     const status = entry.status && entry.status !== 'default' ? entry.status : null;
-    return { status, exclusive: entry.exclusive === true && status !== 'disallowed' };
+    return {
+      status,
+      exclusive: entry.exclusive === true && status !== 'disallowed',
+      freeArchetypeExclusive: entry.freeArchetypeExclusive === true && status !== 'disallowed',
+    };
   }),
 }));
 

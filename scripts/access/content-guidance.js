@@ -123,30 +123,40 @@ export function isDisallowedForCurrentUser(uuid) {
   return isDisallowed(uuid) && shouldRestrictContentForUser();
 }
 
-export function annotateGuidanceBySlug(items, prefix) {
+export function annotateGuidanceBySlug(items, prefix, options = {}) {
   return annotateGuidanceWithResolver(items, (item) => {
     const key = `${prefix}:${item.slug}`;
     return resolveGuidanceStatus({ ...item, uuid: key }, {
       categoryKey: getGuidanceCategoryKeyForSlugPrefix(prefix),
+      ignoreCategoryDefaultDisallowed: options.ignoreCategoryDefaultDisallowed === true,
     });
-  });
+  }, options);
 }
 
-export function annotateGuidance(items) {
-  return annotateGuidanceWithResolver(items, (item) => resolveGuidanceStatus(item));
+export function annotateGuidance(items, options = {}) {
+  return annotateGuidanceWithResolver(
+    items,
+    (item) => resolveGuidanceStatus(item, {
+      ignoreCategoryDefaultDisallowed: options.ignoreCategoryDefaultDisallowed === true,
+    }),
+    options,
+  );
 }
 
-export function resolveGuidanceStatus(item, { categoryKey = null } = {}) {
+export function resolveGuidanceStatus(item, { categoryKey = null, ignoreCategoryDefaultDisallowed = false } = {}) {
   const uuid = item?.uuid ?? null;
   const resolvedCategoryKey = categoryKey ?? getGuidanceCategoryKeyForItem(item);
   const direct = normalizeGuidanceEntry(uuid ? getRawGuidanceEntry(uuid) : null);
-  if (direct.status || direct.exclusive) {
+  if (direct.status || direct.exclusive || direct.freeArchetypeExclusive) {
     return {
       status: direct.status,
       inherited: false,
       exclusive: direct.exclusive,
       exclusiveInherited: false,
       exclusiveScope: direct.exclusive ? (resolvedCategoryKey ?? '__list') : null,
+      freeArchetypeExclusive: direct.freeArchetypeExclusive,
+      freeArchetypeExclusiveInherited: false,
+      freeArchetypeExclusiveScope: direct.freeArchetypeExclusive ? (resolvedCategoryKey ?? '__list') : null,
       categoryKey: resolvedCategoryKey,
     };
   }
@@ -156,13 +166,16 @@ export function resolveGuidanceStatus(item, { categoryKey = null } = {}) {
     ?? null;
   const sourceKey = getSourceGuidanceKey(publicationTitle);
   const source = normalizeGuidanceEntry(sourceKey ? getRawGuidanceEntry(sourceKey) : null);
-  if (source.status || source.exclusive) {
+  if (source.status || source.exclusive || source.freeArchetypeExclusive) {
     return {
       status: source.status,
       inherited: true,
       exclusive: source.exclusive,
       exclusiveInherited: source.exclusive,
       exclusiveScope: source.exclusive ? '__list' : null,
+      freeArchetypeExclusive: source.freeArchetypeExclusive,
+      freeArchetypeExclusiveInherited: source.freeArchetypeExclusive,
+      freeArchetypeExclusiveScope: source.freeArchetypeExclusive ? '__list' : null,
       categoryKey: resolvedCategoryKey,
     };
   }
@@ -174,18 +187,24 @@ export function resolveGuidanceStatus(item, { categoryKey = null } = {}) {
       exclusive: false,
       exclusiveInherited: false,
       exclusiveScope: null,
+      freeArchetypeExclusive: false,
+      freeArchetypeExclusiveInherited: false,
+      freeArchetypeExclusiveScope: null,
       categoryKey: resolvedCategoryKey,
     };
   }
 
   const categoryDefault = getCategoryDefaultPolicy(resolvedCategoryKey);
-  if (categoryDefault === CATEGORY_DEFAULT_POLICIES.DISALLOWED) {
+  if (!ignoreCategoryDefaultDisallowed && categoryDefault === CATEGORY_DEFAULT_POLICIES.DISALLOWED) {
     return {
       status: GUIDANCE_STATUSES.DISALLOWED,
       inherited: true,
       exclusive: source.exclusive,
       exclusiveInherited: source.exclusive,
       exclusiveScope: source.exclusive ? '__list' : null,
+      freeArchetypeExclusive: source.freeArchetypeExclusive,
+      freeArchetypeExclusiveInherited: source.freeArchetypeExclusive,
+      freeArchetypeExclusiveScope: source.freeArchetypeExclusive ? '__list' : null,
       categoryKey: resolvedCategoryKey,
     };
   }
@@ -196,6 +215,9 @@ export function resolveGuidanceStatus(item, { categoryKey = null } = {}) {
     exclusive: source.exclusive,
     exclusiveInherited: source.exclusive,
     exclusiveScope: source.exclusive ? '__list' : null,
+    freeArchetypeExclusive: source.freeArchetypeExclusive,
+    freeArchetypeExclusiveInherited: source.freeArchetypeExclusive,
+    freeArchetypeExclusiveScope: source.freeArchetypeExclusive ? '__list' : null,
     categoryKey: resolvedCategoryKey,
   };
 }
@@ -230,7 +252,10 @@ export function isGuidanceSelectionBlocked(item) {
 export function getGuidanceSelectionTooltip(item) {
   if (item?.isDisallowed !== true) return '';
   if (shouldRestrictContentForUser()) {
-    if (item?.guidanceExclusiveFiltered === true) {
+    if (
+      item?.guidanceExclusiveFiltered === true ||
+      item?.guidanceFreeArchetypeExclusiveFiltered === true
+    ) {
       return game.i18n.localize('PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.BADGE_EXCLUSIVE_REQUIRED');
     }
     return game.i18n.localize('PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.BADGE_DISALLOWED');
@@ -252,23 +277,31 @@ export async function setGuidance(uuid, status) {
 export function normalizeGuidanceEntry(entry) {
   if (typeof entry === 'string') {
     const status = normalizeGuidanceStatus(entry);
-    return { status, exclusive: false };
+    return { status, exclusive: false, freeArchetypeExclusive: false };
   }
-  if (!entry || typeof entry !== 'object') return { status: null, exclusive: false };
+  if (!entry || typeof entry !== 'object') {
+    return { status: null, exclusive: false, freeArchetypeExclusive: false };
+  }
 
   const status = normalizeGuidanceStatus(entry.status);
   const exclusive = entry.exclusive === true && status !== GUIDANCE_STATUSES.DISALLOWED;
-  return { status, exclusive };
+  const freeArchetypeExclusive =
+    entry.freeArchetypeExclusive === true && status !== GUIDANCE_STATUSES.DISALLOWED;
+  return { status, exclusive, freeArchetypeExclusive };
 }
 
-export function buildGuidanceEntry(status, exclusive = false) {
+export function buildGuidanceEntry(status, exclusive = false, freeArchetypeExclusive = false) {
   const normalizedStatus = normalizeGuidanceStatus(status);
   const normalizedExclusive = exclusive === true && normalizedStatus !== GUIDANCE_STATUSES.DISALLOWED;
-  if (!normalizedStatus && !normalizedExclusive) return null;
-  if (!normalizedExclusive) return normalizedStatus;
-  return normalizedStatus
-    ? { status: normalizedStatus, exclusive: true }
-    : { exclusive: true };
+  const normalizedFreeArchetypeExclusive =
+    freeArchetypeExclusive === true && normalizedStatus !== GUIDANCE_STATUSES.DISALLOWED;
+  if (!normalizedStatus && !normalizedExclusive && !normalizedFreeArchetypeExclusive) return null;
+  if (!normalizedExclusive && !normalizedFreeArchetypeExclusive) return normalizedStatus;
+  return {
+    ...(normalizedStatus ? { status: normalizedStatus } : {}),
+    ...(normalizedExclusive ? { exclusive: true } : {}),
+    ...(normalizedFreeArchetypeExclusive ? { freeArchetypeExclusive: true } : {}),
+  };
 }
 
 export function getCategoryDefaultPolicy(categoryKey) {
@@ -280,12 +313,29 @@ export function getCategoryDefaultPolicy(categoryKey) {
     : CATEGORY_DEFAULT_POLICIES.ALLOWED;
 }
 
-function annotateGuidanceWithResolver(items, resolver) {
+function annotateGuidanceWithResolver(items, resolver, options = {}) {
+  const freeArchetypeScopeActive = options.freeArchetype === true;
   const resolvedEntries = items.map((item) => ({
     item,
     resolved: resolver(item),
   }));
-  applyClassArchetypeExclusiveFamilies(resolvedEntries);
+  if (!freeArchetypeScopeActive) {
+    for (const { resolved } of resolvedEntries) {
+      clearInactiveFreeArchetypeExclusiveResolution(resolved);
+    }
+  }
+  applyClassArchetypeExclusiveFamilies(resolvedEntries, {
+    flag: 'exclusive',
+    inheritedFlag: 'exclusiveInherited',
+    scopeFlag: 'exclusiveScope',
+  });
+  if (freeArchetypeScopeActive) {
+    applyClassArchetypeExclusiveFamilies(resolvedEntries, {
+      flag: 'freeArchetypeExclusive',
+      inheritedFlag: 'freeArchetypeExclusiveInherited',
+      scopeFlag: 'freeArchetypeExclusiveScope',
+    });
+  }
 
   const exclusiveScopes = new Set();
   for (const { resolved } of resolvedEntries) {
@@ -293,17 +343,57 @@ function annotateGuidanceWithResolver(items, resolver) {
       exclusiveScopes.add(resolved.exclusiveScope);
     }
   }
+  const freeArchetypeExclusiveScopes = new Set();
+  if (freeArchetypeScopeActive) {
+    for (const { resolved } of resolvedEntries) {
+      if (resolved.freeArchetypeExclusive && resolved.freeArchetypeExclusiveScope) {
+        freeArchetypeExclusiveScopes.add(resolved.freeArchetypeExclusiveScope);
+      }
+    }
+  }
 
   for (const { item, resolved } of resolvedEntries) {
-    applyResolvedStatus(item, applyExclusiveGate(resolved, exclusiveScopes));
+    const globallyResolved = applyExclusiveGate(resolved, exclusiveScopes, {
+      flag: 'exclusive',
+      filteredFlag: 'exclusiveFiltered',
+    });
+    const scopedResolved = freeArchetypeScopeActive
+      ? applyExclusiveGate(globallyResolved, freeArchetypeExclusiveScopes, {
+        flag: 'freeArchetypeExclusive',
+        filteredFlag: 'freeArchetypeExclusiveFiltered',
+      })
+      : globallyResolved;
+    applyResolvedStatus(item, scopedResolved);
   }
   return items;
 }
 
-function applyClassArchetypeExclusiveFamilies(resolvedEntries) {
+function clearInactiveFreeArchetypeExclusiveResolution(resolved) {
+  if (
+    resolved?.freeArchetypeExclusive !== true &&
+    resolved?.freeArchetypeExclusiveFiltered !== true
+  ) {
+    return;
+  }
+
+  resolved.freeArchetypeExclusive = false;
+  resolved.freeArchetypeExclusiveInherited = false;
+  resolved.freeArchetypeExclusiveScope = null;
+  resolved.freeArchetypeExclusiveFiltered = false;
+  resolved.exclusive = false;
+  resolved.exclusiveInherited = false;
+  resolved.exclusiveScope = null;
+  resolved.exclusiveFiltered = false;
+}
+
+function applyClassArchetypeExclusiveFamilies(resolvedEntries, {
+  flag,
+  inheritedFlag,
+  scopeFlag,
+} = {}) {
   const exclusiveFamilies = new Set();
   for (const { item, resolved } of resolvedEntries) {
-    if (!resolved?.exclusive || !isArchetypeDedicationGuidanceItem(item)) continue;
+    if (!resolved?.[flag] || !isArchetypeDedicationGuidanceItem(item)) continue;
     for (const family of getClassArchetypeFamilyKeys(item)) {
       exclusiveFamilies.add(family);
     }
@@ -311,18 +401,25 @@ function applyClassArchetypeExclusiveFamilies(resolvedEntries) {
   if (!exclusiveFamilies.size) return;
 
   for (const { item, resolved } of resolvedEntries) {
-    if (!resolved || resolved.exclusive || !isClassArchetypeGuidanceItem(item)) continue;
+    if (!resolved || resolved[flag] || !isClassArchetypeGuidanceItem(item)) continue;
     if (!getClassArchetypeFamilyKeys(item).some((family) => exclusiveFamilies.has(family))) continue;
     if (resolved.status === GUIDANCE_STATUSES.DISALLOWED && resolved.inherited !== true) continue;
 
-    resolved.exclusive = true;
-    resolved.exclusiveInherited = true;
-    resolved.exclusiveScope = resolved.categoryKey ?? 'classArchetypes';
+    resolved[flag] = true;
+    resolved[inheritedFlag] = true;
+    resolved[scopeFlag] = resolved.categoryKey ?? 'classArchetypes';
+    if (resolved.status === GUIDANCE_STATUSES.DISALLOWED && resolved.inherited === true) {
+      resolved.status = null;
+      resolved.inherited = false;
+    }
   }
 }
 
-function applyExclusiveGate(resolved, exclusiveScopes) {
-  if (resolved.exclusive || exclusiveScopes.size === 0) return resolved;
+function applyExclusiveGate(resolved, exclusiveScopes, {
+  flag,
+  filteredFlag,
+} = {}) {
+  if (resolved[flag] || exclusiveScopes.size === 0) return resolved;
   const itemScope = resolved.categoryKey ?? '__list';
   const blockedByExclusive = exclusiveScopes.has('__list') || exclusiveScopes.has(itemScope);
   if (!blockedByExclusive) return resolved;
@@ -331,7 +428,7 @@ function applyExclusiveGate(resolved, exclusiveScopes) {
     ...resolved,
     status: GUIDANCE_STATUSES.DISALLOWED,
     inherited: true,
-    exclusiveFiltered: true,
+    [filteredFlag]: true,
   };
 }
 
@@ -342,7 +439,9 @@ function applyResolvedStatus(item, resolved) {
   item.isNotRecommended = status === GUIDANCE_STATUSES.NOT_RECOMMENDED;
   item.isDisallowed = status === GUIDANCE_STATUSES.DISALLOWED;
   item.isExclusive = resolved?.exclusive === true;
+  item.isFreeArchetypeExclusive = resolved?.freeArchetypeExclusive === true;
   item.guidanceExclusiveFiltered = resolved?.exclusiveFiltered === true;
+  item.guidanceFreeArchetypeExclusiveFiltered = resolved?.freeArchetypeExclusiveFiltered === true;
   item.guidanceInherited = resolved?.inherited === true && !!status;
   item.guidanceStatus = status ?? GUIDANCE_STATUSES.DEFAULT;
   item.guidanceSelectionBlocked = isGuidanceSelectionBlocked(item);
@@ -357,7 +456,7 @@ function normalizeGuidanceStatus(status) {
 
 function getGuidanceSortPriority(item) {
   if (item?.isRecommended) return 0;
-  if (item?.isExclusive || item?.isAllowed) return 1;
+  if (item?.isExclusive || item?.isFreeArchetypeExclusive || item?.isAllowed) return 1;
   if (item?.isNotRecommended) return 3;
   if (item?.isDisallowed) return 4;
   return 2;
