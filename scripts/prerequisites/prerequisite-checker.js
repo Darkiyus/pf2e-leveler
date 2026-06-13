@@ -1,4 +1,5 @@
 import { parseAllPrerequisiteNodes } from './parsers.js';
+import { SUBCLASS_TAGS } from '../constants.js';
 import {
   matchSkill,
   matchAnySkill,
@@ -27,8 +28,26 @@ import {
   matchUnknown,
 } from './matchers.js';
 
+const SUBCLASS_REQUIREMENT_OWNERS = Object.entries(SUBCLASS_TAGS)
+  .map(([classSlug, subclassTag]) => {
+    const normalizedClass = normalizeSlug(classSlug);
+    const normalizedTag = normalizeSlug(subclassTag);
+    const prefix = `${normalizedClass}-`;
+    return {
+      classSlug: normalizedClass,
+      subclassSlug: normalizedTag.startsWith(prefix)
+        ? normalizedTag.slice(prefix.length)
+        : normalizedTag,
+    };
+  })
+  .filter((entry) => entry.classSlug && entry.subclassSlug);
+
 export function checkPrerequisites(feat, buildState) {
-  const parsed = parseAllPrerequisiteNodes(feat);
+  const parsed = filterClassBranchPrerequisites(
+    parseAllPrerequisiteNodes(feat),
+    feat,
+    buildState,
+  );
 
   if (parsed.length === 0) {
     return { met: true, results: [], tree: null };
@@ -41,6 +60,112 @@ export function checkPrerequisites(feat, buildState) {
   const met = evaluation.met !== false;
 
   return { met, results: evaluation.results, tree: evaluation.tree };
+}
+
+function filterClassBranchPrerequisites(nodes, feat, buildState) {
+  const featClassTraits = getFeatTraitSlugs(feat);
+  const activeFeatClasses = new Set(
+    [...getTrackedClassSlugs(buildState)].filter((classSlug) => featClassTraits.has(classSlug)),
+  );
+
+  if (activeFeatClasses.size === 0) return nodes;
+
+  return nodes
+    .map((node) => pruneClassBranchRequirement(node, featClassTraits, activeFeatClasses))
+    .filter(Boolean);
+}
+
+function pruneClassBranchRequirement(node, featClassTraits, activeFeatClasses) {
+  if (!node || typeof node !== 'object') return node;
+
+  const branchClass = getSubclassRequirementClass(node);
+  if (
+    branchClass
+    && featClassTraits.has(branchClass)
+    && !activeFeatClasses.has(branchClass)
+  ) {
+    return null;
+  }
+
+  if (Array.isArray(node.children)) {
+    const children = node.children
+      .map((child) => pruneClassBranchRequirement(child, featClassTraits, activeFeatClasses))
+      .filter(Boolean);
+    return children.length > 0 ? { ...node, children } : null;
+  }
+
+  if (node.child) {
+    const child = pruneClassBranchRequirement(node.child, featClassTraits, activeFeatClasses);
+    return child ? { ...node, child } : null;
+  }
+
+  return node;
+}
+
+function getSubclassRequirementClass(node) {
+  if (node.kind !== 'leaf') return null;
+
+  if (node.type === 'classIdentity' && node.subclassType) {
+    return getClassForSubclassSlug(normalizeSlug(node.subclassType));
+  }
+
+  if (node.type !== 'feat') return null;
+
+  const slug = normalizeSlug(node.slug);
+  const text = normalizeSlug(node.text);
+  if (!slug || !text) return null;
+
+  for (const { classSlug, subclassSlug } of SUBCLASS_REQUIREMENT_OWNERS) {
+    if (isSubclassRequirementSlug(slug, subclassSlug) && isSubclassRequirementText(text, subclassSlug)) {
+      return classSlug;
+    }
+  }
+
+  return null;
+}
+
+function getClassForSubclassSlug(subclassSlug) {
+  return SUBCLASS_REQUIREMENT_OWNERS.find((entry) => entry.subclassSlug === subclassSlug)?.classSlug ?? null;
+}
+
+function isSubclassRequirementSlug(slug, subclassSlug) {
+  return slug === subclassSlug
+    || slug.startsWith(`${subclassSlug}-`)
+    || slug.endsWith(`-${subclassSlug}`);
+}
+
+function isSubclassRequirementText(text, subclassSlug) {
+  return text === subclassSlug
+    || text.startsWith(`${subclassSlug}-`)
+    || text.endsWith(`-${subclassSlug}`)
+    || text.includes(`-${subclassSlug}-`);
+}
+
+function getFeatTraitSlugs(feat) {
+  return new Set(
+    [
+      ...(Array.isArray(feat?.traits) ? feat.traits : []),
+      ...(feat?.system?.traits?.value ?? []),
+    ]
+      .map(normalizeSlug)
+      .filter(Boolean),
+  );
+}
+
+function getTrackedClassSlugs(buildState) {
+  const classes = Array.isArray(buildState?.classes) && buildState.classes.length > 0
+    ? buildState.classes
+    : [buildState?.class];
+  return new Set(classes.map((entry) => normalizeSlug(entry?.slug)).filter(Boolean));
+}
+
+function normalizeSlug(value) {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/['\u2019]/gu, '')
+    .replace(/[^a-z0-9]+/gu, '-')
+    .replace(/^-+|-+$/gu, '');
 }
 
 function evaluateRequirementNode(node, buildState) {

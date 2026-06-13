@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.5.4
+
+### Feat Picker
+
+- **Shared class feats now ignore prerequisites from other branches** - Thaumaturges can select Know-It-All without being blocked by the Bard-only Enigma Muse prerequisite, while Bard builds still enforce their muse requirements
+
 ## 3.5.3
 
 ### Character Creation

@@ -42,6 +42,44 @@ describe('checkPrerequisites', () => {
     expect(result.results).toHaveLength(0);
   });
 
+  test('ignores subclass prerequisites from another branch of a shared class feat', () => {
+    const feat = {
+      system: {
+        traits: { value: ['bard', 'thaumaturge'] },
+        prerequisites: { value: [{ value: 'Enigma Muse' }] },
+      },
+    };
+
+    const result = checkPrerequisites(feat, {
+      ...buildState,
+      class: { slug: 'thaumaturge', hp: 8 },
+      feats: new Set(),
+    });
+
+    expect(result.met).toBe(true);
+    expect(result.results).toHaveLength(0);
+  });
+
+  test('keeps subclass prerequisites for the matching branch of a shared class feat', () => {
+    const feat = {
+      system: {
+        traits: { value: ['bard', 'thaumaturge'] },
+        prerequisites: { value: [{ value: 'Enigma Muse' }] },
+      },
+    };
+
+    const result = checkPrerequisites(feat, {
+      ...buildState,
+      class: { slug: 'bard', hp: 8, subclassType: 'muse' },
+      feats: new Set(),
+    });
+
+    expect(result.met).toBe(false);
+    expect(result.results).toEqual([
+      expect.objectContaining({ text: 'Enigma Muse', met: false }),
+    ]);
+  });
+
   test('feat with met skill prerequisite', () => {
     const feat = {
       system: { prerequisites: { value: [{ value: 'trained in Athletics' }] } },

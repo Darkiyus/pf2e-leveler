@@ -11,16 +11,23 @@ describe('FeatPicker prerequisite enforcement', () => {
     if (!ClassRegistry.get('fighter')) ClassRegistry.register(FIGHTER);
   });
 
-  function createFeat({ name, prereqText, uuid = 'feat-1', slug = 'feat-1' }) {
+  function createFeat({
+    name,
+    prereqText,
+    uuid = 'feat-1',
+    slug = 'feat-1',
+    level = 2,
+    traits = ['archetype'],
+  }) {
     return {
       uuid,
       slug,
       name,
       img: 'icons/svg/mystery-man.svg',
       system: {
-        level: { value: 2 },
+        level: { value: level },
         maxTakable: 1,
-        traits: { value: ['archetype'], rarity: 'common' },
+        traits: { value: traits, rarity: 'common' },
         prerequisites: prereqText ? { value: [{ value: prereqText }] } : { value: [] },
       },
     };
@@ -446,6 +453,38 @@ describe('FeatPicker prerequisite enforcement', () => {
     expect(result.hasUnknownPrerequisites).toBe(false);
     expect(result.prerequisitesFailed).toBe(true);
     expect(result.selectionBlocked).toBe(true);
+  });
+
+  test('does not apply a Bard muse prerequisite to the Thaumaturge branch of a shared class feat', () => {
+    const feat = createFeat({
+      name: 'Know-It-All',
+      prereqText: 'Enigma Muse',
+      uuid: 'know-it-all',
+      slug: 'know-it-all',
+      level: 8,
+      traits: ['bard', 'thaumaturge'],
+    });
+
+    const picker = new FeatPicker(
+      createActor(),
+      'class',
+      8,
+      createBuildState({
+        level: 8,
+        class: { slug: 'thaumaturge', hp: 8, subclassType: null },
+      }),
+      jest.fn(),
+    );
+    picker.allFeats = [feat];
+
+    const [result] = picker._applyFilters();
+
+    expect(result).toBeDefined();
+    expect(result.prereqResults).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ text: 'Enigma Muse', met: false })]),
+    );
+    expect(result.hasFailedPrerequisites).toBe(false);
+    expect(result.selectionBlocked).toBe(false);
   });
 
   test('mechanical alternative prerequisites do not block selection when one branch is met', () => {
