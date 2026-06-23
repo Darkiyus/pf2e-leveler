@@ -1,3 +1,9 @@
+import { getGradualBoostGroupLevels } from '../classes/progression.js';
+import { isGradualBoostsEnabled } from '../utils/pf2e-api.js';
+
+const BOOST_MILESTONES = [5, 10, 15, 20];
+const ATTRIBUTES = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
+
 export async function applyBoosts(actor, plan, level) {
   const levelData = plan.levels[level];
   if (!levelData?.abilityBoosts?.length) return [];
@@ -9,13 +15,74 @@ export async function applyBoosts(actor, plan, level) {
   if (!buildSource.attributes) buildSource.attributes = {};
   if (!buildSource.attributes.boosts) buildSource.attributes.boosts = {};
   const existing = buildSource.attributes.boosts[boostKey] ?? [];
-  buildSource.attributes.boosts[boostKey] = [...existing, ...levelData.abilityBoosts];
+  buildSource.attributes.boosts[boostKey] = buildBoostBucket(existing, plan, level, levelData.abilityBoosts);
   await actor.update({ 'system.build': buildSource });
 
   return levelData.abilityBoosts;
 }
 
 function findBoostKey(level) {
-  const milestones = [5, 10, 15, 20];
-  return milestones.find((m) => m >= level) ?? null;
+  return BOOST_MILESTONES.find((m) => m >= level) ?? null;
+}
+
+function buildBoostBucket(existing, plan, level, boosts) {
+  if (!isGradualBoostsEnabled()) {
+    return [...normalizeAbilityBoostList(existing), ...normalizeAbilityBoostList(boosts)];
+  }
+
+  const groupLevels = getGradualBoostGroupLevels(level);
+  const currentIndex = groupLevels.indexOf(level);
+  if (currentIndex < 0) {
+    return [...normalizeAbilityBoostList(existing), ...normalizeAbilityBoostList(boosts)];
+  }
+
+  const plannedBoosts = normalizeAbilityBoostList(boosts);
+  if (plannedBoosts.length > 1) return plannedBoosts.slice(0, currentIndex + 1);
+
+  const bucket = normalizeAbilityBoostList(existing);
+  for (const [index, groupLevel] of groupLevels.entries()) {
+    if (index > currentIndex) break;
+    const plannedBoost = normalizeAbilityBoostList(plan?.levels?.[groupLevel]?.abilityBoosts)[0];
+    if (plannedBoost) bucket[index] = plannedBoost;
+  }
+
+  return bucket.slice(0, currentIndex + 1).filter(Boolean);
+}
+
+function normalizeAbilityBoostList(value) {
+  const entries = Array.isArray(value)
+    ? value
+    : value && typeof value === 'object'
+      ? Object.entries(value)
+        .flatMap(([key, entry]) => normalizeAbilityBoostObjectEntry(key, entry))
+      : [value];
+
+  return entries
+    .map((entry) => normalizeAbilityBoostKey(entry))
+    .filter((entry) => ATTRIBUTES.includes(entry));
+}
+
+function normalizeAbilityBoostObjectEntry(key, entry) {
+  if (entry === true || entry === 1 || entry === 'true' || entry === 'selected') return [key];
+  if (typeof entry === 'string') return [entry];
+  if (Array.isArray(entry)) return entry;
+  if (!entry || typeof entry !== 'object') return [];
+  if (typeof entry.selected === 'string') return [entry.selected];
+  if (Array.isArray(entry.selected)) return entry.selected;
+  if (typeof entry.value === 'string') return [entry.value];
+  if (Array.isArray(entry.value)) return entry.value;
+  return [];
+}
+
+function normalizeAbilityBoostKey(value) {
+  const normalized = String(value ?? '').trim().toLowerCase();
+  const aliases = {
+    strength: 'str',
+    dexterity: 'dex',
+    constitution: 'con',
+    intelligence: 'int',
+    wisdom: 'wis',
+    charisma: 'cha',
+  };
+  return aliases[normalized] ?? normalized;
 }

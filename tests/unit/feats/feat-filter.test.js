@@ -59,6 +59,66 @@ describe('filterFeatsByCategory', () => {
     ]);
   });
 
+  test('dual class filtering can include archetype feats when requested by the slot preset', () => {
+    const dualClassFeats = [
+      makeFeat('Reactive Shield', 1, ['fighter']),
+      makeFeat('Medic Dedication', 2, ['archetype', 'dedication']),
+      makeFeat('Doctor Visitation', 4, ['archetype', 'medic']),
+      makeFeat('Quick Bomber', 1, ['alchemist']),
+    ];
+
+    const result = filterFeatsByCategory(dualClassFeats, 'dualClass', 'fighter', 4, {
+      includeDedications: true,
+    });
+
+    expect(result).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: 'Reactive Shield' }),
+      expect.objectContaining({ name: 'Medic Dedication' }),
+      expect.objectContaining({ name: 'Doctor Visitation' }),
+    ]));
+    expect(result).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: 'Quick Bomber' }),
+    ]));
+  });
+
+  test('dual class filtering can include additional archetype feats unlocked by owned dedications', async () => {
+    const dedication = {
+      ...makeFeat('Dual-Weapon Warrior Dedication', 2, ['archetype', 'dedication']),
+      slug: 'dual-weapon-warrior-dedication',
+      system: {
+        ...makeFeat('Dual-Weapon Warrior Dedication', 2, ['archetype', 'dedication']).system,
+        description: {
+          value: '<p><strong>Additional Feats:</strong> 4th Quick Draw</p>',
+        },
+      },
+    };
+    const quickDraw = {
+      ...makeFeat('Quick Draw', 2, ['rogue']),
+      slug: 'quick-draw',
+    };
+
+    const additionalLevels = await collectAdditionalArchetypeFeatLevels(
+      [dedication, quickDraw],
+      new Set(['dual-weapon-warrior-dedication']),
+    );
+
+    const result = filterFeatsByCategory(
+      [dedication, quickDraw],
+      'dualClass',
+      'fighter',
+      4,
+      {
+        includeDedications: true,
+        additionalArchetypeFeatLevels: additionalLevels,
+      },
+    );
+
+    expect(result).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: 'Dual-Weapon Warrior Dedication' }),
+      expect.objectContaining({ name: 'Quick Draw' }),
+    ]));
+  });
+
   test('class feat filtering includes additional archetype feats unlocked by an owned dedication', async () => {
     const dedication = {
       ...makeFeat('Archaeologist Dedication', 2, ['archetype', 'dedication']),
@@ -521,6 +581,72 @@ describe('filterFeatsByCategory', () => {
     ]));
   });
 
+  test('ancestry feat filtering includes universal ancestry-category feats without ancestry traits', () => {
+    const reincarnation = makeFeat('Reincarnation', 9, []);
+    reincarnation.system.category = 'ancestry';
+    const feats = [
+      makeFeat('Natural Ambition', 1, ['human']),
+      reincarnation,
+      makeFeat('Elven Lore', 1, ['elf']),
+    ];
+
+    const result = getFeatsForSelection(feats, 'ancestry', { ancestry: { slug: 'human' }, heritage: null }, 9, {
+      buildState: {
+        ancestryTraits: new Set(['human']),
+      },
+    });
+
+    expect(result).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: 'Natural Ambition' }),
+      expect.objectContaining({ name: 'Reincarnation' }),
+    ]));
+    expect(result).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: 'Elven Lore' }),
+    ]));
+  });
+
+  test('ancestry feat filtering treats Reincarnated ancestry feats as universal access', () => {
+    const originalConfig = global.CONFIG;
+    global.CONFIG = {
+      ...(global.CONFIG ?? {}),
+      PF2E: {
+        ...(global.CONFIG?.PF2E ?? {}),
+        creatureTraits: {
+          ...(global.CONFIG?.PF2E?.creatureTraits ?? {}),
+          human: 'Human',
+          elf: 'Elf',
+          reincarnated: 'Reincarnated',
+        },
+      },
+    };
+
+    try {
+      const reincarnation = makeFeat('Reincarnation', 9, ['reincarnated'], 'rare');
+      reincarnation.system.category = 'ancestry';
+      const feats = [
+        makeFeat('Natural Ambition', 1, ['human']),
+        reincarnation,
+        makeFeat('Elven Lore', 1, ['elf']),
+      ];
+
+      const result = getFeatsForSelection(feats, 'ancestry', { ancestry: { slug: 'human' }, heritage: null }, 9, {
+        buildState: {
+          ancestryTraits: new Set(['human']),
+        },
+      });
+
+      expect(result).toEqual(expect.arrayContaining([
+        expect.objectContaining({ name: 'Natural Ambition' }),
+        expect.objectContaining({ name: 'Reincarnation' }),
+      ]));
+      expect(result).not.toEqual(expect.arrayContaining([
+        expect.objectContaining({ name: 'Elven Lore' }),
+      ]));
+    } finally {
+      global.CONFIG = originalConfig;
+    }
+  });
+
   test('getFeatsForSelection uses the secondary class for dual class feat queries', () => {
     const feats = [
       makeFeat('Reactive Shield', 1, ['fighter']),
@@ -642,6 +768,25 @@ describe('dedication and skill filters', () => {
     expect(result).toEqual([
       expect.objectContaining({ name: 'Fighter Dedication' }),
       expect.objectContaining({ name: 'Medic Dedication' }),
+    ]);
+  });
+
+  test('filterByArchetypeRestrictions uses build state class slug before actor class slug', () => {
+    const actor = { class: { slug: 'alchemist' } };
+    const feats = [
+      makeFeat('Fighter Dedication', 2, ['archetype', 'dedication', 'multiclass']),
+      makeFeat('Alchemist Dedication', 2, ['archetype', 'dedication', 'multiclass']),
+    ];
+    feats[0].slug = 'fighter-dedication';
+    feats[1].slug = 'alchemist-dedication';
+
+    const result = filterByArchetypeRestrictions(feats, actor, {
+      class: { slug: 'fighter' },
+      classArchetypeDedications: new Set(),
+    });
+
+    expect(result).toEqual([
+      expect.objectContaining({ name: 'Alchemist Dedication' }),
     ]);
   });
 

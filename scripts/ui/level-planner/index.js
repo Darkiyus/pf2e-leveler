@@ -2347,9 +2347,13 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   async _buildFeatPickerPreset(category, level, buildState) {
     const classSlug = String(buildState?.class?.slug ?? this.actor?.class?.slug ?? '').toLowerCase();
     switch (category) {
-      case 'classFeats': {
+      case 'classFeats':
+      case 'dualClassFeats': {
         const enforceSubclassDedicationRequirement = game.settings.get(MODULE_ID, 'enforceSubclassDedicationRequirement') === true;
-        const requiredSecondLevelFeat = level === 2 && enforceSubclassDedicationRequirement ? getRequiredSecondLevelClassFeatForActor(this.actor, classSlug) : null;
+        const requirementClassSlug = category === 'dualClassFeats'
+          ? String(this.actor?.class?.slug ?? '').toLowerCase()
+          : classSlug;
+        const requiredSecondLevelFeat = level === 2 && enforceSubclassDedicationRequirement ? getRequiredSecondLevelClassFeatForActor(this.actor, requirementClassSlug) : null;
         const allowedFeatUuids = requiredSecondLevelFeat ? await this._resolveRequiredSecondLevelClassFeatUuids(requiredSecondLevelFeat) : [];
         return {
           selectedFeatTypes: ['class', 'archetype'],
@@ -2360,12 +2364,6 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
           maxLevel: level,
         };
       }
-      case 'dualClassFeats':
-        return {
-          selectedFeatTypes: ['class'],
-          lockedFeatTypes: ['class'],
-          maxLevel: level,
-        };
       case 'skillFeats':
         return {
           selectedFeatTypes: ['skill'],

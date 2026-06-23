@@ -821,6 +821,56 @@ describe('LevelPlanner bootstrap from existing actor', () => {
     game.settings.get = originalGet;
   });
 
+  it('allows required class-archetype dedications in level 2 dual class feat presets', async () => {
+    const originalGet = game.settings.get;
+    game.settings.get = jest.fn((module, key) => (
+      key === 'enforceSubclassDedicationRequirement' ? true : originalGet(module, key)
+    ));
+    loadFeats.mockResolvedValue([
+      {
+        uuid: 'Compendium.pf2e.feats-srd.Item.battle-harbinger-dedication',
+        slug: 'battle-harbinger-dedication',
+        name: 'Battle Harbinger Dedication',
+        system: { level: { value: 2 }, traits: { value: ['archetype', 'dedication', 'class'] } },
+      },
+    ]);
+
+    const actor = createMockActor({
+      class: { slug: 'cleric' },
+      system: {
+        details: { level: { value: 1 }, xp: { value: 0, max: 1000 } },
+      },
+      items: [
+        {
+          type: 'classfeature',
+          system: {
+            traits: { otherTags: ['cleric-doctrine'] },
+            description: {
+              value: 'You must select Battle Harbinger Dedication as your 2nd-level class feat.',
+            },
+          },
+        },
+      ],
+    });
+
+    try {
+      const planner = new LevelPlanner(actor);
+      const preset = await planner._buildFeatPickerPreset('dualClassFeats', 2, {
+        class: { slug: 'fighter' },
+      });
+
+      expect(preset).toEqual(expect.objectContaining({
+        selectedFeatTypes: ['class', 'archetype'],
+        lockedFeatTypes: ['class'],
+        extraVisibleFeatTypes: ['archetype'],
+        allowedFeatUuids: ['Compendium.pf2e.feats-srd.Item.battle-harbinger-dedication'],
+        requiredFeatLimitation: true,
+      }));
+    } finally {
+      game.settings.get = originalGet;
+    }
+  });
+
   it('resolves required 2nd-level class feat uuids from subclass family tags', async () => {
     const originalGet = game.settings.get;
     game.settings.get = jest.fn((module, key) => (

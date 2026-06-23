@@ -7,6 +7,7 @@ import {
   getAdditionalArchetypeMatchKeys,
   filterBySearch,
   filterBySkill,
+  isUniversalAncestryFeat,
   sortFeats,
 } from '../feats/feat-filter.js';
 import { checkPrerequisites } from '../prerequisites/prerequisite-checker.js';
@@ -203,6 +204,7 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     this.additionalArchetypeFeatLevels = [
       'archetype',
       'class',
+      'dualClass',
       'general',
       'skill',
       'custom',
@@ -215,6 +217,7 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     this.additionalArchetypeFeatTraits = [
       'archetype',
       'class',
+      'dualClass',
       'general',
       'skill',
       'custom',
@@ -231,7 +234,7 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       this.targetLevel,
       {
         sortMethod: this.sortMethod,
-        includeDedications: this.category === 'class',
+        includeDedications: this.category === 'class' || this.category === 'dualClass',
         includeSkillFeats: this.category === 'general',
         buildState: this.buildState,
         additionalArchetypeFeatLevels: this.additionalArchetypeFeatLevels,
@@ -248,7 +251,7 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       : categoryFeats;
     annotateGuidance(this.allFeats, {
       freeArchetype: this.freeArchetypeSlot,
-      ignoreCategoryDefaultDisallowed: this.category === 'class' && !this.freeArchetypeSlot,
+      ignoreCategoryDefaultDisallowed: ['class', 'dualClass'].includes(this.category) && !this.freeArchetypeSlot,
     });
     this._showSkillFilter = this._featsHaveSkillRelevance();
   }
@@ -1225,7 +1228,8 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     if (countsAsArchetypeFeat) types.push('archetype');
     if (traits.includes('general')) types.push('general');
     if (traits.includes('skill')) types.push('skill');
-    if (ancestryTraits.some((trait) => traits.includes(trait))) types.push('ancestry');
+    if (ancestryTraits.some((trait) => traits.includes(trait)) || isUniversalAncestryFeat(feat))
+      types.push('ancestry');
     if (this.category === 'custom') {
       if ((classSlug && traits.includes(classSlug)) || traits.some((trait) => ClassRegistry.has(trait))) {
         types.push('class');

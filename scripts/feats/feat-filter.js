@@ -1,5 +1,7 @@
 import { getBuildStateAncestryFeatTraits } from '../utils/ancestry-feat-traits.js';
 
+const UNIVERSAL_ANCESTRY_ACCESS_TRAITS = new Set(['reincarnated']);
+
 export function filterFeatsByCategory(feats, category, searchQuery, targetLevel, options = {}) {
   const normalizedQuery = normalizeQuery(searchQuery);
   const existingFeatNames = new Set();
@@ -11,12 +13,14 @@ export function filterFeatsByCategory(feats, category, searchQuery, targetLevel,
     const traits = feat.system.traits.value.map((t) => t.toLowerCase());
     const featMatchKeys = getAdditionalArchetypeMatchKeys(feat);
     const prerequisiteTexts = (feat.system?.prerequisites?.value ?? []).map((entry) => String(entry?.value ?? ''));
+    const itemCategory = normalizeItemCategory(feat.system?.category);
     const matchesCategory = matchesFeatCategory(traits, category, normalizedQuery, {
       includeDedications,
       includeSkillFeats,
       featMatchKeys,
       additionalArchetypeFeatLevels,
       prerequisiteTexts,
+      itemCategory,
     });
     const unlockedLevel = getAdditionalArchetypeUnlockedLevel(additionalArchetypeFeatLevels, featMatchKeys);
     const hasNativeArchetypeTrait = traits.includes('archetype');
@@ -45,6 +49,7 @@ function matchesFeatCategory(traits, category, queries, options = {}) {
   const isAdditionalArchetypeFeat = getAdditionalArchetypeUnlockedLevel(additionalArchetypeFeatLevels, featMatchKeys) != null;
   const prerequisiteTexts = Array.isArray(options.prerequisiteTexts) ? options.prerequisiteTexts : [];
   const hasDedicationPrerequisite = prerequisiteTexts.some((text) => /\bdedication\b/i.test(String(text ?? '')));
+  const itemCategory = String(options.itemCategory ?? '');
   const isSkillFeat = traits.includes('skill');
   switch (category) {
     case 'custom':
@@ -54,9 +59,12 @@ function matchesFeatCategory(traits, category, queries, options = {}) {
         || (includeDedications && (isAdditionalArchetypeFeat || hasDedicationPrerequisite) && !isSkillFeat)
         || (includeDedications && (traits.includes('dedication') || traits.includes('archetype')));
     case 'dualClass':
-      return queries.some((q) => traits.includes(q)) && !traits.includes('archetype');
+      return (queries.some((q) => traits.includes(q)) && !traits.includes('archetype'))
+        || (includeDedications && (isAdditionalArchetypeFeat || hasDedicationPrerequisite) && !isSkillFeat)
+        || (includeDedications && (traits.includes('dedication') || traits.includes('archetype')));
     case 'ancestry':
-      return queries.some((q) => traits.includes(q));
+      return queries.some((q) => traits.includes(q))
+        || (itemCategory === 'ancestry' && hasUniversalAncestryAccess(traits));
     case 'skill':
       return isSkillFeat && (!traits.includes('archetype') || isAdditionalArchetypeFeat || hasDedicationPrerequisite);
     case 'general':
@@ -124,7 +132,7 @@ export function filterByGeneralSkillFeats(feats, showSkillFeats) {
 }
 
 export function filterByArchetypeRestrictions(feats, actor, buildState) {
-  const classSlug = String(buildState?.classSlug ?? actor?.class?.slug ?? '').toLowerCase();
+  const classSlug = String(buildState?.classSlug ?? buildState?.class?.slug ?? actor?.class?.slug ?? '').toLowerCase();
   const existingClassArchetypeDedications = buildState?.classArchetypeDedications ?? new Set();
   const existingArchetypeDedications = buildState?.archetypeDedications ?? new Set();
   const canTakeNewDedication = buildState?.canTakeNewArchetypeDedication !== false || buildState?.ignoreDedicationLock === true;
@@ -200,7 +208,7 @@ export function getFeatsForSelection(feats, category, actor, targetLevel, option
     result = filterBySkill(result, options.skills);
   }
 
-  if (actor && (category === 'class' || category === 'archetype')) {
+  if (actor && (category === 'class' || category === 'dualClass' || category === 'archetype')) {
     const buildState = options.ignoreDedicationLock
       ? { ...(options.buildState ?? {}), ignoreDedicationLock: true }
       : options.buildState;
@@ -208,6 +216,32 @@ export function getFeatsForSelection(feats, category, actor, targetLevel, option
   }
 
   return sortFeats(result, options.sortMethod ?? 'LEVEL_DESC');
+}
+
+export function isUniversalAncestryFeat(feat) {
+  if (normalizeItemCategory(feat?.system?.category) !== 'ancestry') return false;
+  const traits = (feat?.system?.traits?.value ?? []).map((trait) =>
+    String(trait).toLowerCase(),
+  );
+  return hasUniversalAncestryAccess(traits);
+}
+
+function normalizeItemCategory(value) {
+  return String(value?.value ?? value ?? '').toLowerCase();
+}
+
+function hasKnownCreatureTrait(traits) {
+  const creatureTraits = globalThis.CONFIG?.PF2E?.creatureTraits ?? {};
+  const ancestryTraits = globalThis.CONFIG?.PF2E?.ancestryTraits ?? {};
+  return traits.some((trait) =>
+    Object.prototype.hasOwnProperty.call(creatureTraits, trait)
+    || Object.prototype.hasOwnProperty.call(ancestryTraits, trait),
+  );
+}
+
+function hasUniversalAncestryAccess(traits) {
+  return traits.some((trait) => UNIVERSAL_ANCESTRY_ACCESS_TRAITS.has(trait))
+    || !hasKnownCreatureTrait(traits);
 }
 
 export async function collectAdditionalArchetypeFeatLevels(feats, ownedFeatSlugs, options = {}) {

@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.5.6
+
+### Level Planner
+
+- **Gradual ability boosts now apply the planned ability for each level** - Applying a partial-boost plan no longer reuses an earlier boost from the same milestone bucket, so choosing Con at level 3 and Dex at level 4 applies those exact choices to the character sheet
+- **Plan import and export controls are now easier to find** - Export, Import, and Clear appear above Level 1 with visible labels instead of icon-only buttons hidden below the level list
+- **Dual Class feat slots now support archetype feats** - Dual Class pickers can select archetype and dedication options, including Additional Feats unlocked by existing dedications and required level 2 class-archetype dedications
+- **Universal ancestry feats now appear in ancestry feat pickers** - Ancestry feat choices include universal ancestry-category feats and Rare `reincarnated` trait feats when Rare content is enabled, without leaking ancestry-specific feats across ancestries
+
 ## 3.5.5
 
 ### Character Creation

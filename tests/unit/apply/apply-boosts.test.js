@@ -19,6 +19,55 @@ describe('applyBoosts', () => {
     expect(result).toEqual(['str', 'wis', 'cha', 'int']);
   });
 
+  test('overwrites the current gradual boost slot instead of appending after stale actor data', async () => {
+    global._testSettings = {
+      pf2e: {
+        gradualBoostsVariant: true,
+      },
+    };
+    mockActor.toObject = jest.fn(() => ({
+      system: {
+        build: {
+          attributes: {
+            boosts: {
+              5: ['str', 'con', 'con'],
+            },
+          },
+        },
+      },
+    }));
+    const plan = {
+      levels: {
+        3: { abilityBoosts: ['con'] },
+        4: { abilityBoosts: ['dex'] },
+      },
+    };
+
+    const result = await applyBoosts(mockActor, plan, 4);
+
+    const updateArg = mockActor.update.mock.calls[0][0];
+    expect(updateArg['system.build'].attributes.boosts[5]).toEqual(['str', 'con', 'dex']);
+    expect(result).toEqual(['dex']);
+  });
+
+  test('preserves legacy saved gradual milestone buckets', async () => {
+    global._testSettings = {
+      pf2e: {
+        gradualBoostsVariant: true,
+      },
+    };
+    const plan = {
+      levels: {
+        5: { abilityBoosts: ['str', 'con', 'int', 'cha'] },
+      },
+    };
+
+    await applyBoosts(mockActor, plan, 5);
+
+    const updateArg = mockActor.update.mock.calls[0][0];
+    expect(updateArg['system.build'].attributes.boosts[5]).toEqual(['str', 'con', 'int', 'cha']);
+  });
+
   test('returns empty array when no boosts', async () => {
     const plan = { levels: { 2: { classFeats: [] } } };
     const result = await applyBoosts(mockActor, plan, 2);

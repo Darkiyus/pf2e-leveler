@@ -1354,6 +1354,95 @@ describe('FeatPicker prerequisite enforcement', () => {
     expect(picker._applyFilters().map((feat) => feat.name)).toEqual(['Leshy Lore']);
   });
 
+  test('locked ancestry type filter keeps universal ancestry-category feats', () => {
+    const reincarnation = createFeat({
+      name: 'Reincarnation',
+      uuid: 'reincarnation',
+      slug: 'reincarnation',
+      level: 9,
+      traits: [],
+    });
+    reincarnation.system.category = 'ancestry';
+
+    const elvenLore = createFeat({
+      name: 'Elven Lore',
+      uuid: 'elven-lore',
+      slug: 'elven-lore',
+      level: 1,
+      traits: ['elf'],
+    });
+
+    const picker = new FeatPicker(
+      createActor(),
+      'ancestry',
+      9,
+      createBuildState({
+        ancestryTraits: new Set(['human']),
+      }),
+      jest.fn(),
+    );
+    picker.allFeats = [reincarnation, elvenLore];
+    picker.selectedFeatTypes = new Set(['ancestry']);
+    picker.selectedRarities = new Set(['common']);
+    picker.maxLevel = '9';
+
+    expect(picker._applyFilters().map((feat) => feat.name)).toEqual(['Reincarnation']);
+  });
+
+  test('locked ancestry type filter keeps rare Reincarnated ancestry feats', () => {
+    const originalConfig = global.CONFIG;
+    global.CONFIG = {
+      ...(global.CONFIG ?? {}),
+      PF2E: {
+        ...(global.CONFIG?.PF2E ?? {}),
+        creatureTraits: {
+          ...(global.CONFIG?.PF2E?.creatureTraits ?? {}),
+          human: 'Human',
+          elf: 'Elf',
+          reincarnated: 'Reincarnated',
+        },
+      },
+    };
+
+    try {
+      const reincarnation = createFeat({
+        name: 'Reincarnation',
+        uuid: 'reincarnation',
+        slug: 'reincarnation',
+        level: 9,
+        traits: ['reincarnated'],
+      });
+      reincarnation.system.category = 'ancestry';
+      reincarnation.system.traits.rarity = 'rare';
+
+      const elvenLore = createFeat({
+        name: 'Elven Lore',
+        uuid: 'elven-lore',
+        slug: 'elven-lore',
+        level: 1,
+        traits: ['elf'],
+      });
+
+      const picker = new FeatPicker(
+        createActor(),
+        'ancestry',
+        9,
+        createBuildState({
+          ancestryTraits: new Set(['human']),
+        }),
+        jest.fn(),
+      );
+      picker.allFeats = [reincarnation, elvenLore];
+      picker.selectedFeatTypes = new Set(['ancestry']);
+      picker.selectedRarities = new Set(['rare']);
+      picker.maxLevel = '9';
+
+      expect(picker._applyFilters().map((feat) => feat.name)).toEqual(['Reincarnation']);
+    } finally {
+      global.CONFIG = originalConfig;
+    }
+  });
+
   test('can filter feats by a min and max level range', () => {
     const lowFeat = createFeat({
       name: 'Low Feat',
@@ -1993,6 +2082,78 @@ describe('FeatPicker prerequisite enforcement', () => {
       expect(freeArchetypePicker.filteredFeats.find((feat) => feat.uuid === 'wizard-dedication-uuid')).toBeUndefined();
     } finally {
       restoreGuidance();
+      jest.restoreAllMocks();
+    }
+  });
+
+  test('dual class pickers load class and archetype feat options', async () => {
+    const fighterFeat = createFeat({
+      name: 'Reactive Shield',
+      uuid: 'reactive-shield-uuid',
+      slug: 'reactive-shield',
+      level: 1,
+      traits: ['fighter'],
+    });
+    const medicDedication = createFeat({
+      name: 'Medic Dedication',
+      uuid: 'medic-dedication-uuid',
+      slug: 'medic-dedication',
+      level: 2,
+      traits: ['archetype', 'dedication', 'medic'],
+    });
+    const doctorVisitation = createFeat({
+      name: 'Doctor Visitation',
+      uuid: 'doctor-visitation-uuid',
+      slug: 'doctor-visitation',
+      level: 4,
+      traits: ['archetype', 'medic'],
+    });
+    const alchemistFeat = createFeat({
+      name: 'Quick Bomber',
+      uuid: 'quick-bomber-uuid',
+      slug: 'quick-bomber',
+      level: 1,
+      traits: ['alchemist'],
+    });
+
+    jest.spyOn(featCache, 'getCachedFeats').mockReturnValue([]);
+    jest.spyOn(featCache, 'loadFeats').mockResolvedValue([
+      fighterFeat,
+      medicDedication,
+      doctorVisitation,
+      alchemistFeat,
+    ]);
+
+    try {
+      const picker = new FeatPicker(
+        createActor(),
+        'dualClass',
+        4,
+        createBuildState({
+          level: 4,
+          class: { slug: 'fighter' },
+          canTakeNewArchetypeDedication: true,
+        }),
+        jest.fn(),
+        {
+          preset: {
+            selectedFeatTypes: ['class', 'archetype'],
+            lockedFeatTypes: ['class'],
+            extraVisibleFeatTypes: ['archetype'],
+            maxLevel: 4,
+          },
+        },
+      );
+
+      await picker._initializeFeats();
+
+      expect(picker._applyFilters().map((feat) => feat.name)).toEqual(expect.arrayContaining([
+        'Reactive Shield',
+        'Medic Dedication',
+        'Doctor Visitation',
+      ]));
+      expect(picker._applyFilters().map((feat) => feat.name)).not.toContain('Quick Bomber');
+    } finally {
       jest.restoreAllMocks();
     }
   });

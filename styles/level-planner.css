@@ -131,10 +131,25 @@
 
 .pf2e-leveler .sidebar-actions {
   display: flex;
-  justify-content: center;
-  gap: var(--leveler-spacing-sm);
+  flex-direction: column;
+  gap: var(--leveler-spacing-xs);
   padding: var(--leveler-spacing-sm);
-  border-top: 1px solid var(--leveler-border);
+  border-bottom: 1px solid var(--leveler-border);
+}
+
+.pf2e-leveler .sidebar-actions .sidebar-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--leveler-spacing-xs);
+  min-height: 30px;
+  width: 100%;
+}
+
+.pf2e-leveler .sidebar-action-btn__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pf2e-leveler .sidebar-action-btn {

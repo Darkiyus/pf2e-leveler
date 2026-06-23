@@ -12,6 +12,22 @@
     <div class="sidebar-header">
       {{localize "PF2E_LEVELER.UI.OPEN_PLANNER"}}
     </div>
+    {{#if hasPlan}}
+    <div class="sidebar-actions">
+      <button type="button" class="sidebar-action-btn" data-action="exportPlan" data-tooltip="{{localize 'PF2E_LEVELER.UI.EXPORT'}}" {{#if isImportingPlan}}disabled{{/if}}>
+        <i class="fa-solid fa-file-export"></i>
+        <span class="sidebar-action-btn__label">{{localize "PF2E_LEVELER.UI.EXPORT"}}</span>
+      </button>
+      <button type="button" class="sidebar-action-btn" data-action="importPlan" data-tooltip="{{localize 'PF2E_LEVELER.UI.IMPORT'}}" {{#if isImportingPlan}}disabled{{/if}}>
+        <i class="fa-solid fa-file-import"></i>
+        <span class="sidebar-action-btn__label">{{localize "PF2E_LEVELER.UI.IMPORT"}}</span>
+      </button>
+      <button type="button" class="sidebar-action-btn sidebar-action-btn--danger" data-action="clearPlan" data-tooltip="{{localize 'PF2E_LEVELER.UI.CLEAR'}}" {{#if isImportingPlan}}disabled{{/if}}>
+        <i class="fa-solid fa-trash"></i>
+        <span class="sidebar-action-btn__label">{{localize "PF2E_LEVELER.UI.CLEAR"}}</span>
+      </button>
+    </div>
+    {{/if}}
     <div class="sidebar-levels">
       {{#each sidebarLevels}}
       <div class="sidebar-level {{#if this.active}}active{{/if}} {{#if this.locked}}locked{{/if}}"
@@ -31,19 +47,6 @@
       </div>
       {{/each}}
     </div>
-    {{#if hasPlan}}
-    <div class="sidebar-actions">
-      <button type="button" class="sidebar-action-btn" data-action="exportPlan" data-tooltip="{{localize 'PF2E_LEVELER.UI.EXPORT'}}" {{#if isImportingPlan}}disabled{{/if}}>
-        <i class="fa-solid fa-file-export"></i>
-      </button>
-      <button type="button" class="sidebar-action-btn" data-action="importPlan" data-tooltip="{{localize 'PF2E_LEVELER.UI.IMPORT'}}" {{#if isImportingPlan}}disabled{{/if}}>
-        <i class="fa-solid fa-file-import"></i>
-      </button>
-      <button type="button" class="sidebar-action-btn sidebar-action-btn--danger" data-action="clearPlan" data-tooltip="{{localize 'PF2E_LEVELER.UI.CLEAR'}}" {{#if isImportingPlan}}disabled{{/if}}>
-        <i class="fa-solid fa-trash"></i>
-      </button>
-    </div>
-    {{/if}}
   </div>
 
   <div class="planner-content">
