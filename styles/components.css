@@ -1152,3 +1152,253 @@
   font-size: var(--leveler-font-sm, 0.82rem);
   color: var(--leveler-text-muted);
 }
+
+/* Review Requests panel */
+.pf2e-leveler .review-requests__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--leveler-spacing-sm, 8px);
+  margin: 0;
+  padding: var(--leveler-spacing-sm, 8px);
+  list-style: none;
+}
+
+.pf2e-leveler .review-requests__card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: var(--leveler-spacing-md, 12px);
+  background: var(--leveler-bg-surface);
+  border: 1px solid var(--leveler-border);
+  border-left: 3px solid var(--leveler-border);
+  border-radius: var(--leveler-radius-md);
+}
+
+.pf2e-leveler .review-requests__card--pending {
+  border-left-color: var(--leveler-accent);
+}
+
+.pf2e-leveler .review-requests__card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pf2e-leveler .review-requests__requester {
+  font-weight: 700;
+  color: var(--leveler-text-bright);
+}
+
+.pf2e-leveler .review-requests__character {
+  font-size: var(--leveler-font-sm, 0.82rem);
+  color: var(--leveler-text-muted);
+}
+
+.pf2e-leveler .review-requests__card-header .tag {
+  margin-left: auto;
+}
+
+.pf2e-leveler .review-requests__card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pf2e-leveler .review-requests__item-link {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--leveler-accent-dim);
+  border: 1px solid var(--leveler-accent);
+  border-radius: var(--leveler-radius-sm);
+  color: var(--leveler-accent-light);
+  cursor: pointer;
+  font-size: var(--leveler-font-sm, 0.82rem);
+}
+
+.pf2e-leveler .review-requests__item-link:hover {
+  background: var(--leveler-accent);
+  color: var(--leveler-bg);
+}
+
+.pf2e-leveler .review-requests__item-name {
+  font-weight: 600;
+}
+
+.pf2e-leveler .review-requests__note {
+  margin: 0;
+  padding: 6px 10px;
+  border-left: 2px solid var(--leveler-border-light, rgba(255, 255, 255, 0.15));
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--leveler-radius-sm);
+  color: var(--leveler-text);
+  font-style: italic;
+  white-space: pre-wrap;
+}
+
+.pf2e-leveler .review-requests__date {
+  font-size: 0.72rem;
+  color: var(--leveler-text-muted);
+}
+
+.pf2e-leveler .review-requests__card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.pf2e-leveler .review-requests__action {
+  padding: 5px 14px;
+  border: 1px solid var(--leveler-border);
+  border-radius: var(--leveler-radius-sm);
+  background: var(--leveler-bg);
+  color: var(--leveler-text);
+  cursor: pointer;
+  font-size: var(--leveler-font-sm, 0.82rem);
+  transition: all 0.15s ease;
+}
+
+.pf2e-leveler .review-requests__action:hover {
+  filter: brightness(1.15);
+}
+
+.pf2e-leveler .review-requests__action--resolve {
+  background: rgba(46, 125, 50, 0.25);
+  border-color: var(--leveler-success);
+  color: var(--leveler-success);
+}
+
+.pf2e-leveler .review-requests__action--dismiss {
+  background: rgba(170, 51, 51, 0.2);
+  border-color: rgba(170, 51, 51, 0.5);
+  color: #d98a8a;
+}
+
+.pf2e-leveler .review-requests__action--delete {
+  margin-left: auto;
+  color: var(--leveler-text-muted, #999);
+}
+
+.pf2e-leveler .review-requests__action--delete:hover {
+  color: #d98a8a;
+  border-color: rgba(170, 51, 51, 0.5);
+}
+
+/* Plan comments */
+.plan-comment-marker {
+  margin-left: auto;
+  background: none;
+  border: 0;
+  padding: 2px 6px;
+  cursor: pointer;
+  color: var(--leveler-text-bright);
+  opacity: 0.45;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--leveler-radius-sm);
+}
+.plan-comment-marker:hover { opacity: 1; }
+.plan-comment-marker--unresolved { opacity: 1; color: var(--leveler-accent); }
+.plan-comment-marker--resolved { opacity: 0.7; color: var(--leveler-success); }
+.plan-comment-marker__count { font-size: 0.7rem; font-weight: 600; }
+/* "Awaiting your reply": the other party spoke last and the thread is unresolved.
+   An attention dot makes the threads that need YOUR response stand out. */
+.plan-comment-marker--awaiting { position: relative; opacity: 1; color: var(--leveler-accent); }
+.plan-comment-marker--awaiting::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--leveler-warning, #e0a458);
+  box-shadow: 0 0 0 1px var(--leveler-bg, #1e1e1e);
+}
+/* Wizard: marker sits inline beside the current step's heading (planner-parity). */
+.pf2e-leveler .wizard-content h2 .plan-comment-marker { margin-left: 8px; opacity: 1; vertical-align: middle; }
+/* Heading-less wizard steps (e.g. Feats): pin the marker to the content's top-right. */
+.pf2e-leveler .plan-comment-marker--floating { position: absolute; top: 8px; right: 12px; z-index: 5; opacity: 1; }
+/* "Awaiting your reply" badge on the actor-sheet launch buttons (rendered in the sheet
+   window header, outside .pf2e-leveler — selectors stay unscoped). */
+.pf2e-leveler-create-btn,
+.pf2e-leveler-plan-btn { position: relative; }
+.pf2e-leveler-comment-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  box-sizing: border-box;
+  border-radius: 7px;
+  background: var(--leveler-accent, #c4b49e);
+  color: #1e1e1e;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 14px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.plan-comments-popover {
+  position: absolute;
+  z-index: 60;
+  width: 320px;
+  max-width: calc(100% - 16px);
+  background: var(--leveler-bg-surface);
+  border: 1px solid var(--leveler-border);
+  border-radius: var(--leveler-radius-md);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+}
+.plan-comments-popover__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--leveler-border);
+}
+.plan-comments-popover__title { font-weight: 600; flex: 1; min-width: 0; }
+.plan-comments-popover__resolved { font-size: 0.7rem; color: var(--leveler-success); }
+.plan-comments-popover__close { background: none; border: 0; color: inherit; cursor: pointer; }
+.plan-comments-popover__body { max-height: 240px; overflow-y: auto; padding: 8px 10px; display: flex; flex-direction: column; gap: 10px; }
+.plan-comments-empty { opacity: 0.6; font-size: 0.85rem; }
+.plan-comment-msg { font-size: 0.85rem; }
+.plan-comment-msg__head { display: flex; align-items: center; gap: 6px; opacity: 0.75; font-size: 0.72rem; }
+.plan-comment-msg__author { font-weight: 600; }
+.plan-comment-msg__delete { margin-left: auto; background: none; border: 0; color: inherit; cursor: pointer; }
+.plan-comment-msg__text { white-space: pre-wrap; margin-top: 2px; }
+.plan-comment-msg__items { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.plan-comment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--leveler-accent-dim, rgba(196, 180, 158, 0.2));
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.plan-comment-chip img { width: 16px; height: 16px; border-radius: 3px; object-fit: cover; }
+.plan-comment-chip--pending { cursor: default; }
+.plan-comment-chip--pending i { cursor: pointer; }
+.plan-comments-composer { border-top: 1px solid var(--leveler-border); padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+.plan-comments-composer__drop {
+  border: 1px dashed var(--leveler-border);
+  border-radius: var(--leveler-radius-sm);
+  padding: 6px;
+  text-align: center;
+  font-size: 0.72rem;
+  opacity: 0.6;
+}
+.plan-comments-composer__drop.is-dragover { opacity: 1; border-color: var(--leveler-accent); }
+.plan-comments-composer__uuid { width: 100%; box-sizing: border-box; font-size: 0.75rem; }
+.plan-comments-composer__chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.plan-comments-composer__text { width: 100%; box-sizing: border-box; resize: vertical; }
+.plan-comments-composer__actions { display: flex; gap: 8px; justify-content: flex-end; }
+.plan-comments-popover__readonly { padding: 8px 10px; font-size: 0.78rem; opacity: 0.6; border-top: 1px solid var(--leveler-border); }
