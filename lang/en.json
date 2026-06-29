@@ -736,9 +736,31 @@
       "ACTION_RESOLVE": "Resolve",
       "ACTION_DISMISS": "Dismiss",
       "ACTION_REOPEN": "Reopen",
+      "ACTION_DELETE": "Delete request",
       "REQUESTED_BY": "Requested by {name}",
       "FOR_CHARACTER": "Character: {actor}",
       "APPROVAL_REQUIRED": "Your GM must approve a review request for this character before you can apply. Use \"Request GM review\" first."
+    },
+    "PLAN_COMMENTS": {
+      "TITLE": "Comments",
+      "EMPTY": "No comments yet.",
+      "COMPOSER_PLACEHOLDER": "Write a comment…",
+      "REPLY_PLACEHOLDER": "Reply…",
+      "POST": "Post",
+      "RESOLVE": "Resolve",
+      "REOPEN": "Reopen",
+      "RESOLVED_BADGE": "Resolved",
+      "DELETE": "Delete comment",
+      "DROP_HINT": "Drag an item, spell, or feat here to attach it",
+      "PASTE_HINT": "…or paste an item UUID / @UUID link, then Enter",
+      "ATTACH_INVALID": "Couldn't find an item for that UUID.",
+      "ATTACH_REMOVE": "Remove attachment",
+      "READ_ONLY": "You can view comments but not post on this character.",
+      "MARKER_TOOLTIP": "Comments",
+      "AWAITING_TOOLTIP": "Awaiting your reply",
+      "CLOSE": "Close",
+      "NOTIFY": "{author} commented on \"{part}\"",
+      "BADGE_AWAITING": "{count} comment thread(s) awaiting your reply"
     }
   }
 }

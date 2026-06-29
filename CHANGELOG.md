@@ -1,13 +1,39 @@
 # Changelog
 
+## 3.6.0
+
+### Collaborative Build Comments
+
+- **Inline comment threads on builds** - The GM and a character's owner can leave threaded comments on each part of a Level Planner level (class feat, skill feat, skill increase, ability boosts, spellcasting, equipment, and more) and on each Character Creation step. A comment marker sits beside each section; click it to open the thread, post, and reply - like comments in a shared document. Comments live on the character, so both sides see the same conversation
+- **Attach items, spells, and feats to a comment** - Drag an item, spell, or feat onto a comment, or paste its UUID (or an `@UUID` link) into the composer, to attach it. Attachments render as clickable chips that open the item sheet, so a GM can suggest "try this one" right in the thread. Players can open attached compendium items even when they do not own them
+- **Live updates** - Posting, replying, resolving, and deleting a comment now appears immediately in any open Level Planner or Character Creation window, for both the GM and the player, without reopening the thread
+- **"Awaiting your reply" highlight** - A comment marker shows an attention dot when the other side posted last and the thread is still open, so you can see at a glance which threads need your response
+- **Notifications outside the planner** - When a comment is posted, the other party is whispered in chat with a link to the character, and the character sheet's Level-Up and Creation buttons show a badge counting the threads awaiting your reply - so comments are noticed even when the planner and wizard are closed
+- **Resolve and reopen threads** - The GM can resolve or reopen any thread; a player can resolve only the threads they started, so a GM's review note cannot be closed out from under them. Posting and replying remain open to both sides
+
+### Review Requests
+
+- **Delete review requests** - The GM Review Requests panel adds a Delete button on each request to permanently clear it (along with its originating chat message), keeping the list from growing over time
+
+### Prerequisites
+
+- **Legacy alignment prerequisites no longer show as unmet** - Pathfinder Remaster removed alignment, but some feats still carry alignment prerequisites such as "non-evil alignment" or "you follow a good-aligned deity". These previously appeared as a red, unmet requirement; they are now reported as unverified legacy text, so they neither block selection nor mislead
+
+### Level Planner
+
+- **"Advanced" base class feats no longer ask for an unrelated class feat** - The helper that lets multiclass "Advanced [Archetype]" feats grant a class feat was firing on base class feats whose name merely starts with "Advanced" - such as the cleric's Advanced Domain - and wrongly prompting you to browse for another class feat. It is now limited to archetype feats, so Advanced Domain and similar feats apply without the bogus picker (#84)
+
 ## 3.5.8
 
 ### Content Guidance
 
 - **Hide disallowed sources from the publication filters** - A new "Disallowed sources in filters" setting lets GMs drop sources they have banned in Content Guidance from the publication filter lists (everywhere, or for players only); items from those sources are still filtered out as before
-- **Bulk-mark sources by category** - The Content Guidance Sources tab adds "Bulk by Group" controls (Adventure Paths, AP Player's Guides, Stand-Alone Adventures, Blogs, Lost Omens) that apply a guidance status to every source in a category at once
+- **Bulk-mark sources by category** - The Content Guidance Sources tab adds "Bulk by Group" controls (Adventure Paths, AP Player's Guides, Stand-Alone Adventures, Blogs, Lost Omens) that apply a guidance status to every source in a category at once; the older Bulk-by-Rarity control was removed from the Sources tab in favour of it
 - **Filter pickers by guidance status** - A "Guidance" chip group in the feat, spell, and equipment pickers filters by Suggested / Allowed / Not Recommended / Disallowed (the Disallowed chip is GM-only)
-- **Request GM review of a build** - When a GM turns on the new "Enable player review requests" setting (off by default), players get a "Request GM review" button in the Level Planner and in Character Creation that sends the GM their build with an optional note; the GM reviews and resolves requests from a new Review Requests panel
+
+### GM Review
+
+- **Request GM review of a build** - When a GM turns on the new "Enable player review requests" setting (off by default), players get a single "Request GM review" button in the Level Planner and one in Character Creation that sends the GM their build with an optional note. Delivery uses socketlib to reach the active GM reliably, falling back to a flagged GM whisper if no GM is online (the request is folded into the panel the next time a GM opens it). The GM reviews, resolves, dismisses, or reopens requests from a new Review Requests panel - nothing is auto-applied
 - **Optional: require GM approval before applying** - A separate "Require GM approval before applying" setting (off by default) blocks non-GM players from applying a level-up or finishing Character Creation until the GM approves (Resolves) their review request for that character; the approval holds until the GM Reopens or Dismisses it
 
 ### Pickers & UX
