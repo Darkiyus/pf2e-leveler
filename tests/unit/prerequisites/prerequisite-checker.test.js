@@ -512,6 +512,24 @@ describe('checkPrerequisites', () => {
     expect(result.met).toBe(true);
   });
 
+  test('meets an armor (Unarmored Defense) proficiency prerequisite', () => {
+    const feat = {
+      system: { prerequisites: { value: [{ value: 'Expert in Unarmored Defense' }] } },
+    };
+    const met = checkPrerequisites(feat, {
+      ...buildState,
+      proficiencies: { ...buildState.proficiencies, 'unarmored-defense': 2 },
+    });
+    expect(met.met).toBe(true);
+    expect(met.results[0].met).toBe(true);
+
+    const unmet = checkPrerequisites(feat, {
+      ...buildState,
+      proficiencies: { ...buildState.proficiencies, 'unarmored-defense': 1 },
+    });
+    expect(unmet.results[0].met).toBe(false);
+  });
+
   test('met class dc proficiency prerequisite', () => {
     const feat = {
       system: { prerequisites: { value: [{ value: 'trained in Class DC' }] } },

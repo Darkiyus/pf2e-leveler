@@ -1704,12 +1704,25 @@ function getPlannedFeatSkillRules(feat) {
 
 function computeProficiencies(actor, classDefs, atLevel) {
   const trackedClassDefs = Array.isArray(classDefs) ? classDefs.filter(Boolean) : [classDefs].filter(Boolean);
+  const defenses = actor?.system?.proficiencies?.defenses ?? {};
+  const defenseRank = (key) => {
+    const entry = defenses[key];
+    if (typeof entry === 'number') return entry;
+    return entry?.rank ?? PROFICIENCY_RANKS.UNTRAINED;
+  };
   const proficiencies = {
     perception: actor?.system?.perception?.rank ?? PROFICIENCY_RANKS.UNTRAINED,
     fortitude: actor?.system?.saves?.fortitude?.rank ?? PROFICIENCY_RANKS.UNTRAINED,
     reflex: actor?.system?.saves?.reflex?.rank ?? PROFICIENCY_RANKS.UNTRAINED,
     will: actor?.system?.saves?.will?.rank ?? PROFICIENCY_RANKS.UNTRAINED,
     classdc: actor?.system?.attributes?.classDC?.rank ?? PROFICIENCY_RANKS.UNTRAINED,
+    // Armor (defense) proficiencies. Keys mirror the parser's slug for prereqs like
+    // "Expert in Unarmored Defense" / "Trained in Light Armor" (the matcher strips
+    // non-letters, so "unarmored-defense" and the parser's slug normalize identically).
+    'unarmored-defense': defenseRank('unarmored'),
+    'light-armor': defenseRank('light'),
+    'medium-armor': defenseRank('medium'),
+    'heavy-armor': defenseRank('heavy'),
   };
 
   for (const classDef of trackedClassDefs) {

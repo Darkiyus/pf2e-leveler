@@ -47,6 +47,21 @@ describe('computeBuildState', () => {
     expect(state.classSlug).toBe('alchemist');
   });
 
+  test('tracks armor (defense) proficiencies for prerequisites like "Expert in Unarmored Defense"', () => {
+    mockActor.system.proficiencies = {
+      defenses: { unarmored: { rank: 2 }, light: { rank: 1 }, medium: { rank: 0 }, heavy: { rank: 0 } },
+    };
+    const state = computeBuildState(mockActor, plan, 2);
+    expect(state.proficiencies['unarmored-defense']).toBe(PROFICIENCY_RANKS.EXPERT);
+    expect(state.proficiencies['light-armor']).toBe(PROFICIENCY_RANKS.TRAINED);
+    expect(state.proficiencies['heavy-armor']).toBe(PROFICIENCY_RANKS.UNTRAINED);
+  });
+
+  test('defaults armor proficiencies to untrained when the actor has none', () => {
+    const state = computeBuildState(mockActor, plan, 2);
+    expect(state.proficiencies['unarmored-defense']).toBe(PROFICIENCY_RANKS.UNTRAINED);
+  });
+
   test('includes the secondary class in tracked classes when dual class is enabled', () => {
     global._testSettings = {
       pf2e: { dualClassVariant: true },

@@ -18,6 +18,7 @@
 ### Prerequisites
 
 - **Legacy alignment prerequisites no longer show as unmet** - Pathfinder Remaster removed alignment, but some feats still carry alignment prerequisites such as "non-evil alignment" or "you follow a good-aligned deity". These previously appeared as a red, unmet requirement; they are now reported as unverified legacy text, so they neither block selection nor mislead
+- **Armor proficiency prerequisites are now evaluated** - Feats that require an armor proficiency (such as Bullet Dancer Dedication's "Expert in Unarmored Defense") were always shown as unmet because the planner did not track armor ranks. It now reads your Unarmored / Light / Medium / Heavy Armor proficiency, so these prerequisites resolve correctly
 
 ### Level Planner
 
