@@ -140,6 +140,7 @@ export async function hydrateChoiceSets(wizard, choiceSets, currentChoices) {
   const skillContext = await buildSkillContext(wizard);
   const skillState = createSkillStateMap(skillContext);
   const hydratedChoiceSets = await Promise.all((choiceSets ?? []).map(async (cs) => {
+    const isKineticImpulseChoice = isKineticistImpulseChoiceSetForWizard(wizard, cs);
     const options = await Promise.all((cs.options ?? []).map(async (opt) => {
       if (isRawValueChoiceSet(cs)) return normalizeRawChoiceOption(opt);
       const value = extractChoiceValue(opt);
@@ -148,22 +149,36 @@ export async function hydrateChoiceSets(wizard, choiceSets, currentChoices) {
           || (opt?.value && typeof opt.value === 'object')
           || !opt?.img
           || !opt?.description);
-      if (!needsHydration) return opt;
+      const needsLevelHydration = isKineticImpulseChoice
+        && extractChoiceUuid(opt)
+        && !Number.isFinite(Number(opt?.level));
+      if (!needsHydration && !needsLevelHydration) return opt;
       return enrichChoiceOption(wizard, opt, { preserveRawValue: shouldPreserveRawChoiceValue(cs) });
     }));
-    return { ...cs, options };
+    return {
+      ...cs,
+      options: isKineticImpulseChoice ? options.filter((option) => Number(option?.level ?? 0) === 1) : options,
+    };
   }));
 
-  return hydratedChoiceSets.map((cs) => ({
-    ...cs,
-    isItemChoice: cs.options.some((opt) => !!extractChoiceUuid(opt) || !!opt?.img || !!opt?.description),
-    isFeatChoice: cs.options.length > 0 && cs.options.every((opt) => String(opt?.type ?? '').toLowerCase() === 'feat'),
-    isSpellChoice: cs.options.length > 0 && cs.options.every((opt) => String(opt?.type ?? '').toLowerCase() === 'spell'),
-    isWeaponChoice: cs.options.length > 0 && cs.options.every((opt) => String(opt?.type ?? '').toLowerCase() === 'weapon'),
-    options: hydrateChoiceSetOptions(wizard, cs, skillState, currentChoices),
-    selectedOption: findMatchingChoiceOption(cs.options, currentChoices?.[cs.flag] ?? null),
-    hasSelection: !!currentChoices[cs.flag] && currentChoices[cs.flag] !== '[object Object]',
-  }));
+  return hydratedChoiceSets.map((cs) => {
+    const options = hydrateChoiceSetOptions(wizard, cs, skillState, currentChoices);
+    const selectedOption = findMatchingChoiceOption(options, currentChoices?.[cs.flag] ?? null);
+    const isKineticImpulseChoice = isKineticistImpulseChoiceSetForWizard(wizard, cs);
+    const rawHasSelection = !!currentChoices[cs.flag] && currentChoices[cs.flag] !== '[object Object]';
+    if (isKineticImpulseChoice && rawHasSelection && !selectedOption) delete currentChoices[cs.flag];
+
+    return {
+      ...cs,
+      isItemChoice: options.some((opt) => !!extractChoiceUuid(opt) || !!opt?.img || !!opt?.description),
+      isFeatChoice: options.length > 0 && options.every((opt) => String(opt?.type ?? '').toLowerCase() === 'feat'),
+      isSpellChoice: options.length > 0 && options.every((opt) => String(opt?.type ?? '').toLowerCase() === 'spell'),
+      isWeaponChoice: options.length > 0 && options.every((opt) => String(opt?.type ?? '').toLowerCase() === 'weapon'),
+      options,
+      selectedOption,
+      hasSelection: isKineticImpulseChoice ? !!selectedOption : rawHasSelection,
+    };
+  });
 }
 
 export async function getSelectedSubclassChoiceLabels(wizard) {
@@ -1187,7 +1202,11 @@ async function resolveChoiceSetOptions(wizard, rule, currentChoices = {}, source
     return resolveConfigChoiceOptions(rule.choices.config);
   }
 
-  const resolvedFilter = resolveChoiceSetFilterPlaceholders(rule.choices.filter ?? [], wizard, currentChoices);
+  const resolvedFilter = withKineticGateImpulseLevelFilter(
+    resolveChoiceSetFilterPlaceholders(rule.choices.filter ?? [], wizard, currentChoices),
+    rule,
+    sourceItem,
+  );
   const candidates = await loadChoiceSetCandidates(wizard, {
     ...rule.choices,
     filter: resolvedFilter,
@@ -1223,13 +1242,50 @@ async function resolveChoiceSetOptions(wizard, rule, currentChoices = {}, source
       img: item.img ?? null,
       traits: item.traits ?? [],
       rarity: item.rarity ?? 'common',
-      ...(item.type === 'spell' ? { level: item.level ?? null } : {}),
+      level: item.level ?? null,
       type: item.type ?? null,
       category: item.category ?? null,
       range: item.range ?? null,
       isRanged: !!item.isRanged,
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+function withKineticGateImpulseLevelFilter(filter, rule, sourceItem) {
+  if (!isKineticGateImpulseChoiceSet(rule, sourceItem)) return filter;
+  if (choiceSetFilterMentionsItemLevel(filter)) return filter;
+  return [...(Array.isArray(filter) ? filter : [filter]).filter(Boolean), 'item:level:1'];
+}
+
+function isKineticGateImpulseChoiceSet(rule, sourceItem) {
+  const flag = String(rule?.flag ?? '');
+  if (flag !== 'impulseOne' && flag !== 'impulseTwo') return false;
+
+  const sourceSlug = normalizeSourceSlug(sourceItem);
+  if (sourceSlug === 'kinetic-gate' || sourceSlug.endsWith('-gate')) return true;
+
+  const sourceUuid = String(sourceItem?.uuid ?? '').toLowerCase();
+  return sourceUuid.includes('.classfeatures.item.kinetic-gate');
+}
+
+function choiceSetFilterMentionsItemLevel(filter) {
+  return safeSerializeChoiceFilters(filter).includes('item:level');
+}
+
+function isKineticistImpulseChoiceSetForWizard(wizard, choiceSet) {
+  const flag = String(choiceSet?.flag ?? '');
+  if (flag !== 'impulseOne' && flag !== 'impulseTwo') return false;
+  const classSlugs = [
+    wizard?.data?.class?.slug,
+    wizard?.data?.dualClass?.slug,
+  ].map((slug) => String(slug ?? '').toLowerCase());
+  if (classSlugs.includes('kineticist')) return true;
+
+  const subclassSlugs = [
+    wizard?.data?.subclass?.slug,
+    wizard?.data?.dualSubclass?.slug,
+  ].map((slug) => String(slug ?? '').toLowerCase());
+  return subclassSlugs.some((slug) => slug.endsWith('-gate'));
 }
 
 async function resolveSkillChoiceSetOptions(wizard, rule, currentChoices = {}, sourceItem = null) {

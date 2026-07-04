@@ -265,6 +265,7 @@ describe('CharacterWizard subclass choice-set parsing', () => {
             img: 'icons/svg/item-bag.svg',
             traits: [],
             rarity: 'common',
+            level: 1,
             type: 'feat',
             category: null,
             range: null,
@@ -278,6 +279,7 @@ describe('CharacterWizard subclass choice-set parsing', () => {
             img: 'icons/svg/item-bag.svg',
             traits: [],
             rarity: 'common',
+            level: 1,
             type: 'feat',
             category: null,
             range: null,
@@ -724,6 +726,181 @@ describe('CharacterWizard subclass choice-set parsing', () => {
         subclassName: 'Night Patron',
       }),
     ]);
+  });
+
+  it('caps kinetic gate impulse choice sets to level 1 impulses', async () => {
+    const wizard = new CharacterWizard(createMockActor({ level: 7 }));
+    wizard.data.class = { slug: 'kineticist', name: 'Kineticist' };
+    wizard.data.subclass = { slug: 'earth-gate', uuid: 'earth-gate-uuid', name: 'Earth Gate' };
+    wizard.data.kineticGateMode = 'single-gate';
+
+    const armorInEarth = createDoc({
+      uuid: 'Compendium.pf2e.feats-srd.Item.armor-in-earth',
+      name: 'Armor in Earth',
+      traits: ['earth', 'impulse', 'kineticist', 'primal'],
+      level: 1,
+    });
+    const jaggedBerms = createDoc({
+      uuid: 'Compendium.pf2e.feats-srd.Item.jagged-berms',
+      name: 'Jagged Berms',
+      traits: ['earth', 'impulse', 'kineticist', 'primal'],
+      level: 12,
+    });
+    const earthquake = createDoc({
+      uuid: 'Compendium.pf2e.feats-srd.Item.earthquake',
+      name: 'Earthquake',
+      traits: ['earth', 'impulse', 'kineticist', 'primal'],
+      level: 18,
+    });
+
+    game.packs.set('pf2e.feats-srd', {
+      getDocuments: jest.fn(async () => [
+        armorInEarth,
+        jaggedBerms,
+        earthquake,
+      ]),
+    });
+
+    const sets = await wizard._parseChoiceSets([
+      {
+        key: 'ChoiceSet',
+        flag: 'impulseOne',
+        prompt: 'PF2E.SpecificRule.Kineticist.KineticGate.Prompt.Impulse',
+        choices: {
+          itemType: 'feat',
+          filter: [
+            'item:type:feat',
+            'item:trait:earth',
+            'item:trait:impulse',
+          ],
+        },
+      },
+    ], {}, {
+      uuid: 'Compendium.pf2e.classfeatures.Item.kinetic-gate',
+      name: 'Kinetic Gate',
+      slug: 'kinetic-gate',
+      system: { slug: 'kinetic-gate' },
+    });
+
+    expect(sets[0].options.map((option) => option.label)).toEqual(['Armor in Earth']);
+    expect(sets[0].options[0].level).toBe(1);
+  });
+
+  it('caps elemental gate subclass impulse choice sets to level 1 impulses', async () => {
+    const wizard = new CharacterWizard(createMockActor({ level: 7 }));
+    wizard.data.class = { slug: 'kineticist', name: 'Kineticist' };
+    wizard.data.subclass = { slug: 'earth-gate', uuid: 'earth-gate-uuid', name: 'Earth Gate' };
+    wizard.data.kineticGateMode = 'single-gate';
+
+    const armorInEarth = createDoc({
+      uuid: 'Compendium.pf2e.feats-srd.Item.armor-in-earth',
+      name: 'Armor in Earth',
+      traits: ['earth', 'impulse', 'kineticist', 'primal'],
+      level: 1,
+    });
+    const assumeEarthsMantle = createDoc({
+      uuid: 'Compendium.pf2e.feats-srd.Item.assume-earths-mantle',
+      name: "Assume Earth's Mantle",
+      traits: ['earth', 'impulse', 'kineticist', 'primal'],
+      level: 14,
+    });
+
+    game.packs.set('pf2e.feats-srd', {
+      getDocuments: jest.fn(async () => [
+        armorInEarth,
+        assumeEarthsMantle,
+      ]),
+    });
+
+    const sets = await wizard._parseChoiceSets([
+      {
+        key: 'ChoiceSet',
+        flag: 'impulseOne',
+        prompt: 'Select an impulse feat.',
+        choices: {
+          itemType: 'feat',
+          filter: [
+            'item:type:feat',
+            'item:trait:earth',
+            'item:trait:impulse',
+          ],
+        },
+      },
+    ], {}, {
+      uuid: 'Compendium.pf2e.classfeatures.Item.earth-gate',
+      name: 'Earth Gate',
+      slug: 'earth-gate',
+      system: { slug: 'earth-gate' },
+    });
+
+    expect(sets[0].options.map((option) => option.label)).toEqual(['Armor in Earth']);
+  });
+
+  it('rehydrates saved kinetic gate impulse choices before filtering level 1 options', async () => {
+    const wizard = new CharacterWizard(createMockActor({ level: 7 }));
+    wizard.data.class = { slug: 'kineticist', name: 'Kineticist' };
+    wizard.data.subclass = {
+      name: 'Earth Gate',
+      slug: 'earth-gate',
+      choiceSets: [
+        {
+          flag: 'impulseOne',
+          prompt: 'Select an impulse feat.',
+          options: [
+            {
+              value: 'Compendium.pf2e.feats-srd.Item.armor-in-earth',
+              label: 'Armor in Earth',
+              uuid: 'Compendium.pf2e.feats-srd.Item.armor-in-earth',
+              img: 'icons/svg/item-bag.svg',
+              traits: ['earth', 'impulse', 'kineticist', 'primal'],
+              rarity: 'common',
+              type: 'feat',
+            },
+            {
+              value: 'Compendium.pf2e.feats-srd.Item.assume-earths-mantle',
+              label: "Assume Earth's Mantle",
+              uuid: 'Compendium.pf2e.feats-srd.Item.assume-earths-mantle',
+              img: 'icons/svg/item-bag.svg',
+              traits: ['earth', 'impulse', 'kineticist', 'primal'],
+              rarity: 'common',
+              type: 'feat',
+            },
+          ],
+        },
+      ],
+      choices: {
+        impulseOne: 'Compendium.pf2e.feats-srd.Item.assume-earths-mantle',
+      },
+    };
+
+    global.fromUuid = jest.fn(async (uuid) => {
+      if (uuid === 'Compendium.pf2e.feats-srd.Item.armor-in-earth') {
+        return createDoc({
+          uuid,
+          name: 'Armor in Earth',
+          traits: ['earth', 'impulse', 'kineticist', 'primal'],
+          level: 1,
+        });
+      }
+      if (uuid === 'Compendium.pf2e.feats-srd.Item.assume-earths-mantle') {
+        return createDoc({
+          uuid,
+          name: "Assume Earth's Mantle",
+          traits: ['earth', 'impulse', 'kineticist', 'primal'],
+          level: 14,
+        });
+      }
+      return null;
+    });
+
+    const context = await wizard._buildSubclassChoicesContext();
+
+    expect(context.choiceSets[0].options.map((option) => option.label)).toEqual(['Armor in Earth']);
+    expect(context.choiceSets[0].options[0].level).toBe(1);
+    expect(context.choiceSets[0].selectedOption).toBeNull();
+    expect(context.choiceSets[0].hasSelection).toBe(false);
+    expect(wizard.data.subclass.choices.impulseOne).toBeUndefined();
+    expect(wizard._isStepComplete('subclassChoices')).toBe(false);
   });
 
   it('enriches inline compendium array choices into item-backed options', async () => {

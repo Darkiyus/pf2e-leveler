@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.6.2
+
+### Character Creation
+
+- **Kineticist gate impulse choices only show valid 1st-level impulses** - Kinetic Gate and elemental gate choice sets now hydrate impulse item levels before filtering, so level 7+ character creation no longer offers higher-level impulse feats such as level 12, 14, or 18 options. If a stale saved gate impulse is no longer valid, the wizard clears it instead of treating the step as complete
+- **Choice cards no longer show inline item descriptions** - Character Creation item-choice cards now show the item name, icon, traits, and selection state only. Click the item name to open the full item sheet for details, keeping PF2e template/damage/UUID syntax out of the card list
+
 ## 3.6.1
 
 ### Access

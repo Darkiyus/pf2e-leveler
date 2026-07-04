@@ -556,7 +556,7 @@ export async function loadTaggedClassFeatures(wizard, tag, cacheKey, { includeSu
         ...base,
         tradition: wizard._resolveSubclassTradition(source),
         spellUuids: parseSpellUuidsFromDescription(source?.system?.rules ?? [], source?.system?.description?.value ?? ''),
-        choiceSets: await wizard._parseChoiceSets(source?.system?.rules ?? []),
+        choiceSets: await wizard._parseChoiceSets(source?.system?.rules ?? [], {}, source),
         grantedSkills: wizard._parseGrantedSkills(source?.system?.rules ?? [], source?.system?.description?.value ?? ''),
         grantedLores: wizard._parseSubclassLores(source?.system?.rules ?? [], source?.system?.description?.value ?? ''),
         curriculum: parseCurriculum(source?.system?.description?.value ?? ''),

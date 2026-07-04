@@ -1545,12 +1545,6 @@
   overflow-wrap: anywhere;
 }
 
-.pf2e-leveler .wizard-item__desc {
-  font-size: var(--leveler-font-sm);
-  color: var(--leveler-text-muted);
-  line-height: 1.35;
-}
-
 .pf2e-leveler .tag--tiny {
   font-size: 0.6rem;
   padding: 0 4px;

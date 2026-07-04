@@ -396,9 +396,6 @@
           {{/if}}
           <div class="wizard-item__info">
             <span class="wizard-item__name {{#unless this.uuid}}wizard-item__name--static{{/unless}}" {{#if this.uuid}}data-action="viewItem" data-uuid="{{this.uuid}}"{{/if}}>{{this.label}}</span>
-            {{#if this.summary}}
-            <div class="wizard-item__desc">{{this.summary}}</div>
-            {{/if}}
             <div class="wizard-item__traits">
               {{#each this.traits}}
               <span class="tag tag--muted tag--tiny" data-tooltip="{{titleCase this}}">{{this}}</span>
@@ -469,9 +466,6 @@
           {{/if}}
           <div class="wizard-item__info">
             <span class="wizard-item__name {{#unless this.uuid}}wizard-item__name--static{{/unless}}" {{#if this.uuid}}data-action="viewItem" data-uuid="{{this.uuid}}"{{/if}}>{{this.label}}</span>
-            {{#if this.summary}}
-            <div class="wizard-item__desc">{{this.summary}}</div>
-            {{/if}}
             <div class="wizard-item__traits">
               {{#each this.traits}}
               <span class="tag tag--muted tag--tiny" data-tooltip="{{titleCase this}}">{{this}}</span>
@@ -600,9 +594,6 @@
           {{/if}}
           <div class="wizard-item__info">
             <span class="wizard-item__name {{#unless this.selectedOption.uuid}}wizard-item__name--static{{/unless}}" {{#if this.selectedOption.uuid}}data-action="viewItem" data-uuid="{{this.selectedOption.uuid}}"{{/if}}>{{this.selectedOption.label}}</span>
-            {{#if this.selectedOption.summary}}
-            <div class="wizard-item__desc">{{this.selectedOption.summary}}</div>
-            {{/if}}
             <div class="wizard-item__traits">
               {{#each this.selectedOption.traits}}
               <span class="tag tag--muted tag--tiny" data-tooltip="{{titleCase this}}">{{this}}</span>
@@ -637,9 +628,6 @@
           {{/if}}
           <div class="wizard-item__info">
             <span class="wizard-item__name {{#unless this.selectedOption.uuid}}wizard-item__name--static{{/unless}}" {{#if this.selectedOption.uuid}}data-action="viewItem" data-uuid="{{this.selectedOption.uuid}}"{{/if}}>{{this.selectedOption.label}}</span>
-            {{#if this.selectedOption.summary}}
-            <div class="wizard-item__desc">{{this.selectedOption.summary}}</div>
-            {{/if}}
             <div class="wizard-item__traits">
               {{#each this.selectedOption.traits}}
               <span class="tag tag--muted tag--tiny" data-tooltip="{{titleCase this}}">{{this}}</span>
@@ -689,9 +677,6 @@
           {{/if}}
           <div class="wizard-item__info">
             <span class="wizard-item__name {{#unless this.uuid}}wizard-item__name--static{{/unless}}" {{#if this.uuid}}data-action="viewItem" data-uuid="{{this.uuid}}"{{/if}}>{{this.label}}</span>
-            {{#if this.summary}}
-            <div class="wizard-item__desc">{{this.summary}}</div>
-            {{/if}}
             <div class="wizard-item__traits">
               {{#each this.traits}}
               <span class="tag tag--muted tag--tiny" data-tooltip="{{titleCase this}}">{{this}}</span>
