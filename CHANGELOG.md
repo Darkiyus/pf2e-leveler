@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.6.3
+
+### Fixed
+
+- socket true in manifest
+
 ## 3.6.2
 
 ### Character Creation

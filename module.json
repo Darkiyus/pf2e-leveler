@@ -2,7 +2,8 @@
   "id": "pf2e-leveler",
   "title": "PF2e Leveler",
   "description": "<p>Create, Plan and auto-apply character level-ups for Pathfinder 2E. Plan your entire build from level 1 to 20, with prerequisite validation and automatic application on level change.</p>",
-  "version": "3.6.2",
+  "version": "3.6.3",
+  "socket": true,
   "compatibility": {
     "minimum": "13",
     "verified": "14"
@@ -14,9 +15,7 @@
       "flags": {}
     }
   ],
-  "esmodules": [
-    "scripts/main.js"
-  ],
+  "esmodules": ["scripts/main.js"],
   "styles": [
     {
       "src": "styles/variables.css"
@@ -56,16 +55,8 @@
   ],
   "flags": {
     "hotReload": {
-      "extensions": [
-        "css",
-        "hbs",
-        "json"
-      ],
-      "paths": [
-        "styles",
-        "templates",
-        "lang"
-      ]
+      "extensions": ["css", "hbs", "json"],
+      "paths": ["styles", "templates", "lang"]
     }
   },
   "relationships": {
