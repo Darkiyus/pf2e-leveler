@@ -1,8 +1,8 @@
 {
   "id": "pf2e-leveler",
-  "title": "PF2e Leveler – German Edition & Fixes",
+  "title": "Darkis Better PF2e-Leveler",
   "description": "<p>A community fork of PF2e Leveler with an optional German interface, smoother character-creation navigation, GM campaign setup, reusable quick-equipment packages, and expanded heritage content guidance.</p>",
-  "version": "3.8.3",
+  "version": "3.8.4",
   "socket": true,
   "compatibility": {
     "minimum": "13",
@@ -16,7 +16,7 @@
     },
     {
       "name": "Darkiyus",
-      "url": "https://github.com/Darkiyus/pf2e-leveler",
+      "url": "https://github.com/Darkiyus/Darkis-Better-PF2e-Leveler",
       "flags": {}
     }
   ],

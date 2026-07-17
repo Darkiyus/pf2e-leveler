@@ -658,9 +658,6 @@
           "UNSELECTABLE": "Afficher sans permettre la sélection"
         },
         "DISALLOWED_SHARED_HERITAGE_REASON": "Indisponible : cet héritage est interdit dans toutes ses copies de compendium",
-        "PLAYER_PREVIEW": "Aperçu en tant que joueur",
-        "PLAYER_PREVIEW_ACTIVE": "L’aperçu joueur est actif. Les dérogations du MJ ne sont pas représentées dans cette vue.",
-        "PLAYER_PREVIEW_BLOCKED": "Non sélectionnable par les joueurs",
         "HERITAGE_VIEW": "Type d’héritage",
         "HERITAGE_VIEW_ALL": "Tous les héritages"
       },

@@ -1,6 +1,6 @@
-# PF2e Leveler – German Edition & Fixes
+# Darkis Better PF2e-Leveler
 
-Community-Fork von [PF2e Leveler](https://github.com/roi007leaf/pf2e-leveler) mit optionaler deutscher Oberfläche, Fehlerbehebungen und Performance-Verbesserungen. Die ursprüngliche Erweiterung und ihre grundlegende Architektur wurden von **RoiLeaf** entwickelt.
+Darkis Better PF2e-Leveler ist ein Community-Fork von [PF2e Leveler](https://github.com/roi007leaf/pf2e-leveler) mit optionaler deutscher Oberfläche, Fehlerbehebungen und Performance-Verbesserungen. Die ursprüngliche Erweiterung und ihre grundlegende Architektur wurden von **RoiLeaf** entwickelt.
 
 [Deutsch](#deutsch) · [English](#english)
 
@@ -27,7 +27,7 @@ Beim Einsatz in meinen eigenen Runden sind mir einige Stellen aufgefallen, die i
 ### Was wurde geändert – und warum?
 
 - **Flüssigere Tabwechsel:** Der Charakterassistent lädt für Listen bevorzugt schlanke Kompendiumsindizes statt vollständiger Dokumente. Bereits geladene Pakete und laufende Anfragen werden während der gesamten Foundry-Sitzung zwischen Assistenten geteilt. Hintergrunddaten werden priorisiert und nacheinander während Leerlaufzeiten geladen; aufwendige, schrittübergreifende Berechnungen werden bis zur nächsten tatsächlichen Charakteränderung wiederverwendet.
-- **Bessere Steuerung vielseitiger Herkünfte:** Die SL-Ansicht besitzt eigene Filter für Abstammungsherkünfte und vielseitige Herkünfte, Sammelaktionen sowie eine Spielervorschau. Herkunftsregeln verwenden einen stabilen Herkunftsschlüssel, sodass beispielsweise ein verbotenes Dhampir aus einem Übersetzungs- oder Homebrew-Kompendium nicht als ungesperrte Kopie erneut auftaucht. SL dürfen verbotene Optionen weiterhin bewusst überschreiben.
+- **Bessere Steuerung vielseitiger Herkünfte:** Die SL-Ansicht besitzt eigene Filter für Abstammungsherkünfte und vielseitige Herkünfte sowie Sammelaktionen. Herkunftsregeln verwenden einen stabilen Herkunftsschlüssel, sodass beispielsweise ein verbotenes Dhampir aus einem Übersetzungs- oder Homebrew-Kompendium nicht als ungesperrte Kopie erneut auftaucht. SL dürfen verbotene Optionen weiterhin bewusst überschreiben.
 - **Einrichtungsassistent für den SL:** Beim ersten Einsatz kann ein optionaler Assistent Sprache, Seltenheiten, Inhaltsquellen, Leveler-Regeln, erkannte PF2e-Varianten, Prüfanfragen und Spielerzugriff gemeinsam konfigurieren. Die Presets „Ausgewogen“, „Eingeschränkt“ und „Homebrew-freundlich“ dienen als Ausgangspunkt. Der Assistent bleibt über die Moduleinstellungen erneut erreichbar.
 - **Kampagnenprofile und Diagnose:** Die relevante Leveler- und PF2e-Konfiguration kann als JSON-Profil zwischen Welten übertragen werden. Eine Diagnose erkennt fehlende Kompendien, veraltete Inhaltsverweise, fehlende Gegenstände in Ausrüstungspaketen, doppelte Herkunftsschlüssel und widersprüchliche Prüfeinstellungen. Laufzeit-Caches lassen sich dort sicher leeren.
 - **Kampagnenregeln für Spieler:** Die Zusammenfassung der Charaktererschaffung zeigt die aktiven Zugriffs- und Variantenregeln, damit Spieler vor dem Anwenden erkennen, welche Inhalte und optionalen Regeln in der Welt gelten.
@@ -68,10 +68,10 @@ Dies ist ein Roadmap-Eintrag und **noch nicht Bestandteil dieser Version**.
 2. Füge diese Adresse unter **Manifest-URL** ein:
 
    ```text
-   https://github.com/Darkiyus/pf2e-leveler/releases/latest/download/module.json
+   https://github.com/Darkiyus/Darkis-Better-PF2e-Leveler/releases/latest/download/module.json
    ```
 
-3. Klicke auf **Installieren** und aktiviere anschließend **PF2e Leveler – German Edition & Fixes** in deiner Welt.
+3. Klicke auf **Installieren** und aktiviere anschließend **Darkis Better PF2e-Leveler** in deiner Welt.
 
 Die Manifest-URL verweist immer auf die neueste veröffentlichte Version dieses Forks.
 
@@ -103,7 +103,7 @@ Deutsch ist optional und wird wie jede andere Foundry-Sprache in der Kernkonfigu
 ### Ursprung, Lizenz und Nutzung
 
 - Ursprüngliches Projekt und Entwickler: [RoiLeaf – PF2e Leveler](https://github.com/roi007leaf/pf2e-leveler)
-- Community-Fork: [Darkiyus/pf2e-leveler](https://github.com/Darkiyus/pf2e-leveler)
+- Community-Fork: [Darkiyus/Darkis-Better-PF2e-Leveler](https://github.com/Darkiyus/Darkis-Better-PF2e-Leveler)
 
 Dieser Fork ist kein offizielles Release des ursprünglichen Entwicklers. Soweit Bestandteile eigenständige Beiträge dieses Forks sind, dürfen diese gern privat oder in eigenen Projekten verwendet, verändert und weitergegeben werden. Eine Erwähnung ist willkommen, aber keine Voraussetzung.
 
@@ -138,7 +138,7 @@ While using the module in my own games, I found a few areas that I wanted to imp
 ### What changed – and why?
 
 - **Smoother tab changes:** Character-creation lists prefer lightweight compendium indexes over complete documents. Loaded packs and in-flight requests are shared between wizards for the complete Foundry session. Background data is loaded in priority order during browser idle time, while expensive cross-step calculations are reused until the character actually changes.
-- **Better versatile-heritage control:** The GM view adds separate ancestry-heritage and versatile-heritage filters, bulk actions, and a player preview. Stable heritage keys make a rule apply to matching copies supplied by translation or homebrew compendiums. GMs retain their intentional override.
+- **Better versatile-heritage control:** The GM view adds separate ancestry-heritage and versatile-heritage filters and bulk actions. Stable heritage keys make a rule apply to matching copies supplied by translation or homebrew compendiums. GMs retain their intentional override.
 - **GM setup assistant:** An optional first-run assistant configures language, rarities, content sources, Leveler rules, detected PF2e variants, review requests, and player access in one place. Balanced, Restricted, and Homebrew-friendly presets provide starting points, and the assistant can be reopened from Module Settings.
 - **Campaign profiles and diagnostics:** Relevant Leveler and PF2e configuration can be transferred between worlds as a JSON profile. Diagnostics report missing compendiums, stale guidance references, missing quick-package items, duplicate heritage slugs, conflicting review settings, and runtime cache status. The same page can safely clear those caches.
 - **Campaign rules for players:** The Character Creation Summary displays active access and variant rules so players can see which content and optional rules govern the world before applying their character.
@@ -179,10 +179,10 @@ This is a roadmap item and is **not included in the current version**.
 2. Enter this address in the **Manifest URL** field:
 
    ```text
-   https://github.com/Darkiyus/pf2e-leveler/releases/latest/download/module.json
+   https://github.com/Darkiyus/Darkis-Better-PF2e-Leveler/releases/latest/download/module.json
    ```
 
-3. Select **Install**, then enable **PF2e Leveler – German Edition & Fixes** in your world.
+3. Select **Install**, then enable **Darkis Better PF2e-Leveler** in your world.
 
 The manifest URL always points to the latest published version of this fork.
 
@@ -214,7 +214,7 @@ German is optional and can be selected through each user's Foundry core language
 ### Origin, license, and use
 
 - Original project and developer: [RoiLeaf – PF2e Leveler](https://github.com/roi007leaf/pf2e-leveler)
-- Community fork: [Darkiyus/pf2e-leveler](https://github.com/Darkiyus/pf2e-leveler)
+- Community fork: [Darkiyus/Darkis-Better-PF2e-Leveler](https://github.com/Darkiyus/Darkis-Better-PF2e-Leveler)
 
 This community fork is not an official release by the original developer. To the extent that material is an original contribution created specifically for this fork, you are welcome to use, modify, and redistribute it privately or in your own projects. Attribution is appreciated, but not required.
 

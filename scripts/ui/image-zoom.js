@@ -7,6 +7,7 @@ const ZOOM_SELECTOR = [
   'img.spell-option__img',
 ].join(', ');
 
+const ZOOM_EXCLUDED_SELECTOR = '.wizard-browser--background';
 const SHOW_DELAY_MS = 120;
 const CURSOR_OFFSET = 18;
 
@@ -70,7 +71,7 @@ export function initImageZoomPreview() {
     'mouseover',
     (event) => {
       const img = event.target?.closest?.(ZOOM_SELECTOR);
-      if (!img) return;
+      if (!img || img.closest(ZOOM_EXCLUDED_SELECTOR)) return;
       clearTimeout(showTimeout);
       showTimeout = setTimeout(() => showZoom(img, event), SHOW_DELAY_MS);
     },

@@ -481,6 +481,8 @@
 
 .pf2e-leveler .wizard-item-grid--gallery .wizard-item {
   grid-template-columns: 1fr;
+  grid-auto-rows: min-content;
+  min-height: min-content;
   padding: 0;
   overflow: hidden;
 }
@@ -488,7 +490,8 @@
 .pf2e-leveler .wizard-item-grid--gallery .wizard-item__img {
   width: 100%;
   height: 170px;
-  border-radius: 0;
+  border-radius: var(--leveler-radius-sm) var(--leveler-radius-sm) 0 0;
+  object-position: center;
 }
 
 .pf2e-leveler .wizard-item-grid--gallery .wizard-item__info {

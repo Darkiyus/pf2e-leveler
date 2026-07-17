@@ -4,9 +4,6 @@ import path from 'path';
 const LANGUAGES = ['en', 'de', 'fr', 'cn'];
 const CONTENT_GUIDANCE_KEYS = [
   'DISALLOWED_SHARED_HERITAGE_REASON',
-  'PLAYER_PREVIEW',
-  'PLAYER_PREVIEW_ACTIVE',
-  'PLAYER_PREVIEW_BLOCKED',
   'HERITAGE_VIEW',
   'HERITAGE_VIEW_ALL',
 ];
