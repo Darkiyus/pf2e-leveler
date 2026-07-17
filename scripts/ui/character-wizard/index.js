@@ -1858,6 +1858,13 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
     this.render(true);
   }
 
+  _setAncestryGalleryView(mode) {
+    const galleryView = mode === 'gallery';
+    if (game.settings.get(MODULE_ID, 'ancestryGalleryView') === galleryView) return;
+    game.settings.set(MODULE_ID, 'ancestryGalleryView', galleryView);
+    this.render(true);
+  }
+
   _exportCreationData() {
     const json = exportCreationData(this.data);
     const blob = new Blob([json], { type: 'application/json' });
@@ -3695,6 +3702,8 @@ function buildBrowserStepContext(stepId, data, stepContext) {
     showRarityFilters: config.showRarityFilters !== false,
     showTraits: config.showTraits === true,
     selectAction: config.selectAction ?? 'selectItem',
+    galleryEligible: config.galleryEligible === true,
+    galleryView: config.galleryEligible === true && game.settings.get(MODULE_ID, 'ancestryGalleryView'),
   };
 
   const browserGroups = stepContext?.classGroups ?? stepContext?.subclassGroups ?? null;
@@ -3829,6 +3838,7 @@ const BROWSER_STEP_CONFIG = {
     selectedKey: 'ancestry',
     clearAction: 'clearAncestry',
     showRarityFilters: true,
+    galleryEligible: true,
   },
   heritage: {
     titleKey: 'CREATION.STEPS.HERITAGE',

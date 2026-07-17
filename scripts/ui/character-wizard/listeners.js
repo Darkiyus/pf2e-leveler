@@ -59,6 +59,9 @@ export function activateCharacterWizardListeners(wizard, el) {
   el.querySelectorAll('[data-action="togglePublicationFilterSection"]').forEach((btn) => {
     btn.addEventListener('click', () => wizard._togglePublicationFilterSection());
   });
+  el.querySelectorAll('[data-action="setAncestryGalleryView"]').forEach((btn) => {
+    btn.addEventListener('click', () => wizard._setAncestryGalleryView(btn.dataset.mode));
+  });
   el.querySelectorAll('[data-action="searchPublications"]').forEach((input) => {
     input.addEventListener('input', () => {
       const query = input.value.trim().toLowerCase();

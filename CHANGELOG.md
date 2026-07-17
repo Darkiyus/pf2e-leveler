@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.8.3 – Gallery View and Image Zoom
+
+### Added
+
+- List/gallery view toggle for the ancestry step in the character-creation wizard, with large-image cards and a remembered per-user preference
+- Matching gallery view toggle for the ancestry and heritage categories in GM Content Guidance
+- Hover preview that shows a larger version of an image next to the cursor across the character wizard, the feat/spell/equipment pickers, and GM Content Guidance
+
 ## 3.8.2 – Setup Assistant Fixes
 
 ### Fixed

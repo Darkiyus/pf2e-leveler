@@ -36,6 +36,7 @@ const GUIDANCE_CATEGORIES = [
   { key: 'languages', type: null },
 ];
 
+const GALLERY_ELIGIBLE_CATEGORIES = new Set(['ancestries', 'heritages']);
 const DEFAULT_GUIDANCE_STATUS_CYCLE = ['default', 'recommended', 'not-recommended', 'disallowed'];
 const ALLOWLIST_GUIDANCE_STATUS_CYCLE = ['default', 'allowed', 'recommended', 'not-recommended', 'disallowed'];
 const BULK_GUIDANCE_STATES = ['recommended', 'not-recommended', 'disallowed', 'default'];
@@ -82,6 +83,7 @@ export class ContentGuidanceMenu extends HandlebarsApplicationMixin(ApplicationV
     this.classArchetypesDedicationsOnly = true;
     this.heritageView = 'all';
     this.previewAsPlayer = false;
+    this.galleryView = game.settings.get(MODULE_ID, 'guidanceGalleryView');
     this._draft = null;
     this._itemCache = {};
     this._pendingScrollTop = null;
@@ -169,6 +171,8 @@ export class ContentGuidanceMenu extends HandlebarsApplicationMixin(ApplicationV
       secondaryCategories: categories.filter((category) => category.key === 'sources'),
       items: previewItems,
       useGridLayout: this.activeCategory !== 'heritages',
+      showGalleryToggle: GALLERY_ELIGIBLE_CATEGORIES.has(this.activeCategory),
+      galleryView: GALLERY_ELIGIBLE_CATEGORIES.has(this.activeCategory) && this.galleryView,
       searchText: this.searchText,
       totalMarked,
       countLabel: game.i18n.format('PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.COUNT', { count: totalMarked }),
@@ -402,6 +406,16 @@ export class ContentGuidanceMenu extends HandlebarsApplicationMixin(ApplicationV
     root.querySelector('[data-action="toggle-player-preview"]')?.addEventListener('click', () => {
       this.previewAsPlayer = !this.previewAsPlayer;
       this._rerenderPreservingScroll({ resetScroll: true });
+    });
+
+    root.querySelectorAll('[data-action="set-guidance-gallery-view"]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const galleryView = btn.dataset.mode === 'gallery';
+        if (this.galleryView === galleryView) return;
+        this.galleryView = galleryView;
+        game.settings.set(MODULE_ID, 'guidanceGalleryView', galleryView);
+        this._rerenderPreservingScroll({ resetScroll: false });
+      });
     });
 
     root.querySelector('[data-action="search-guidance"]')?.addEventListener('input', (e) => {
