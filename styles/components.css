@@ -1543,6 +1543,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  vertical-align: middle;
 }
 
 .pf2e-leveler .coin-amount {
@@ -1556,7 +1557,6 @@
   width: 1.15em;
   height: 1.15em;
   object-fit: contain;
-  vertical-align: -0.2em;
   flex-shrink: 0;
 }
 
