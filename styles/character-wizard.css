@@ -437,6 +437,76 @@
   font-size: var(--leveler-font-sm);
 }
 
+.pf2e-leveler .wizard-browser__headerRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pf2e-leveler .wizard-view-toggle {
+  display: flex;
+  gap: 4px;
+}
+
+.pf2e-leveler .wizard-view-toggle__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--leveler-border);
+  border-radius: var(--leveler-radius-sm);
+  background: transparent;
+  color: var(--leveler-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pf2e-leveler .wizard-view-toggle__button:hover {
+  background: var(--leveler-bg-hover);
+  color: var(--leveler-text);
+}
+
+.pf2e-leveler .wizard-view-toggle__button.is-active {
+  background: var(--leveler-accent);
+  border-color: var(--leveler-accent);
+  color: var(--leveler-bg);
+}
+
+.pf2e-leveler .wizard-item-grid--browser.wizard-item-grid--gallery {
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px;
+}
+
+.pf2e-leveler .wizard-item-grid--gallery .wizard-item {
+  grid-template-columns: 1fr;
+  padding: 0;
+  overflow: hidden;
+}
+
+.pf2e-leveler .wizard-item-grid--gallery .wizard-item__img {
+  width: 100%;
+  height: 170px;
+  border-radius: 0;
+}
+
+.pf2e-leveler .wizard-item-grid--gallery .wizard-item__info {
+  padding: 10px 12px 0;
+}
+
+.pf2e-leveler .wizard-item-grid--gallery .wizard-item__name {
+  font-size: var(--leveler-font-lg);
+  white-space: normal;
+}
+
+.pf2e-leveler .wizard-item-grid--gallery .wizard-item__select {
+  justify-self: stretch;
+  margin: 10px 12px 12px;
+  padding: 7px 10px;
+  text-align: center;
+}
+
 .pf2e-leveler .wizard-browser-filter {
   padding: 12px 14px;
   border: 1px solid rgba(196, 180, 158, 0.18);

@@ -38,13 +38,14 @@ Beim Einsatz in meinen eigenen Runden sind mir einige Stellen aufgefallen, die i
 - **Verständlichere Attributsverbesserungen:** Der entsprechende Schritt erklärt nun Verbesserungen, Attributsschwächen und die alternative Abstammungsregel. Eine dynamische Anzeige zeigt außerdem, wie viele der vier freien Attributsverbesserungen noch zu vergeben sind.
 - **Optionale deutsche Oberfläche:** Deutsch wurde als zusätzliche Sprache ergänzt. Englisch, Französisch und Chinesisch bleiben verfügbar. Die Übersetzung verwendet PF2e-Begriffe wie „Abstammung“, „Herkunft“, „Attributsverbesserung“, „Fertigkeitsverbesserung“, „Last“ und „Zaubergrad“.
 - **Stabilitätskorrekturen:** Suchläufe unterhalb der Mindestlänge lösen keine vollständigen Neuberechnungen mehr aus. Ergebnislisten bleiben begrenzt, und ein bereits geschlossenes Ausrüstungsfenster wird nach einem verspäteten Kompendium-Ladevorgang nicht erneut gerendert.
+- **Galerie-Ansicht und Bildvorschau:** Der Abstammungsschritt im Charaktererschaffungs-Assistenten sowie die Abstammungs- und Herkunfts-Inhaltsvorgaben in der SL-Verwaltung lassen sich zwischen einer kompakten Liste und einer Galerie mit großen Bildern umschalten; die gewählte Ansicht wird pro Benutzer gemerkt. Zusätzlich zeigt das Bewegen der Maus über ein Bild in allen Auswahllisten (Abstammungen, Herkünfte, Talente, Zauber, Ausrüstung, SL-Inhaltsvorgaben) eine vergrößerte Vorschau neben dem Mauszeiger.
 - **Korrekturen aus gemeldeten Upstream-Issues:** Deutsche Fertigkeitsvoraussetzungen wie „Geübt in Athletik“ und „Experte in Heilkunde“ werden korrekt erkannt; Abstammungs- und Homebrew-Herkunftsvoraussetzungen lassen sich gemeinsam prüfen. Beim Zeit-Orakel verleiht **Advanced Revelation** jetzt korrekt **Time Skip** statt **Manifold Lives**, während **Greater Revelation** weiterhin Manifold Lives verleiht. Die Leveler-Schaltflächen sind robuster gegen Sheet-Themes und UI-Module; zusätzlich öffnet das frei belegbare Foundry-Tastenkürzel **Umschalt+L** den Leveler für einen ausgewählten oder zugewiesenen Charakter.
 
 Namen und Beschreibungen von Talenten, Zaubern, Gegenständen und anderen Spielinhalten stammen aus den aktiven PF2e-/SF2e-Kompendien. Für übersetzte Spielinhalte muss zusätzlich eine passende System- oder Kompendiumsübersetzung aktiv sein.
 
 ### Getestete Umgebung
 
-- Foundry VTT 14, Build 3654
+- Foundry VTT 14, Build 3654 sowie Build 14.365
 - Pathfinder Second Edition 8.3.0
 
 Die Moduldefinition unterstützt weiterhin Foundry VTT ab Version 13 sowie PF2e ab 7.0.0. Die oben genannten Versionen bezeichnen die konkret getestete Kombination.
@@ -148,13 +149,14 @@ While using the module in my own games, I found a few areas that I wanted to imp
 - **Clearer ability boosts:** The ability-boost step now explains boosts, ancestry flaws, and the alternate ancestry rule. A live counter also shows how many of the four free boosts remain.
 - **Optional German interface:** German is an additional language, not a replacement. English, French, and Chinese remain available. The German wording follows established PF2e terminology.
 - **Stability fixes:** Queries below the minimum length no longer trigger full list rebuilds. Result lists remain bounded, and an equipment picker that has already been closed is not rendered again after a delayed compendium load completes.
+- **Gallery view and image preview:** The ancestry step in the character-creation wizard, along with the ancestry and heritage content guidance in GM administration, can switch between a compact list and a large-image gallery; the chosen view is remembered per user. Hovering over any image in the selection lists (ancestries, heritages, feats, spells, equipment, GM content guidance) also shows an enlarged preview next to the cursor.
 - **Fixes for reported upstream issues:** German proficiency prerequisites such as “Geübt in Athletik” and “Experte in Heilkunde” are recognized correctly, while ancestry and homebrew-heritage prerequisites can be checked together. The Time Oracle's **Advanced Revelation** now grants **Time Skip** instead of **Manifold Lives**, with Manifold Lives reserved for **Greater Revelation**. Leveler sheet controls are more resistant to sheet themes and UI modules, and the editable Foundry shortcut **Shift+L** opens the Leveler for a selected or assigned character.
 
 Feat, spell, item, and other game-content names and descriptions come from the active PF2e/SF2e compendiums. A matching system or compendium translation is therefore required for translated game content.
 
 ### Tested environment
 
-- Foundry VTT 14, Build 3654
+- Foundry VTT 14, Build 3654 and Build 14.365
 - Pathfinder Second Edition 8.3.0
 
 The manifest continues to support Foundry VTT 13 or newer and PF2e 7.0.0 or newer. The versions above identify the combination that was explicitly tested.

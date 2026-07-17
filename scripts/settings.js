@@ -213,6 +213,20 @@ export function registerSettings() {
     default: false,
   });
 
+  game.settings.register(MODULE_ID, 'ancestryGalleryView', {
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: false,
+  });
+
+  game.settings.register(MODULE_ID, 'guidanceGalleryView', {
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: false,
+  });
+
   game.settings.register(MODULE_ID, 'publicationFilterVisibility', {
     name: game.i18n.localize('PF2E_LEVELER.SETTINGS.PUBLICATION_FILTER_VISIBILITY.NAME'),
     hint: game.i18n.localize('PF2E_LEVELER.SETTINGS.PUBLICATION_FILTER_VISIBILITY.HINT'),

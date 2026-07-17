@@ -8,6 +8,7 @@ import { info } from '../utils/logger.js';
 import { registerReviewRequestSocket } from '../access/review-requests.js';
 import { registerPlanCommentsHooks } from './plan-comments-sync.js';
 import { maybeOpenGmSetupWizard } from '../ui/gm-setup-wizard.js';
+import { initImageZoomPreview } from '../ui/image-zoom.js';
 
 export function registerLifecycleHooks() {
   Hooks.once('init', onInit);
@@ -32,6 +33,7 @@ async function onReady() {
   registerSheetIntegration();
   registerPlanCommentsHooks();
   maybeOpenGmSetupWizard();
+  initImageZoomPreview();
 }
 
 function registerClasses() {

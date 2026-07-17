@@ -216,7 +216,29 @@
       <section class="wizard-browser__results">
         <div class="wizard-browser__results-header">
           <div class="wizard-browser__eyebrow">{{browserStep.resultsLabel}}</div>
-          <div class="wizard-browser__count">{{browserStep.items.length}}</div>
+          <div class="wizard-browser__headerRight">
+            {{#if browserStep.galleryEligible}}
+            <div class="wizard-view-toggle" role="group" aria-label="{{localize 'PF2E_LEVELER.UI.VIEW_MODE'}}">
+              <button
+                type="button"
+                class="wizard-view-toggle__button {{#unless browserStep.galleryView}}is-active{{/unless}}"
+                data-action="setAncestryGalleryView"
+                data-mode="list"
+                data-tooltip="{{localize 'PF2E_LEVELER.UI.VIEW_LIST'}}">
+                <i class="fa-solid fa-list"></i>
+              </button>
+              <button
+                type="button"
+                class="wizard-view-toggle__button {{#if browserStep.galleryView}}is-active{{/if}}"
+                data-action="setAncestryGalleryView"
+                data-mode="gallery"
+                data-tooltip="{{localize 'PF2E_LEVELER.UI.VIEW_GALLERY'}}">
+                <i class="fa-solid fa-images"></i>
+              </button>
+            </div>
+            {{/if}}
+            <div class="wizard-browser__count">{{browserStep.items.length}}</div>
+          </div>
         </div>
 
         {{#if browserStep.groups}}
@@ -227,7 +249,7 @@
           <span class="tag tag--info tag--tiny">{{this.selected.name}}</span>
           {{/if}}
         </div>
-        <div class="wizard-item-grid wizard-item-grid--browser">
+        <div class="wizard-item-grid wizard-item-grid--browser {{#if browserStep.galleryView}}wizard-item-grid--gallery{{/if}}">
           {{#each this.items}}
           <div class="wizard-item {{#if this.isDisallowed}}wizard-item--disallowed{{/if}}" data-name="{{this.name}}" data-rarity="{{this.rarity}}" data-skills="{{this.trainedSkillsText}}" data-attributes="{{this.boostsText}}">
             <img src="{{this.img}}" alt="" class="wizard-item__img">
@@ -270,7 +292,7 @@
         </div>
         {{/each}}
         {{else}}
-        <div class="wizard-item-grid wizard-item-grid--browser">
+        <div class="wizard-item-grid wizard-item-grid--browser {{#if browserStep.galleryView}}wizard-item-grid--gallery{{/if}}">
           {{#each browserStep.items}}
           <div class="wizard-item {{#if this.isDisallowed}}wizard-item--disallowed{{/if}}" data-name="{{this.name}}" data-rarity="{{this.rarity}}" data-skills="{{this.trainedSkillsText}}" data-attributes="{{this.boostsText}}">
             <img src="{{this.img}}" alt="" class="wizard-item__img">

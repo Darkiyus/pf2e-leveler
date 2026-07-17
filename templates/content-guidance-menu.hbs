@@ -56,6 +56,26 @@
           <i class="fa-solid fa-user"></i>
           {{localize "PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.PLAYER_PREVIEW"}}
         </button>
+        {{#if showGalleryToggle}}
+        <div class="wizard-view-toggle" role="group" aria-label="{{localize 'PF2E_LEVELER.UI.VIEW_MODE'}}">
+          <button
+            type="button"
+            class="wizard-view-toggle__button {{#unless galleryView}}is-active{{/unless}}"
+            data-action="set-guidance-gallery-view"
+            data-mode="list"
+            data-tooltip="{{localize 'PF2E_LEVELER.UI.VIEW_LIST'}}">
+            <i class="fa-solid fa-list"></i>
+          </button>
+          <button
+            type="button"
+            class="wizard-view-toggle__button {{#if galleryView}}is-active{{/if}}"
+            data-action="set-guidance-gallery-view"
+            data-mode="gallery"
+            data-tooltip="{{localize 'PF2E_LEVELER.UI.VIEW_GALLERY'}}">
+            <i class="fa-solid fa-images"></i>
+          </button>
+        </div>
+        {{/if}}
       </header>
 
       {{#if previewAsPlayer}}
@@ -215,7 +235,7 @@
       </section>
       {{/if}}
 
-      <div class="guidance-list {{#if useGridLayout}}guidance-list--grid{{/if}}">
+      <div class="guidance-list {{#if galleryView}}guidance-list--gallery{{else if useGridLayout}}guidance-list--grid{{/if}}">
         {{#if groupedItems}}
           {{#each groupedItems}}
           <div class="wizard-browser__group-label guidance-group__header">

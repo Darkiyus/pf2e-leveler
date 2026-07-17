@@ -998,6 +998,42 @@
   align-content: start;
 }
 
+.pf2e-leveler .guidance-list--gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
+  align-content: start;
+}
+
+.pf2e-leveler .guidance-list--gallery .guidance-item {
+  flex-wrap: wrap;
+  align-items: flex-start;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.pf2e-leveler .guidance-list--gallery .guidance-item__img {
+  flex: 1 1 100%;
+  width: 100%;
+  height: 150px;
+  border-radius: 0;
+}
+
+.pf2e-leveler .guidance-list--gallery .guidance-item__info {
+  flex: 1 1 100%;
+  padding: 8px 10px 2px;
+}
+
+.pf2e-leveler .guidance-list--gallery .guidance-item__name {
+  white-space: normal;
+  font-weight: 700;
+}
+
+.pf2e-leveler .guidance-list--gallery .guidance-item__toggle {
+  margin: 0 0 8px 6px;
+}
+
 .pf2e-leveler .guidance-bulk {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
