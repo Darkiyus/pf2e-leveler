@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.8.4 – Gallery Fixes and Cleanup
+
+### Fixed
+
+- The ancestry gallery view no longer collapses to thin stripes or clips card text when the window is resized; gallery cards now size to their full content
+- The hover image preview now renders at a consistent size regardless of the source image's resolution instead of matching the source image's native pixel size
+- The image hover preview no longer appears for background portraits
+- More spacing between the search field and the list/gallery toggle in GM Content Guidance
+
+### Removed
+
+- The "Preview as Player" toggle in GM Content Guidance has been removed
+
 ## 3.8.3 – Gallery View and Image Zoom
 
 ### Added

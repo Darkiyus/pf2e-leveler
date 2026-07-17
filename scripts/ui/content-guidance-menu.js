@@ -6,11 +6,9 @@ import {
   getCategoryDefaultGuidanceKey,
   getContentGuidance,
   getGuidanceKeyForItem,
-  getPlayerDisallowedContentMode,
   getSourceGuidanceKey,
   invalidateGuidanceCache,
   normalizeGuidanceEntry,
-  PLAYER_DISALLOWED_CONTENT_MODES,
 } from '../access/content-guidance.js';
 import { getLanguageMap, getLanguageRarityMap } from './character-wizard/skills-languages.js';
 import { PUBLICATION_GROUPS, getPublicationGroupMembers } from '../access/source-classification.js';
@@ -82,7 +80,6 @@ export class ContentGuidanceMenu extends HandlebarsApplicationMixin(ApplicationV
     this.searchText = '';
     this.classArchetypesDedicationsOnly = true;
     this.heritageView = 'all';
-    this.previewAsPlayer = false;
     this.galleryView = game.settings.get(MODULE_ID, 'guidanceGalleryView');
     this._draft = null;
     this._itemCache = {};
@@ -156,20 +153,15 @@ export class ContentGuidanceMenu extends HandlebarsApplicationMixin(ApplicationV
       isFreeArchetypeExclusive: resolved.freeArchetypeExclusive === true,
       showFreeArchetypeExclusiveControls: this.activeCategory === 'classArchetypes',
       guidanceInherited: resolved.inherited,
-      previewBlocked: this.previewAsPlayer && resolved.status === 'disallowed',
     };
     });
-    const playerMode = getPlayerDisallowedContentMode();
-    const previewItems = this.previewAsPlayer && playerMode === PLAYER_DISALLOWED_CONTENT_MODES.HIDDEN
-      ? displayItems.filter((item) => !item.isDisallowed)
-      : displayItems;
     const categoryDefaultPolicy = this._getCategoryDefaultPolicy(this.activeCategory);
 
     return {
       categories,
       primaryCategories: categories.filter((category) => category.key !== 'sources'),
       secondaryCategories: categories.filter((category) => category.key === 'sources'),
-      items: previewItems,
+      items: displayItems,
       useGridLayout: this.activeCategory !== 'heritages',
       showGalleryToggle: GALLERY_ELIGIBLE_CATEGORIES.has(this.activeCategory),
       galleryView: GALLERY_ELIGIBLE_CATEGORIES.has(this.activeCategory) && this.galleryView,
@@ -204,12 +196,10 @@ export class ContentGuidanceMenu extends HandlebarsApplicationMixin(ApplicationV
         { value: 'ancestry', active: this.heritageView === 'ancestry', label: game.i18n.localize('PF2E_LEVELER.CREATION.HERITAGE_GROUP_ANCESTRY') },
         { value: 'versatile', active: this.heritageView === 'versatile', label: game.i18n.localize('PF2E_LEVELER.CREATION.HERITAGE_GROUP_VERSATILE') },
       ],
-      previewAsPlayer: this.previewAsPlayer,
-      previewModeLabel: game.i18n.localize(`PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.PLAYER_DISALLOWED_MODE.${playerMode.toUpperCase()}`),
       rarityBulkGroups: this._buildRarityBulkGroups(items),
       publicationGroupBulkGroups: this._buildPublicationGroupBulkGroups(items),
       specialBulkGroups: this._buildSpecialBulkGroups(items),
-      groupedItems: this.activeCategory === 'heritages' ? this._buildHeritageGroups(previewItems) : null,
+      groupedItems: this.activeCategory === 'heritages' ? this._buildHeritageGroups(displayItems) : null,
     };
   }
 
@@ -401,11 +391,6 @@ export class ContentGuidanceMenu extends HandlebarsApplicationMixin(ApplicationV
         this.heritageView = mode;
         this._rerenderPreservingScroll({ resetScroll: true });
       });
-    });
-
-    root.querySelector('[data-action="toggle-player-preview"]')?.addEventListener('click', () => {
-      this.previewAsPlayer = !this.previewAsPlayer;
-      this._rerenderPreservingScroll({ resetScroll: true });
     });
 
     root.querySelectorAll('[data-action="set-guidance-gallery-view"]').forEach((btn) => {

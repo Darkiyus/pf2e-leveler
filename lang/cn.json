@@ -299,9 +299,6 @@
                 "DEFAULT_POLICY": "未标记项目",
                 "BADGE_EXCLUSIVE_REQUIRED": "不在专用列表中",
                 "DISALLOWED_SHARED_HERITAGE_REASON": "不可用：该传承的所有合集副本均已被禁用",
-                "PLAYER_PREVIEW": "以玩家身份预览",
-                "PLAYER_PREVIEW_ACTIVE": "玩家预览已启用。此视图不包含GM越权选择。",
-                "PLAYER_PREVIEW_BLOCKED": "玩家无法选择",
                 "HERITAGE_VIEW": "传承类型",
                 "HERITAGE_VIEW_ALL": "全部传承"
             },
