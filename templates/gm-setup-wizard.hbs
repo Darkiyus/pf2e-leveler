@@ -56,7 +56,7 @@
         <div class="setup-wizard__presetGrid">
           {{#each presets}}
           <button type="button" class="setup-wizard__preset {{#if active}}is-selected{{/if}}" data-action="apply-preset" data-preset="{{key}}">
-            <strong>{{label}}</strong>
+            <strong><i class="fa-solid {{icon}}"></i>{{label}}</strong>
             <span>{{hint}}</span>
           </button>
           {{/each}}
@@ -65,7 +65,7 @@
           <label class="setup-wizard__toggle"><input type="checkbox" data-setting="playerAllowUncommon" data-namespace="module" {{#if moduleSettings.playerAllowUncommon}}checked{{/if}}><span><strong>{{localize "PF2E_LEVELER.SETUP.ALLOW_UNCOMMON"}}</strong><small>{{localize "PF2E_LEVELER.SETUP.ALLOW_UNCOMMON_HINT"}}</small></span></label>
           <label class="setup-wizard__toggle"><input type="checkbox" data-setting="playerAllowRare" data-namespace="module" {{#if moduleSettings.playerAllowRare}}checked{{/if}}><span><strong>{{localize "PF2E_LEVELER.SETUP.ALLOW_RARE"}}</strong><small>{{localize "PF2E_LEVELER.SETUP.ALLOW_RARE_HINT"}}</small></span></label>
           <label class="setup-wizard__toggle"><input type="checkbox" data-setting="playerAllowUnique" data-namespace="module" {{#if moduleSettings.playerAllowUnique}}checked{{/if}}><span><strong>{{localize "PF2E_LEVELER.SETUP.ALLOW_UNIQUE"}}</strong><small>{{localize "PF2E_LEVELER.SETUP.ALLOW_UNIQUE_HINT"}}</small></span></label>
-          <label class="setup-wizard__field"><span>{{localize "PF2E_LEVELER.SETUP.DISALLOWED_MODE"}}</span><select data-setting="playerDisallowedContentMode" data-namespace="module"><option value="unselectable" {{#if (eq moduleSettings.playerDisallowedContentMode "unselectable")}}selected{{/if}}>{{localize "PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.PLAYER_DISALLOWED_MODE.UNSELECTABLE"}}</option><option value="hidden" {{#if (eq moduleSettings.playerDisallowedContentMode "hidden")}}selected{{/if}}>{{localize "PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.PLAYER_DISALLOWED_MODE.HIDDEN"}}</option></select></label>
+          <label class="setup-wizard__field"><span>{{localize "PF2E_LEVELER.SETUP.DISALLOWED_MODE"}}</span><select data-setting="playerDisallowedContentMode" data-namespace="module"><option value="unselectable" {{#if (eq moduleSettings.playerDisallowedContentMode "unselectable")}}selected{{/if}}>{{localize "PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.PLAYER_DISALLOWED_MODE.UNSELECTABLE"}}</option><option value="hidden" {{#if (eq moduleSettings.playerDisallowedContentMode "hidden")}}selected{{/if}}>{{localize "PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.PLAYER_DISALLOWED_MODE.HIDDEN"}}</option></select><small>{{localize "PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.PLAYER_DISALLOWED_MODE.HINT"}}</small></label>
         </div>
         <div class="setup-wizard__actionsRow">
           <button type="button" data-action="open-guidance"><i class="fa-solid fa-star"></i>{{localize "PF2E_LEVELER.SETUP.OPEN_GUIDANCE"}}</button>

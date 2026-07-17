@@ -178,6 +178,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  height: auto;
   color: var(--leveler-text);
   text-align: left;
 }
@@ -185,6 +186,17 @@
 .pf2e-leveler .setup-wizard__preset {
   align-items: flex-start;
   flex-direction: column;
+}
+
+.pf2e-leveler .setup-wizard__preset strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pf2e-leveler .setup-wizard__preset strong i {
+  color: var(--leveler-accent);
+  font-size: 0.85em;
 }
 
 .pf2e-leveler .setup-wizard__preset span,
@@ -219,6 +231,11 @@
 
 .pf2e-leveler .setup-wizard__field select {
   width: 100%;
+}
+
+.pf2e-leveler .setup-wizard__field small {
+  color: var(--leveler-text-muted);
+  line-height: 1.35;
 }
 
 .pf2e-leveler .setup-wizard__notice {
