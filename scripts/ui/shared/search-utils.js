@@ -3,6 +3,7 @@ export const SEARCH_DEBOUNCE_MS = 250;
 export const SEARCH_RESULT_LIMIT = 200;
 
 const searchTimers = new WeakMap();
+const appliedSearchQueries = new WeakMap();
 
 export function normalizeSearchQuery(value) {
   return String(value ?? '').trim().toLocaleLowerCase();
@@ -19,7 +20,13 @@ export function scheduleSearch(input, callback, delay = SEARCH_DEBOUNCE_MS) {
 
   const timer = setTimeout(() => {
     searchTimers.delete(input);
-    callback();
+    const query = getActiveSearchQuery(input?.value);
+    const previousQuery = appliedSearchQueries.has(input)
+      ? appliedSearchQueries.get(input)
+      : getActiveSearchQuery(input?.defaultValue);
+    if (query === previousQuery) return;
+    appliedSearchQueries.set(input, query);
+    callback(query);
   }, delay);
   searchTimers.set(input, timer);
 }

@@ -95,6 +95,21 @@ describe('SpellPicker', () => {
     expect(picker._filterSpells().map((spell) => spell.uuid)).toEqual(['magic-missile']);
   });
 
+  test('caps rendered spell rows while preserving the complete filtered count', async () => {
+    const actor = createMockActor({ items: [] });
+    const picker = new SpellPicker(actor, 'arcane', 1, jest.fn(), { excludedSelections: [] });
+    picker.allSpells = Array.from({ length: 250 }, (_, index) => (
+      makeSpell(`spell-${index}`, `Spell ${String(index).padStart(3, '0')}`, 1, ['arcane'])
+    ));
+
+    const context = await picker._prepareContext();
+
+    expect(context.filteredCount).toBe(250);
+    expect(context.renderedCount).toBe(200);
+    expect(context.spells).toHaveLength(200);
+    expect(context.capped).toBe(true);
+  });
+
   test('toggling the publication section is reflected in the next prepared context', async () => {
     const actor = createMockActor({ items: [] });
     const picker = new SpellPicker(actor, 'arcane', 1, jest.fn(), { excludedSelections: [] });

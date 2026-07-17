@@ -121,7 +121,13 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     this._weaponFilterValues = [];
     this._updateTimer = null;
     this._listUpdateVersion = 0;
+    this._appliedSearchQuery = '';
     this._publicationOptions = null;
+    this._categoryValuesCache = null;
+    this._armorFilterOptionsCache = null;
+    this._weaponFilterOptionsCache = null;
+    this._traitValuesCache = null;
+    this._loadItemsPromise = null;
     this._domListeners = null;
     this._loading = this.allItems.length === 0;
     if (!this._loading) annotateGuidance(this.allItems);
@@ -158,6 +164,7 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     const weaponFilterOptions = this._getWeaponFilterOptions();
     const showArmorFilters = this._shouldShowEquipmentFilters('armor');
     const showWeaponFilters = this._shouldShowEquipmentFilters('weapon');
+    const traitOptions = this._getTraitOptions();
     this._availableRarityValues = this._getAvailableRarityValues();
     this._normalizeSelectedRarities();
     this.filteredItems = this._filterItems();
@@ -195,8 +202,8 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
         this.selectedGuidanceTags,
         { labels: getGuidanceTagLabels() },
       ),
-      traitOptions: this._getTraitOptions(),
-      selectedTraitChips: this._getTraitOptions().filter((o) => o.selected),
+      traitOptions,
+      selectedTraitChips: traitOptions.filter((o) => o.selected),
       traitLogic: this.traitLogic,
       armorFilterLogic: this.armorFilterLogic,
       weaponFilterLogic: this.weaponFilterLogic,
@@ -373,15 +380,19 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _getCategoryOptions() {
-    const seen = new Set(this.allItems.map((item) => normalizeItemCategory(item)));
-    const categories = [...seen].sort((a, b) => a.localeCompare(b));
+    if (!this._categoryValuesCache) {
+      const seen = new Set(this.allItems.map((item) => normalizeItemCategory(item)));
+      this._categoryValuesCache = [...seen].sort((a, b) => a.localeCompare(b));
+    }
+    const categories = this._categoryValuesCache;
     this._categoryValues = categories;
     this.selectedCategories = initializeSelectionSet(this.selectedCategories, categories, { defaultValues: [] });
     return buildChipOptions(categories, this.selectedCategories, { labels: getLocalizedLabelMap(CATEGORY_LABELS) });
   }
 
   _getArmorFilterOptions() {
-    const values = collectEquipmentFilterValues(this.allItems, 'armor');
+    const values = this._armorFilterOptionsCache
+      ?? (this._armorFilterOptionsCache = collectEquipmentFilterValues(this.allItems, 'armor'));
     this._armorFilterValues = values.map((entry) => entry.value);
     this.selectedArmorFilters = initializeSelectionSet(this.selectedArmorFilters, this._armorFilterValues, { defaultValues: [] });
     return values.map((entry) => ({
@@ -391,7 +402,8 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _getWeaponFilterOptions() {
-    const values = collectEquipmentFilterValues(this.allItems, 'weapon');
+    const values = this._weaponFilterOptionsCache
+      ?? (this._weaponFilterOptionsCache = collectEquipmentFilterValues(this.allItems, 'weapon'));
     this._weaponFilterValues = values.map((entry) => entry.value);
     this.selectedWeaponFilters = initializeSelectionSet(this.selectedWeaponFilters, this._weaponFilterValues, { defaultValues: [] });
     return values.map((entry) => ({
@@ -423,11 +435,22 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _getTraitOptions() {
-    const traits = new Set();
-    for (const item of this.allItems) {
-      for (const trait of (item.system?.traits?.value ?? [])) traits.add(String(trait).toLowerCase());
+    if (!this._traitValuesCache) {
+      const traits = new Set();
+      for (const item of this.allItems) {
+        for (const trait of (item.system?.traits?.value ?? [])) traits.add(String(trait).toLowerCase());
+      }
+      this._traitValuesCache = [...traits].sort((a, b) => a.localeCompare(b));
     }
-    return buildChipOptions([...traits].sort((a, b) => a.localeCompare(b)), this.selectedTraits);
+    return buildChipOptions(this._traitValuesCache, this.selectedTraits);
+  }
+
+  _resetFacetCaches() {
+    this._publicationOptions = null;
+    this._categoryValuesCache = null;
+    this._armorFilterOptionsCache = null;
+    this._weaponFilterOptionsCache = null;
+    this._traitValuesCache = null;
   }
 
   _getVisibleTraits() {
@@ -504,6 +527,11 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   async _updateList() {
+    if (this._updateTimer) {
+      clearTimeout(this._updateTimer);
+      this._updateTimer = null;
+    }
+    this._appliedSearchQuery = getActiveSearchQuery(this.searchText);
     const updateVersion = ++this._listUpdateVersion;
     this._availableRarityValues = this._getAvailableRarityValues();
     this._normalizeSelectedRarities();
@@ -655,8 +683,13 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _scheduleUpdate() {
     if (this._updateTimer) clearTimeout(this._updateTimer);
+    this._updateTimer = null;
+    const nextQuery = getActiveSearchQuery(this.searchText);
+    if (nextQuery === this._appliedSearchQuery) return;
+    this._listUpdateVersion += 1;
     this._updateTimer = setTimeout(() => {
       this._updateTimer = null;
+      this._appliedSearchQuery = nextQuery;
       this._updateList();
     }, SEARCH_DEBOUNCE_MS);
   }
@@ -673,13 +706,19 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!el) return;
 
     if (this._loading) {
-      loadItems().then((items) => {
-        this.allItems = items;
-        this._publicationOptions = null;
-        annotateGuidance(this.allItems);
-        this._loading = false;
-        this.render(false);
-      });
+      if (!this._loadItemsPromise) {
+        this._loadItemsPromise = loadItems()
+          .then((items) => {
+            this.allItems = items;
+            this._resetFacetCaches();
+            annotateGuidance(this.allItems);
+            this._loading = false;
+            if (this.rendered) this.render(false);
+          })
+          .finally(() => {
+            this._loadItemsPromise = null;
+          });
+      }
       return;
     }
 

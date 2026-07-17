@@ -236,7 +236,7 @@
             {{localize "PF2E_LEVELER.SPELLS.ADD_SELECTED"}} <i class="fa-solid fa-arrow-right"></i>
           </button>
           {{/if}}
-          <div class="picker__results-count">{{filteredCount}}</div>
+          <div class="picker__results-count">{{#if capped}}{{renderedCount}}/{{filteredCount}}{{else}}{{filteredCount}}{{/if}}</div>
         </div>
       </div>
 
@@ -285,6 +285,9 @@
           <p>{{localize "PF2E_LEVELER.SPELLS.NO_RESULTS"}}</p>
         </div>
         {{/each}}
+        {{#if capped}}
+        <div class="item-picker__cap-notice">{{localize "PF2E_LEVELER.ITEM_PICKER.SHOWING_PARTIAL"}} {{renderedCount}} / {{filteredCount}}</div>
+        {{/if}}
       </div>
     </section>
   </div>
