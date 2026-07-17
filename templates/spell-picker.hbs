@@ -27,7 +27,8 @@
       <div class="picker__filter-group picker__filter-group--compact picker__filter-group--search">
         <input type="text" class="picker__search"
                placeholder="{{localize 'PF2E_LEVELER.SPELLS.SEARCH'}}"
-               data-action="searchSpells">
+               data-action="searchSpells"
+               minlength="3">
         {{#if isGM}}
         <button type="button" class="picker__settings-gear" data-action="openContentGuidance"
                 data-tooltip="{{localize 'PF2E_LEVELER.SETTINGS.CONTENT_GUIDANCE.OPEN_SETTINGS'}}">

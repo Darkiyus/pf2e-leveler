@@ -15,6 +15,8 @@ import {
   normalizeSpellCategory,
   toggleSelectableChip,
 } from './shared/picker-utils.js';
+import { getActiveSearchQuery, SEARCH_DEBOUNCE_MS } from './shared/search-utils.js';
+import { formatOr } from '../utils/i18n-fallback.js';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const RARITY_VALUES = ['common', 'uncommon', 'rare', 'unique'];
@@ -84,6 +86,7 @@ export class SpellPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     this.searchText = '';
     this.sortMode = options.sortMode ?? this._getDefaultSortMode();
     this._updateListTimer = null;
+    this._listUpdateVersion = 0;
     this._domListeners = null;
     this.preset = options.preset ?? null;
     this.customTitle = typeof options.title === 'string' && options.title.trim().length > 0
@@ -109,10 +112,22 @@ export class SpellPicker extends HandlebarsApplicationMixin(ApplicationV2) {
 
   get title() {
     if (this.customTitle) return this.customTitle;
-    if (this.isCantrip) return `${this.actor.name} - Cantrips`;
-    if (this.rank === -1) return `${this.actor.name} - ${this._capitalize(this.tradition)} Spellbook`;
-    const ordinal = this._ordinal(this.rank);
-    return `${this.actor.name} - ${ordinal}-Rank ${this._capitalize(this.tradition)} Spells`;
+    const tradition = getTraditionLabel(this.tradition);
+    if (this.isCantrip) {
+      return formatOr('SPELLS.WINDOW_CANTRIPS', { actorName: this.actor.name }, '{actorName} - Cantrips');
+    }
+    if (this.rank === -1) {
+      return formatOr(
+        'SPELLS.WINDOW_SPELLBOOK',
+        { actorName: this.actor.name, tradition },
+        '{actorName} - {tradition} Spellbook',
+      );
+    }
+    return formatOr(
+      'SPELLS.WINDOW_RANK',
+      { actorName: this.actor.name, rank: this.rank, tradition },
+      '{actorName} - Rank {rank} {tradition} Spells',
+    );
   }
 
   async _prepareContext() {
@@ -224,7 +239,7 @@ export class SpellPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       const searchInput = e.target.closest?.('[data-action="searchSpells"]');
       if (searchInput) {
         this.searchText = e.target.value.toLowerCase();
-        this._scheduleListUpdate(100);
+        this._scheduleListUpdate(SEARCH_DEBOUNCE_MS);
         return;
       }
 
@@ -523,6 +538,7 @@ export class SpellPicker extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   async _updateList() {
+    const updateVersion = ++this._listUpdateVersion;
     this._availableRarityValues = this._getAvailableRarityValues();
     this._normalizeSelectedRarities();
     this.filteredSpells = this._filterSpells();
@@ -569,6 +585,7 @@ export class SpellPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       remasterOnly: this.remasterOnly,
       hideGunsTech: this.hideGunsTech,
     });
+    if (updateVersion !== this._listUpdateVersion) return;
 
     const temp = document.createElement('div');
     temp.innerHTML = html;
@@ -624,7 +641,11 @@ export class SpellPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     if (this.remasterOnly) spells = spells.filter((spell) => isRemasterItem(spell));
     if (this.hideGunsTech) spells = spells.filter((spell) => !itemHasExcludedTechTrait(spell));
-    if (this.searchText) spells = spells.filter((s) => (s._levelerSearchName ?? s.name.toLowerCase()).includes(this.searchText));
+    const searchQuery = getActiveSearchQuery(this.searchText);
+    if (searchQuery) {
+      spells = spells.filter((spell) =>
+        (spell._levelerSearchName ?? spell.name.toLowerCase()).includes(searchQuery));
+    }
     if (this.multiSelect) {
       const preSelectedUuids = new Set(this.selectedSpells.map((s) => s.uuid));
       spells = spells.filter((spell) => !this.selectedSpellUuids.has(spell.uuid) && !preSelectedUuids.has(spell.uuid));
@@ -860,15 +881,6 @@ export class SpellPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       this._updateListTimer = null;
       this._updateList();
     }, delay);
-  }
-
-  _ordinal(n) {
-    const suffixes = { 1: 'st', 2: 'nd', 3: 'rd' };
-    return `${n}${suffixes[n] || 'th'}`;
-  }
-
-  _capitalize(s) {
-    return s.charAt(0).toUpperCase() + s.slice(1);
   }
 
   _getDefaultSortMode() {

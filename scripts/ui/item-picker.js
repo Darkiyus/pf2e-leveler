@@ -18,6 +18,13 @@ import {
   normalizeItemCategory,
   toggleSelectableChip,
 } from './shared/picker-utils.js';
+import {
+  getActiveSearchQuery,
+  limitSearchResults,
+  normalizeSearchQuery,
+  SEARCH_DEBOUNCE_MS,
+} from './shared/search-utils.js';
+import { localizeOr } from '../utils/i18n-fallback.js';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const renderHandlebarsTemplate = foundry.applications?.handlebars?.renderTemplate ?? globalThis.renderTemplate;
@@ -35,34 +42,34 @@ const ITEM_SORT_LABELS = {
 };
 
 const CATEGORY_LABELS = {
-  ancestry: 'Ancestry',
-  ammunition: 'Ammunition',
-  armor: 'Armor',
-  background: 'Background',
-  classfeature: 'Class Feature',
-  consumable: 'Consumable',
-  container: 'Container',
-  deity: 'Deity',
-  equipment: 'Equipment',
-  heritage: 'Heritage',
-  shield: 'Shield',
-  weapon: 'Weapon',
+  ancestry: ['ITEM_PICKER.CATEGORY_ANCESTRY', 'Ancestry'],
+  ammunition: ['ITEM_PICKER.CATEGORY_AMMUNITION', 'Ammunition'],
+  armor: ['ITEM_PICKER.CATEGORY_ARMOR', 'Armor'],
+  background: ['ITEM_PICKER.CATEGORY_BACKGROUND', 'Background'],
+  classfeature: ['ITEM_PICKER.CATEGORY_CLASS_FEATURE', 'Class Feature'],
+  consumable: ['ITEM_PICKER.CATEGORY_CONSUMABLE', 'Consumable'],
+  container: ['ITEM_PICKER.CATEGORY_CONTAINER', 'Container'],
+  deity: ['ITEM_PICKER.CATEGORY_DEITY', 'Deity'],
+  equipment: ['ITEM_PICKER.CATEGORY_EQUIPMENT', 'Equipment'],
+  heritage: ['ITEM_PICKER.CATEGORY_HERITAGE', 'Heritage'],
+  shield: ['ITEM_PICKER.CATEGORY_SHIELD', 'Shield'],
+  weapon: ['ITEM_PICKER.CATEGORY_WEAPON', 'Weapon'],
 };
 
 const ARMOR_FILTER_CATEGORY_LABELS = {
-  unarmored: 'Unarmored',
-  light: 'Light Armor',
-  medium: 'Medium Armor',
-  heavy: 'Heavy Armor',
-  'light-barding': 'Light Barding',
-  'heavy-barding': 'Heavy Barding',
+  unarmored: ['ITEM_PICKER.ARMOR_UNARMORED', 'Unarmored'],
+  light: ['ITEM_PICKER.ARMOR_LIGHT', 'Light Armor'],
+  medium: ['ITEM_PICKER.ARMOR_MEDIUM', 'Medium Armor'],
+  heavy: ['ITEM_PICKER.ARMOR_HEAVY', 'Heavy Armor'],
+  'light-barding': ['ITEM_PICKER.BARDING_LIGHT', 'Light Barding'],
+  'heavy-barding': ['ITEM_PICKER.BARDING_HEAVY', 'Heavy Barding'],
 };
 
 const WEAPON_FILTER_CATEGORY_LABELS = {
-  simple: 'Simple Weapon',
-  martial: 'Martial Weapon',
-  advanced: 'Advanced Weapon',
-  unarmed: 'Unarmed Attack',
+  simple: ['ITEM_PICKER.WEAPON_SIMPLE', 'Simple Weapon'],
+  martial: ['ITEM_PICKER.WEAPON_MARTIAL', 'Martial Weapon'],
+  advanced: ['ITEM_PICKER.WEAPON_ADVANCED', 'Advanced Weapon'],
+  unarmed: ['ITEM_PICKER.WEAPON_UNARMED', 'Unarmed Attack'],
 };
 
 export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -113,6 +120,8 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     this._armorFilterValues = [];
     this._weaponFilterValues = [];
     this._updateTimer = null;
+    this._listUpdateVersion = 0;
+    this._publicationOptions = null;
     this._domListeners = null;
     this._loading = this.allItems.length === 0;
     if (!this._loading) annotateGuidance(this.allItems);
@@ -135,7 +144,7 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
   };
 
   get title() {
-    return this.customTitle ?? `${this.actor.name} — Equipment`;
+    return this.customTitle ?? `${this.actor.name} — ${localizeOr('ITEM_PICKER.EQUIPMENT', 'Equipment')}`;
   }
 
   async _prepareContext() {
@@ -153,9 +162,7 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     this._normalizeSelectedRarities();
     this.filteredItems = this._filterItems();
 
-    const RENDER_LIMIT = 200;
-    const capped = !this._hasActiveFilter() && this.filteredItems.length > RENDER_LIMIT;
-    const renderedItems = capped ? this.filteredItems.slice(0, RENDER_LIMIT) : this.filteredItems;
+    const { items: renderedItems, capped } = limitSearchResults(this.filteredItems);
     return {
       loading: false,
       resultsTitle: this._getResultsTitle(),
@@ -180,7 +187,7 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       showWeaponFilters,
       filterSections: this._getFilterSections(),
       rarityOptions: buildChipOptions(this._getVisibleRarityValues(), this.selectedRarities, {
-        labels: { common: 'Common', uncommon: 'Uncommon', rare: 'Rare', unique: 'Unique' },
+        labels: getLocalizedRarityLabels(),
         lockedValues: this._getRarityToggleLockedValues(),
       }),
       guidanceTagOptions: buildChipOptions(
@@ -230,15 +237,15 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _getResultsTitle() {
-    return this.customTitle ?? game.i18n?.localize?.('PF2E_LEVELER.ITEM_PICKER.EQUIPMENT') ?? 'Equipment';
+    return this.customTitle ?? localizeOr('ITEM_PICKER.EQUIPMENT', 'Equipment');
   }
 
   _getEmptyMessage() {
-    if (this.customTitle && /\bformulas?\b/i.test(this.customTitle)) return 'No formulas found';
-    return 'No items found';
+    if (this.customTitle && /\bformulas?\b/i.test(this.customTitle)) return localizeOr('ITEM_PICKER.NO_FORMULAS', 'No formulas found');
+    return localizeOr('ITEM_PICKER.NO_ITEMS', 'No items found');
   }
 
-  _filterItems({ ignoreRarity = false } = {}) {
+  _filterItems({ ignoreRarity = false, sort = true } = {}) {
     let items = filterDisallowedForCurrentUser([...this.allItems]);
     items = applySourceFilter(
       items,
@@ -271,9 +278,10 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       const max = Number(this.maxLevel);
       items = items.filter((item) => Number(item.system?.level?.value ?? 0) <= max);
     }
-    if (this.searchText) {
-      const query = this.searchText.toLowerCase();
-      items = items.filter((item) => String(item.name ?? '').toLowerCase().includes(query));
+    const query = getActiveSearchQuery(this.searchText);
+    if (query) {
+      items = items.filter((item) =>
+        (item._levelerSearchName ?? normalizeSearchQuery(item.name)).includes(query));
     }
     if (this.remasterOnly) items = items.filter((item) => isRemasterItem(item));
     if (this.hideGunsTech) items = items.filter((item) => !itemHasExcludedTechTrait(item));
@@ -291,39 +299,28 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     if (this.collapseFormulaVariants) {
       items = collapseFormulaVariantsToLowestLevel(items);
     }
-    return sortItemsForPicker(items, this.sortMode);
+    return sort ? sortItemsForPicker(items, this.sortMode) : items;
   }
 
   _getAvailableRarityValues() {
     return getAvailableRarityValues(
-      this._filterItems({ ignoreRarity: true }),
+      this._filterItems({ ignoreRarity: true, sort: false }),
       (item) => item.system?.traits?.rarity ?? 'common',
       RARITY_VALUES,
     );
   }
 
-  _hasActiveFilter() {
-    if (this.searchText) return true;
-    if (this.maxLevel !== '') return true;
-    if (this.selectedTraits.size > 0) return true;
-    if (this.requiredTraits.size > 0) return true;
-    if (this._shouldApplyEquipmentFilters('armor') && !this._armorFilterValues.every((v) => this.selectedArmorFilters.has(v))) return true;
-    if (this._shouldApplyEquipmentFilters('weapon') && !this._weaponFilterValues.every((v) => this.selectedWeaponFilters.has(v))) return true;
-    if (!isUnrestrictedSelection(this.selectedCategories, this._categoryValues)) return true;
-    if (!isUnrestrictedSelection(this.selectedSourcePackages, this._sourcePackageValues)) return true;
-    if (!isUnrestrictedSelection(this.selectedPublications, this._publicationTitles)) return true;
-    if (!isUnrestrictedSelection(this.selectedRarities, this._availableRarityValues ?? RARITY_VALUES)) return true;
-    return false;
-  }
-
   _getPublicationOptions() {
-    const unique = new Map();
-    for (const item of this.allItems) {
-      const title = String(item.publicationTitle ?? item.system?.publication?.title ?? '').trim();
-      if (!title || unique.has(title)) continue;
-      unique.set(title, { key: title, label: title });
+    if (!this._publicationOptions) {
+      const unique = new Map();
+      for (const item of this.allItems) {
+        const title = String(item.publicationTitle ?? item.system?.publication?.title ?? '').trim();
+        if (!title || unique.has(title)) continue;
+        unique.set(title, { key: title, label: title });
+      }
+      this._publicationOptions = [...unique.values()].sort((a, b) => a.label.localeCompare(b.label));
     }
-    const options = [...unique.values()].sort((a, b) => a.label.localeCompare(b.label));
+    const options = this._publicationOptions;
     this._publicationTitles = options.map((e) => e.key);
     this.selectedPublications = initializeSelectionSet(this.selectedPublications, this._publicationTitles, { defaultValues: [] });
     const displayOptions = options.map((e) => ({ ...e, selected: this.selectedPublications.has(e.key) }));
@@ -380,7 +377,7 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     const categories = [...seen].sort((a, b) => a.localeCompare(b));
     this._categoryValues = categories;
     this.selectedCategories = initializeSelectionSet(this.selectedCategories, categories, { defaultValues: [] });
-    return buildChipOptions(categories, this.selectedCategories, { labels: CATEGORY_LABELS });
+    return buildChipOptions(categories, this.selectedCategories, { labels: getLocalizedLabelMap(CATEGORY_LABELS) });
   }
 
   _getArmorFilterOptions() {
@@ -507,15 +504,14 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   async _updateList() {
+    const updateVersion = ++this._listUpdateVersion;
     this._availableRarityValues = this._getAvailableRarityValues();
     this._normalizeSelectedRarities();
     this.filteredItems = this._filterItems();
     const root = this._getRootElement();
     const listContainer = root?.querySelector('.item-list');
     if (!listContainer) return;
-    const RENDER_LIMIT = 200;
-    const capped = !this._hasActiveFilter() && this.filteredItems.length > RENDER_LIMIT;
-    const renderedItems = capped ? this.filteredItems.slice(0, RENDER_LIMIT) : this.filteredItems;
+    const { items: renderedItems, capped } = limitSearchResults(this.filteredItems);
     const context = {
       resultsTitle: this._getResultsTitle(),
       emptyMessage: this._getEmptyMessage(),
@@ -540,7 +536,7 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       armorFilterLogic: this.armorFilterLogic,
       weaponFilterLogic: this.weaponFilterLogic,
       rarityOptions: buildChipOptions(this._getVisibleRarityValues(), this.selectedRarities, {
-        labels: { common: 'Common', uncommon: 'Uncommon', rare: 'Rare', unique: 'Unique' },
+        labels: getLocalizedRarityLabels(),
         lockedValues: this._getRarityToggleLockedValues(),
       }),
       guidanceTagOptions: buildChipOptions(
@@ -552,6 +548,7 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       sortOptions: this._getSortOptions(),
     };
     const html = await renderHandlebarsTemplate(`modules/${MODULE_ID}/templates/item-picker.hbs`, context);
+    if (updateVersion !== this._listUpdateVersion) return;
     const temp = document.createElement('div');
     temp.innerHTML = html;
     const newList = temp.querySelector('.item-list');
@@ -661,7 +658,7 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     this._updateTimer = setTimeout(() => {
       this._updateTimer = null;
       this._updateList();
-    }, 150);
+    }, SEARCH_DEBOUNCE_MS);
   }
 
   _getRootElement() {
@@ -678,6 +675,7 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     if (this._loading) {
       loadItems().then((items) => {
         this.allItems = items;
+        this._publicationOptions = null;
         annotateGuidance(this.allItems);
         this._loading = false;
         this.render(false);
@@ -1139,20 +1137,22 @@ export async function loadItems() {
   if (_itemCache) return _itemCache;
   const keys = getCompendiumKeysForCategory('equipment');
   const items = [];
-  for (const key of keys) {
+  const compendiumItems = await Promise.all(keys.map(async (key) => {
     const pack = game.packs.get(key);
-    if (!pack) continue;
+    if (!pack) return [];
     const docs = await pack.getDocuments().catch(() => []);
     const sourcePackage = pack.metadata?.packageName ?? pack.metadata?.package ?? '';
     const sourcePackageLabel = game.modules?.get?.(sourcePackage)?.title ?? sourcePackage ?? key;
-    items.push(...docs.map((doc) => {
+    return docs.map((doc) => {
       doc.sourcePack = key;
       doc.sourcePackage = sourcePackage || key;
       doc.sourcePackageLabel = sourcePackageLabel || key;
       doc.publicationTitle = doc.publicationTitle ?? doc.system?.publication?.title ?? null;
+      doc._levelerSearchName = normalizeSearchQuery(doc.name);
       return doc;
-    }));
-  }
+    });
+  }));
+  items.push(...compendiumItems.flat());
   const worldSourcePackage = 'world';
   const worldSourcePackageLabel = compactSourceOwnerLabel(game.world?.title ?? 'World');
   items.push(...getAllWorldItems()
@@ -1162,6 +1162,7 @@ export async function loadItems() {
       item.sourcePackage = item.sourcePackage ?? worldSourcePackage;
       item.sourcePackageLabel = item.sourcePackageLabel ?? worldSourcePackageLabel;
       item.publicationTitle = item.publicationTitle ?? item.system?.publication?.title ?? null;
+      item._levelerSearchName = normalizeSearchQuery(item.name);
       return item;
     }));
   _itemCache = items.filter((item) =>
@@ -1245,9 +1246,26 @@ function normalizeEquipmentProperty(value) {
 function getEquipmentFilterLabel(value, kind) {
   const [type, raw] = String(value ?? '').split(':');
   if (!raw) return value;
-  if (type === 'category' && kind === 'armor') return ARMOR_FILTER_CATEGORY_LABELS[raw] ?? humanizeEquipmentFilterValue(raw);
-  if (type === 'category' && kind === 'weapon') return WEAPON_FILTER_CATEGORY_LABELS[raw] ?? humanizeEquipmentFilterValue(raw);
+  if (type === 'category' && kind === 'armor') return localizeLabelEntry(ARMOR_FILTER_CATEGORY_LABELS[raw], humanizeEquipmentFilterValue(raw));
+  if (type === 'category' && kind === 'weapon') return localizeLabelEntry(WEAPON_FILTER_CATEGORY_LABELS[raw], humanizeEquipmentFilterValue(raw));
   return humanizeEquipmentFilterValue(raw);
+}
+
+function getLocalizedLabelMap(entries) {
+  return Object.fromEntries(Object.entries(entries).map(([value, entry]) => [value, localizeLabelEntry(entry, value)]));
+}
+
+function localizeLabelEntry(entry, fallback) {
+  return Array.isArray(entry) ? localizeOr(entry[0], entry[1]) : fallback;
+}
+
+function getLocalizedRarityLabels() {
+  return {
+    common: localizeOr('QUICK_EQUIPMENT.RARITY_COMMON', 'Common'),
+    uncommon: localizeOr('QUICK_EQUIPMENT.RARITY_UNCOMMON', 'Uncommon'),
+    rare: localizeOr('QUICK_EQUIPMENT.RARITY_RARE', 'Rare'),
+    unique: localizeOr('QUICK_EQUIPMENT.RARITY_UNIQUE', 'Unique'),
+  };
 }
 
 function getEquipmentItemTags(item) {

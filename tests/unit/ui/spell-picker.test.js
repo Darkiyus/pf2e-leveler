@@ -77,6 +77,24 @@ describe('SpellPicker', () => {
     expect(template).not.toContain('<div class="picker__filter-label">{{localize "PF2E_LEVELER.SPELLS.TRAIT_FILTER"}}</div>');
   });
 
+  test('starts spell searches at three characters', () => {
+    const actor = createMockActor({ items: [] });
+    const picker = new SpellPicker(actor, 'arcane', 1, jest.fn(), { excludedSelections: [] });
+    picker.allSpells = [
+      makeSpell('magic-missile', 'Magic Missile', 1, ['arcane']),
+      makeSpell('acid-grip', 'Acid Grip', 1, ['arcane']),
+    ];
+
+    picker.searchText = 'ma';
+    expect(picker._filterSpells().map((spell) => spell.uuid)).toEqual([
+      'magic-missile',
+      'acid-grip',
+    ]);
+
+    picker.searchText = 'mag';
+    expect(picker._filterSpells().map((spell) => spell.uuid)).toEqual(['magic-missile']);
+  });
+
   test('toggling the publication section is reflected in the next prepared context', async () => {
     const actor = createMockActor({ items: [] });
     const picker = new SpellPicker(actor, 'arcane', 1, jest.fn(), { excludedSelections: [] });

@@ -1,5 +1,23 @@
 # Changelog
 
+## 3.7.0 – German Edition & Fixes
+
+### Added
+
+- Optional, complete German localization alongside the existing English, French, and Chinese languages
+- Reusable quick-equipment packages with images, descriptive metadata, contained PF2e items, and automatic price and Bulk calculation
+- Heritage content guidance for standard, versatile, mixed-ancestry, world, and module-provided heritages
+
+### Improved
+
+- Search fields now wait for at least three characters, debounce input, cap rendered results, and discard stale asynchronous searches
+- Equipment, feat, spell, content-guidance, and character-wizard searches remain responsive while the user continues typing
+- Hard-coded interface labels in the character wizard, pickers, and level planner now use localization keys
+
+### Attribution
+
+- Community fork maintained by Darkiyus and based on the original PF2e Leveler by RoiLeaf
+
 ## 3.6.5
 
 ### Fixed

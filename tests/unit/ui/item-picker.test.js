@@ -1066,6 +1066,52 @@ describe('ItemPicker', () => {
     expect(context.capped).toBe(true);
   });
 
+  test('starts item searches at three characters', () => {
+    const picker = new ItemPicker({ name: 'Actor' }, jest.fn(), {
+      items: [
+        {
+          uuid: 'rapier',
+          name: 'Rapier',
+          type: 'weapon',
+          system: { traits: { rarity: 'common', value: [] }, level: { value: 0 } },
+        },
+        {
+          uuid: 'dagger',
+          name: 'Dagger',
+          type: 'weapon',
+          system: { traits: { rarity: 'common', value: [] }, level: { value: 0 } },
+        },
+      ],
+    });
+
+    picker.searchText = 'ra';
+    expect(picker._filterItems().map((item) => item.uuid)).toEqual(['rapier', 'dagger']);
+
+    picker.searchText = 'rap';
+    expect(picker._filterItems().map((item) => item.uuid)).toEqual(['rapier']);
+  });
+
+  test('keeps broad active searches capped at 200 rendered equipment rows', async () => {
+    const items = Array.from({ length: 250 }, (_, i) => ({
+      uuid: `item-${i}`,
+      name: `Common Item ${String(i).padStart(3, '0')}`,
+      type: 'equipment',
+      system: {
+        traits: { rarity: 'common', value: [] },
+        level: { value: 1 },
+      },
+    }));
+    const picker = new ItemPicker({ name: 'Actor' }, jest.fn(), { items });
+    picker.searchText = 'item';
+
+    const context = await picker._prepareContext();
+
+    expect(context.filteredCount).toBe(250);
+    expect(context.renderedCount).toBe(200);
+    expect(context.items).toHaveLength(200);
+    expect(context.capped).toBe(true);
+  });
+
   test('caps initial item picker results even when source packages are present but no source filter is selected', async () => {
     const items = Array.from({ length: 250 }, (_, i) => ({
       uuid: `item-${i}`,

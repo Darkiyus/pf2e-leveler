@@ -2310,6 +2310,12 @@ describe('FeatPicker prerequisite enforcement', () => {
 
     const picker = new FeatPicker(createActor(), 'custom', 2, createBuildState(), jest.fn());
     picker.allFeats = [matchingName, traitOnly];
+    picker.searchText = 'sk';
+
+    expect(picker._applyFilters().map((entry) => entry.name)).toEqual(
+      expect.arrayContaining(['Skill Training', 'Unrelated Feat']),
+    );
+
     picker.searchText = 'skill';
 
     expect(picker._applyFilters().map((entry) => entry.name)).toEqual(['Skill Training']);

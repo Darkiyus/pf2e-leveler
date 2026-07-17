@@ -29,6 +29,8 @@ import {
   initializeSelectionSet,
   toggleSelectableChip,
 } from './shared/picker-utils.js';
+import { getActiveSearchQuery, SEARCH_DEBOUNCE_MS } from './shared/search-utils.js';
+import { formatOr, localizeOr } from '../utils/i18n-fallback.js';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const renderHandlebarsTemplate =
@@ -86,6 +88,7 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     this._prereqCache = new Map();
     this._buildStateSignature = this._createBuildStateSignature();
     this._updateListTimer = null;
+    this._listUpdateVersion = 0;
     this._domListeners = null;
     this.preset = options.preset ?? null;
     this.customTitle = options.title ?? null;
@@ -119,16 +122,24 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       return this.customTitle.trim();
     }
     const typeNames = {
-      class: 'Class Feats',
-      dualClass: 'Dual Class Feats',
-      skill: 'Skill Feats',
-      general: 'General Feats',
-      ancestry: 'Ancestry Feats',
-      archetype: 'Archetype Feats',
-      mythic: 'Mythic Feats',
-      custom: 'All Feats',
+      class: localizeOr('FEAT_PICKER.CATEGORY_CLASS_FEATS', 'Class Feats'),
+      dualClass: localizeOr('FEAT_PICKER.CATEGORY_DUAL_CLASS_FEATS', 'Dual Class Feats'),
+      skill: localizeOr('FEAT_PICKER.CATEGORY_SKILL_FEATS', 'Skill Feats'),
+      general: localizeOr('FEAT_PICKER.CATEGORY_GENERAL_FEATS', 'General Feats'),
+      ancestry: localizeOr('FEAT_PICKER.CATEGORY_ANCESTRY_FEATS', 'Ancestry Feats'),
+      archetype: localizeOr('FEAT_PICKER.CATEGORY_ARCHETYPE_FEATS', 'Archetype Feats'),
+      mythic: localizeOr('FEAT_PICKER.CATEGORY_MYTHIC_FEATS', 'Mythic Feats'),
+      custom: localizeOr('FEAT_PICKER.CATEGORY_ALL_FEATS', 'All Feats'),
     };
-    return `${this.actor.name} - ${typeNames[this.category] ?? 'Feats'} | Level ${this.targetLevel}`;
+    return formatOr(
+      'FEAT_PICKER.WINDOW_TITLE',
+      {
+        actorName: this.actor.name,
+        category: typeNames[this.category] ?? localizeOr('FEAT_PICKER.CATEGORY_FEATS', 'Feats'),
+        level: this.targetLevel,
+      },
+      '{actorName} - {category} | Level {level}',
+    );
   }
 
   async _prepareContext() {
@@ -367,7 +378,8 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     if (this.excludedFeatUuids.size > 0) {
       feats = feats.filter((feat) => !this.excludedFeatUuids.has(this._getFeatUuid(feat)));
     }
-    if (this.searchText) feats = filterBySearch(feats, this.searchText);
+    const searchQuery = getActiveSearchQuery(this.searchText);
+    if (searchQuery) feats = filterBySearch(feats, searchQuery);
     if (this.requiredSkills.size > 0)
       feats = filterBySkill(feats, [...this.requiredSkills], this.skillLogic);
     if (this._showSkillFilter && this.selectedSkills.size > 0)
@@ -502,7 +514,7 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
         'input',
         (e) => {
           this.searchText = e.target.value;
-          this._scheduleListUpdate(120);
+          this._scheduleListUpdate(SEARCH_DEBOUNCE_MS);
         },
         { signal },
       );
@@ -818,6 +830,7 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   async _updateFeatList() {
+    const updateVersion = ++this._listUpdateVersion;
     const publicationOptions = this._getPublicationOptions();
     this._availableRarityValues = this._getAvailableRarityValues();
     this._normalizeSelectedRarities();
@@ -854,6 +867,7 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
         this._getSelectableFilteredFeatUuids().length > 0 &&
         this._getSelectableFilteredFeatUuids().every((uuid) => this.selectedFeatUuids.has(uuid)),
     });
+    if (updateVersion !== this._listUpdateVersion) return;
 
     const temp = document.createElement('div');
     temp.innerHTML = html;
