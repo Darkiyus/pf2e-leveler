@@ -1,6 +1,6 @@
 {
   "name": "pf2e-leveler",
-  "version": "3.8.1",
+  "version": "3.8.2",
   "description": "PF2e Leveler community fork with German localization and performance fixes",
   "main": "scripts/main.js",
   "scripts": {

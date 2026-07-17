@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.8.2 – Setup Assistant Fixes
+
+### Fixed
+
+- The Content step of the GM Setup Assistant no longer overlaps the campaign preset cards; card buttons now size to their actual text instead of Foundry's default fixed button height
+
+### Improved
+
+- The Content step now explains what uncommon/rare/unique rarity actually means in Pathfinder 2E and what each toggle does, with concrete examples instead of restating the setting name
+- The Balanced, Restricted, and Homebrew-friendly presets describe their trade-offs (setup effort vs. flexibility) instead of only listing what they enable
+- Each preset card now has a small icon for faster visual scanning, and the "banned content visibility" dropdown shows its existing hidden-vs-greyed-out explanation directly in the wizard
+
 ## 3.8.1 – Upstream Issue Fixes
 
 ### Fixed

@@ -953,7 +953,7 @@
       "LANGUAGE_BODY": "PF2e Leveler follows each user's Foundry core language. Changing it here updates the complete Foundry interface after a reload.",
       "LANGUAGE_GLOBAL_HINT": "This is a user-specific Foundry setting, not a Leveler-only language switch. Compendium content still requires a matching translation module.",
       "CONTENT_TITLE": "Define player content access",
-      "CONTENT_BODY": "Start with a campaign preset, then fine-tune rarities, compendium sources, recommendations, and bans.",
+      "CONTENT_BODY": "Every feat, ancestry, and item in Pathfinder 2E has a rarity: common (always free to pick), uncommon (usually deserves a small in-world explanation), rare (tied to specific places or groups), and unique (usually belongs to one particular person or story moment). The toggles below decide how far your players may reach during character creation. The easiest start is picking one of the three presets and adjusting individual toggles from there.",
       "RULES_TITLE": "Review Leveler and PF2e rules",
       "RULES_BODY": "Leveler options and detected PF2e system variants are shown together. PF2e settings are changed in the system namespace and may require a reload.",
       "WORKFLOW_TITLE": "Configure the creation workflow",
@@ -964,11 +964,11 @@
       "SUMMARY_TITLE": "Review and save",
       "SUMMARY_BODY": "Export the campaign profile for another world or finish to apply the selected settings.",
       "ALLOW_UNCOMMON": "Allow uncommon content",
-      "ALLOW_UNCOMMON_HINT": "Players may choose uncommon options unless separately banned.",
+      "ALLOW_UNCOMMON_HINT": "Uncommon options (a less usual ancestry, a special feat) don't fit every setting but are rarely a problem. On: players pick them freely. Off: only you unlock individual ones.",
       "ALLOW_RARE": "Allow rare content",
-      "ALLOW_RARE_HINT": "Players may choose rare options unless separately banned.",
+      "ALLOW_RARE_HINT": "Rare options are normally tied to specific places, peoples, or organizations in your campaign. On: players may pick them freely. Most tables are better off leaving this off and granting individual exceptions instead.",
       "ALLOW_UNIQUE": "Allow unique content",
-      "ALLOW_UNIQUE_HINT": "Players may choose unique options unless separately banned.",
+      "ALLOW_UNIQUE_HINT": "Unique options usually belong to one particular character or story moment, like an archvillain's gear or an adventure's artifact. They're generally not meant for regular character creation — leave this off unless you specifically want to allow it.",
       "DISALLOWED_MODE": "How banned content appears to players",
       "OPEN_GUIDANCE": "Open Content Guidance",
       "OPEN_COMPENDIUMS": "Configure Compendiums",
@@ -1033,9 +1033,9 @@
         "SUMMARY": "Summary"
       },
       "PRESETS": {
-        "BALANCED": { "NAME": "Balanced", "HINT": "Allow uncommon content while keeping rare and unique choices under GM control." },
-        "RESTRICTED": { "NAME": "Restricted", "HINT": "Hide banned content and limit players to explicitly configured sources." },
-        "HOMEBREW": { "NAME": "Homebrew-friendly", "HINT": "Allow uncommon and rare content with guidance instead of strict prerequisite blocking." }
+        "BALANCED": { "NAME": "Balanced (recommended)", "HINT": "A good starting point for most groups: uncommon content is free to pick, while rare and unique options stay visible but greyed out until you unlock them individually. Pro: little setup work. Con: you unlock special requests yourself." },
+        "RESTRICTED": { "NAME": "Restricted", "HINT": "Full control for beginner-friendly tables: players only see content from the sources you picked, everything else is completely hidden. Pro: few surprises. Con: you maintain sources and exceptions yourself." },
+        "HOMEBREW": { "NAME": "Homebrew-friendly", "HINT": "For experienced groups with their own content: uncommon and rare options are free to pick, and prerequisites are shown as guidance instead of being hard-enforced. Pro: maximum freedom. Con: needs more back-and-forth with the group." }
       },
       "DIAGNOSTICS": {
         "MISSING_PACK": "Configured compendium is unavailable: {key}",

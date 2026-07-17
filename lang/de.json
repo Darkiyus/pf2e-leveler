@@ -953,7 +953,7 @@
       "LANGUAGE_BODY": "PF2e Leveler verwendet die Foundry-Kernsprache des jeweiligen Benutzers. Eine Änderung hier stellt nach einem Neuladen die gesamte Foundry-Oberfläche um.",
       "LANGUAGE_GLOBAL_HINT": "Dies ist eine benutzerbezogene Foundry-Einstellung und keine reine Leveler-Spracheinstellung. Kompendiumsinhalte benötigen weiterhin ein passendes Übersetzungsmodul.",
       "CONTENT_TITLE": "Inhaltszugriff für Spieler festlegen",
-      "CONTENT_BODY": "Beginne mit einem Kampagnenprofil und passe anschließend Seltenheiten, Kompendiumsquellen, Empfehlungen und Verbote an.",
+      "CONTENT_BODY": "Jeder Talent, jede Abstammung und jeder Gegenstand in Pathfinder 2E hat eine Seltenheitsstufe: gewöhnlich (immer frei wählbar), ungewöhnlich (braucht eigentlich eine kleine Erklärung in der Spielwelt), selten (an bestimmte Orte oder Gruppen gebunden) und einzigartig (gehört meist genau einer Person oder einem Story-Moment). Mit den Reglern unten legst du fest, wie weit deine Spieler bei der Charaktererschaffung darüber hinausgreifen dürfen. Starte am einfachsten mit einem der drei Profile und passe danach einzelne Regler an.",
       "RULES_TITLE": "Leveler- und PF2e-Regeln prüfen",
       "RULES_BODY": "Leveler-Optionen und erkannte PF2e-Systemvarianten werden gemeinsam angezeigt. PF2e-Einstellungen werden im System gespeichert und können ein Neuladen erfordern.",
       "WORKFLOW_TITLE": "Ablauf der Charaktererschaffung konfigurieren",
@@ -964,11 +964,11 @@
       "SUMMARY_TITLE": "Prüfen und speichern",
       "SUMMARY_BODY": "Exportiere das Kampagnenprofil für eine andere Welt oder schließe die Einrichtung ab, um die gewählten Einstellungen anzuwenden.",
       "ALLOW_UNCOMMON": "Ungewöhnliche Inhalte erlauben",
-      "ALLOW_UNCOMMON_HINT": "Spieler dürfen ungewöhnliche Optionen wählen, sofern sie nicht einzeln verboten wurden.",
+      "ALLOW_UNCOMMON_HINT": "Ungewöhnliche Optionen (z. B. eine seltenere Abstammung oder ein besonderes Talent) passen nicht in jede Welt, sind aber meist unproblematisch. Aktiviert: Spieler wählen sie frei. Deaktiviert: nur du als SL schaltest einzelne davon frei.",
       "ALLOW_RARE": "Seltene Inhalte erlauben",
-      "ALLOW_RARE_HINT": "Spieler dürfen seltene Optionen wählen, sofern sie nicht einzeln verboten wurden.",
+      "ALLOW_RARE_HINT": "Seltene Optionen sind normalerweise an bestimmte Orte, Völker oder Organisationen deiner Kampagne gebunden. Aktiviert: Spieler dürfen frei daraus wählen. In den meisten Runden lohnt es sich, das aus zu lassen und stattdessen gezielt Ausnahmen zu erlauben.",
       "ALLOW_UNIQUE": "Einzigartige Inhalte erlauben",
-      "ALLOW_UNIQUE_HINT": "Spieler dürfen einzigartige Optionen wählen, sofern sie nicht einzeln verboten wurden.",
+      "ALLOW_UNIQUE_HINT": "Einzigartige Optionen gehören meist zu einer bestimmten Figur oder einem Story-Moment, etwa der Ausrüstung eines Erzfeindes oder einem Artefakt aus dem Abenteuer. Für neue Charaktere sind sie in aller Regel nicht gedacht – lass diesen Schalter deaktiviert, außer du willst genau das bewusst ermöglichen.",
       "DISALLOWED_MODE": "Darstellung verbotener Inhalte für Spieler",
       "OPEN_GUIDANCE": "Inhaltsvorgaben öffnen",
       "OPEN_COMPENDIUMS": "Kompendien konfigurieren",
@@ -1033,9 +1033,9 @@
         "SUMMARY": "Zusammenfassung"
       },
       "PRESETS": {
-        "BALANCED": { "NAME": "Ausgewogen", "HINT": "Erlaubt ungewöhnliche Inhalte; seltene und einzigartige Optionen bleiben unter Kontrolle des SL." },
-        "RESTRICTED": { "NAME": "Eingeschränkt", "HINT": "Blendet verbotene Inhalte aus und beschränkt Spieler auf ausdrücklich gewählte Quellen." },
-        "HOMEBREW": { "NAME": "Homebrew-freundlich", "HINT": "Erlaubt ungewöhnliche und seltene Inhalte und arbeitet stärker mit Empfehlungen als mit harten Voraussetzungssperren." }
+        "BALANCED": { "NAME": "Ausgewogen (empfohlen)", "HINT": "Guter Start für die meisten Gruppen: Ungewöhnliche Inhalte sind frei wählbar, seltene und einzigartige Optionen bleiben sichtbar, aber ausgegraut, bis du sie einzeln freigibst. Vorteil: wenig Einrichtungsaufwand. Nachteil: Sonderwünsche musst du selbst freischalten." },
+        "RESTRICTED": { "NAME": "Eingeschränkt", "HINT": "Volle Kontrolle für Einsteiger-Runden: Spieler sehen nur Inhalte aus den von dir gewählten Quellen, alles andere ist komplett ausgeblendet. Vorteil: kaum Überraschungen. Nachteil: du musst Quellen und Ausnahmen selbst pflegen." },
+        "HOMEBREW": { "NAME": "Homebrew-freundlich", "HINT": "Für erfahrene Gruppen mit eigenen Inhalten: Ungewöhnliche und seltene Optionen sind frei wählbar, Voraussetzungen werden nur als Empfehlung angezeigt statt hart erzwungen. Vorteil: maximale Freiheit. Nachteil: erfordert mehr Absprache mit der Gruppe." }
       },
       "DIAGNOSTICS": {
         "MISSING_PACK": "Konfiguriertes Kompendium ist nicht verfügbar: {key}",

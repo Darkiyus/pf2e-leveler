@@ -17,6 +17,11 @@ import { invalidateCharacterWizardCompendiumCaches } from './character-wizard/lo
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const SETUP_STEPS = ['welcome', 'language', 'content', 'rules', 'workflow', 'diagnostics', 'summary'];
 const RELOAD_MODULE_SETTINGS = ['showPlanButton', 'ancestralParagon', 'enableDualClassSupport'];
+const PRESET_ICONS = {
+  balanced: 'fa-scale-balanced',
+  restricted: 'fa-shield-halved',
+  homebrew: 'fa-flask',
+};
 
 export class GmSetupWizard extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor(options = {}) {
@@ -84,6 +89,7 @@ export class GmSetupWizard extends HandlebarsApplicationMixin(ApplicationV2) {
       presets: Object.keys(SETUP_PRESETS).map((key) => ({
         key,
         active: key === this.selectedPreset,
+        icon: PRESET_ICONS[key] ?? 'fa-sliders',
         label: game.i18n.localize(`PF2E_LEVELER.SETUP.PRESETS.${key.toUpperCase()}.NAME`),
         hint: game.i18n.localize(`PF2E_LEVELER.SETUP.PRESETS.${key.toUpperCase()}.HINT`),
       })),
