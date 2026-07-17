@@ -279,7 +279,7 @@
               <span class="item-option__name" data-action="viewItem" data-uuid="{{this.uuid}}">{{this.name}}</span>
               {{#if this.alreadyTaken}}<span class="tag tag--muted tag--tiny"><i class="fa-solid fa-check"></i> {{localize "PF2E_LEVELER.ITEM_PICKER.TAKEN"}}</span>{{/if}}
               <span class="item-option__level">{{format "PF2E_LEVELER.FEAT_PICKER.LEVEL" level=this.itemLevel}}</span>
-              {{#if this.priceLabel}}<span class="item-option__level">{{this.priceLabel}}</span>{{/if}}
+              {{#if this.priceCoins}}<span class="item-option__level">{{coinIcons this.priceCoins}}{{#if this.pricePerLabel}} / {{this.pricePerLabel}}{{/if}}</span>{{/if}}
             </div>
             <div class="item-option__traits">
               <span class="tag tag--muted">{{this.category}}</span>

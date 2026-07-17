@@ -229,6 +229,8 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       img: item.img,
       rarity,
       priceLabel,
+      priceCoins: price ?? null,
+      pricePerLabel: pricePer > 1 ? pricePer : null,
       itemLevel: Number(item.system?.level?.value ?? 0),
       category: normalizeItemCategory(item),
       traits: [...new Set(item.system?.traits?.value ?? [])].filter((t) => t !== normalizeItemCategory(item)),

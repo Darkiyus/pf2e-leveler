@@ -226,8 +226,9 @@
 }
 
 .pf2e-leveler .wizard-sidebar__logo {
-  width: 64px;
-  height: 64px;
+  width: 160px;
+  height: 160px;
+  max-width: 100%;
   object-fit: contain;
   opacity: 0.85;
 }
@@ -1564,18 +1565,19 @@
 }
 
 .pf2e-leveler .wizard-equipment-total__value {
+  font-size: var(--leveler-font-md);
   font-weight: 700;
   color: var(--leveler-accent);
 }
 
 .pf2e-leveler .wizard-equipment-total__limit {
-  font-size: var(--leveler-font-sm);
+  font-size: var(--leveler-font-md);
   color: var(--leveler-text-muted);
   margin-left: 2px;
 }
 
 .pf2e-leveler .wizard-equipment-total__remaining {
-  font-size: var(--leveler-font-sm);
+  font-size: var(--leveler-font-md);
   color: var(--leveler-text-muted);
   margin-left: auto;
 }

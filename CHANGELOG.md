@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.11.3 – Coin Icon and Readability Fixes
+
+### Fixed
+
+- Coin icons no longer sit slightly off from the surrounding text baseline in quick-equipment cards and totals.
+- The equipment total/budget/remaining line in the wizard showed the current total in a visibly larger coin icon than the limit next to it; both now use the same size.
+- Equipment prices in the item browser (feat/item picker) now show coin icons instead of only "gp"/"sp" text, consistent with the rest of the module.
+- The module logo in the character wizard sidebar is now noticeably larger (2.5x).
+- The selected quick-equipment package entry in the package editor's sidebar list no longer overlaps its own text; a generic theme rule for "active" buttons was unintentionally overriding this list entry's height and text color, making it hard to read.
+- Dropdown (`<select>`) option lists across the module (e.g. rarity, category) now use the dark theme's colors instead of the browser's default light background with light text.
+
 ## 3.11.2 – Wizard Logo
 
 ### Added
