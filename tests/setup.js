@@ -15,6 +15,7 @@ global.game = {
           showPlanButton: true,
           autoApplyOnLevelUp: true,
           allowIncompleteCreation: false,
+          lockCharacterWizard: false,
           showPrerequisites: true,
           enforcePrerequisites: true,
           enableDualClassSupport: true,

@@ -1,5 +1,25 @@
 # Changelog
 
+## 3.12.0 – Currency Fix, Wizard Access Control, Quick-Equipment Pricing
+
+### Fixed
+
+- Starting-wealth currency granted at the end of character creation still wasn't reaching the character sheet. The previous fix wrote to `system.currency`, but PF2e stores coins as inventory items and computes that field automatically; it now uses the system's own `actor.inventory.addCurrency()` API.
+- Re-applying the character wizard on a character that already had items (e.g. a player redoing a mistake) added a second, duplicate copy of everything — ancestry, background, class, feats, equipment. The wizard now clears the character's existing items before applying, so redoing it can't stack duplicates. This is called out in the confirmation dialog before you click "Create Character".
+- Merging equipment from two sources (e.g. browsing an item directly, then also adding a quick-equipment package containing the same item) kept the price/bulk data from whichever add happened first instead of refreshing it, which could leave a stack priced incorrectly.
+- The quick-equipment package quantity stepper in the package editor changed items one at a time regardless of their sale batch size (e.g. arrows sold in 10s), unlike the same stepper in the character wizard; both now step by the item's batch size consistently.
+- The quick-equipment package preview popup still showed prices as plain "X gp" text instead of coin icons.
+
+### Added
+
+- The character-creation wizard is now restricted to players' level 1 characters; GMs are not affected by this restriction. A new world setting, "Lock Character Wizard for Players", lets a GM disable it for players entirely (e.g. once the campaign has started).
+- A "Clear" button in the wizard lets you discard everything entered so far and start the form over, without touching the character sheet itself.
+- Hovering an item in the quick-equipment preview popup now shows its description as a tooltip.
+- The quick-equipment package editor's class checkboxes now show each class's icon instead of a plain checkbox.
+- The quick-equipment package editor now supports a custom fixed price or a percentage discount off the calculated total, instead of always using the sum of contained items.
+- The item browser (feat/item picker) now shows a weapon's group (e.g. Sword, Firearm, Bow) as a tag, localized in all supported languages, and a "requires ammo" hint for bows, crossbows, firearms, and slings.
+- Equipment rows in the wizard's equipment list now show each stack's price, not just the running total.
+
 ## 3.11.3 – Coin Icon and Readability Fixes
 
 ### Fixed

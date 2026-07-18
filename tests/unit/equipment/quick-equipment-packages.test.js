@@ -105,10 +105,66 @@ describe('quick equipment packages', () => {
     expect(merged[0].price).toEqual({ gp: 0, sp: 2, cp: 0 });
   });
 
+  test('refreshes price/pricePer/bulk from the newly merged entry instead of keeping stale values', () => {
+    const merged = mergePackageItems(
+      [{ uuid: 'Item.arrows', name: 'Arrows', quantity: 10, price: { sp: 1 }, pricePer: 10, bulk: 0.1, bulkPer: 10 }],
+      [{ uuid: 'Item.arrows', name: 'Arrows', quantity: 10, price: { sp: 2 }, pricePer: 10, bulk: 0.2, bulkPer: 10 }],
+    );
+
+    expect(merged).toHaveLength(1);
+    expect(merged[0].quantity).toBe(20);
+    expect(merged[0].price).toEqual({ gp: 0, sp: 2, cp: 0 });
+    expect(merged[0].bulk).toBe(0.2);
+  });
+
   test('creates safe defaults and normalizes copper values', () => {
     const quickPackage = createQuickEquipmentPackage({ name: 'Starter Set' });
     expect(quickPackage.type).toBe('kit');
     expect(quickPackage.system.price.value).toEqual({ gp: 0, sp: 0, cp: 0 });
     expect(copperToCoins(123)).toEqual({ gp: 1, sp: 2, cp: 3 });
+  });
+
+  describe('price modes', () => {
+    const items = [{ uuid: 'Item.dagger', name: 'Dagger', quantity: 1, price: { gp: 10 }, pricePer: 1 }];
+
+    test('defaults to the calculated sum of items', () => {
+      const quickPackage = normalizeQuickEquipmentPackage({ name: 'Kit', items });
+      expect(quickPackage.priceMode).toBe('calculated');
+      expect(quickPackage.priceCp).toBe(1000);
+      expect(quickPackage.system.price.value).toEqual({ gp: 10, sp: 0, cp: 0 });
+    });
+
+    test('uses a custom price when priceMode is custom, ignoring the calculated total', () => {
+      const quickPackage = normalizeQuickEquipmentPackage({
+        name: 'Kit', items, priceMode: 'custom', customPrice: { gp: 3, sp: 5 },
+      });
+      expect(quickPackage.priceCp).toBe(350);
+      expect(quickPackage.system.price.value).toEqual({ gp: 3, sp: 5, cp: 0 });
+      expect(quickPackage.calculatedPriceCp).toBe(1000);
+    });
+
+    test('applies a percentage discount to the calculated total', () => {
+      const quickPackage = normalizeQuickEquipmentPackage({
+        name: 'Kit', items, priceMode: 'discount', discountPercent: 25,
+      });
+      expect(quickPackage.priceCp).toBe(750);
+      expect(quickPackage.system.price.value).toEqual({ gp: 7, sp: 5, cp: 0 });
+    });
+
+    test('clamps discountPercent to 0-100', () => {
+      const over = normalizeQuickEquipmentPackage({ name: 'Kit', items, priceMode: 'discount', discountPercent: 150 });
+      expect(over.discountPercent).toBe(100);
+      expect(over.priceCp).toBe(0);
+
+      const under = normalizeQuickEquipmentPackage({ name: 'Kit', items, priceMode: 'discount', discountPercent: -10 });
+      expect(under.discountPercent).toBe(0);
+      expect(under.priceCp).toBe(1000);
+    });
+
+    test('falls back to calculated mode for an unknown priceMode value', () => {
+      const quickPackage = normalizeQuickEquipmentPackage({ name: 'Kit', items, priceMode: 'bogus' });
+      expect(quickPackage.priceMode).toBe('calculated');
+      expect(quickPackage.priceCp).toBe(1000);
+    });
   });
 });

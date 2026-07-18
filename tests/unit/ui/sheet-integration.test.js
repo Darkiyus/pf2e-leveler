@@ -76,22 +76,34 @@ describe('creation wizard sheet access', () => {
     game.user.isGM = true;
   });
 
-  test('allows opening the creation wizard for creation-stage characters', () => {
+  test('always allows GMs to open the creation wizard, regardless of level or existing ancestry/class', () => {
     expect(canOpenCreationWizard(createMockActor())).toBe(true);
     expect(canOpenCreationWizard(createMockActor({
-      ancestry: null,
+      ancestry: { slug: 'human' },
       class: { slug: 'wizard' },
       system: { details: { level: { value: 5 } } },
     }))).toBe(true);
     expect(canOpenCreationWizard({ type: 'npc' })).toBe(false);
   });
 
-  test('hides the creation wizard entry point once a leveled character should use the planner', () => {
-    expect(canOpenCreationWizard(createMockActor({
-      ancestry: { slug: 'human' },
-      class: { slug: 'wizard' },
-      system: { details: { level: { value: 5 } } },
-    }))).toBe(false);
+  test('blocks players from opening the creation wizard once their character is above level 1', () => {
+    game.user.isGM = false;
+    const actor = createMockActor({
+      system: { details: { level: { value: 2 } } },
+    });
+    actor.testUserPermission = jest.fn((user, permission) => user === game.user && permission === 'OWNER');
+
+    expect(canOpenCreationWizard(actor)).toBe(false);
+  });
+
+  test('allows players to open the creation wizard for their level 1 character', () => {
+    game.user.isGM = false;
+    const actor = createMockActor({
+      system: { details: { level: { value: 1 } } },
+    });
+    actor.testUserPermission = jest.fn((user, permission) => user === game.user && permission === 'OWNER');
+
+    expect(canOpenCreationWizard(actor)).toBe(true);
   });
 
   test('blocks the creation wizard for non-owner players', () => {
@@ -112,6 +124,22 @@ describe('creation wizard sheet access', () => {
     actor.testUserPermission = jest.fn((user, permission) => user === game.user && permission === 'OWNER');
 
     expect(canOpenCreationWizard(actor)).toBe(true);
+  });
+
+  test('a GM-enabled lock blocks players from the creation wizard but not GMs', () => {
+    global._testSettings = {
+      'darkis-better-pf2e-leveler': { lockCharacterWizard: true },
+    };
+
+    game.user.isGM = false;
+    const playerActor = createMockActor({ system: { details: { level: { value: 1 } } } });
+    playerActor.testUserPermission = jest.fn((user, permission) => user === game.user && permission === 'OWNER');
+    expect(canOpenCreationWizard(playerActor)).toBe(false);
+
+    game.user.isGM = true;
+    expect(canOpenCreationWizard(playerActor)).toBe(true);
+
+    delete global._testSettings;
   });
 
   test('uses an edit label after a class exists', () => {
@@ -301,9 +329,10 @@ describe('character sheet render integration', () => {
     }
   });
 
-  test('does not add the creation button for leveled characters that redirect to the planner', () => {
+  test('still shows the creation button for GMs on leveled characters, since opening it offers a planner redirect', () => {
     const restoreJQuery = useDomJQuery();
     try {
+      game.user.isGM = true;
       const actor = createMockActor({
         id: 'abc123',
         ancestry: { slug: 'human' },
@@ -331,10 +360,50 @@ describe('character sheet render integration', () => {
       )[1];
       renderHandler({ actor }, content);
 
+      expect(header.querySelector('.pf2e-leveler-create-btn')).not.toBeNull();
+      expect(header.querySelector('.pf2e-leveler-plan-btn')).not.toBeNull();
+    } finally {
+      restoreJQuery();
+    }
+  });
+
+  test('hides the creation button for players once their character is above level 1', () => {
+    const restoreJQuery = useDomJQuery();
+    try {
+      game.user.isGM = false;
+      const actor = createMockActor({
+        id: 'abc123',
+        ancestry: { slug: 'human' },
+        class: { slug: 'wizard' },
+        system: { details: { level: { value: 5 } } },
+      });
+      actor.testUserPermission = jest.fn((user, permission) => user === game.user && permission === 'OWNER');
+      const app = document.createElement('section');
+      app.id = 'CharacterSheetPF2e-Actor-abc123';
+      app.className = 'application sheet actor character';
+
+      const header = document.createElement('header');
+      header.className = 'window-header';
+      const closeButton = document.createElement('button');
+      closeButton.className = 'close header-control';
+      header.append(closeButton);
+
+      const content = document.createElement('div');
+      content.className = 'sheet-content';
+      app.append(header, content);
+      document.body.append(app);
+
+      registerSheetIntegration();
+      const renderHandler = Hooks.on.mock.calls.find(
+        ([hook]) => hook === 'renderCharacterSheetPF2e',
+      )[1];
+      renderHandler({ actor }, content);
+
       expect(header.querySelector('.pf2e-leveler-create-btn')).toBeNull();
       expect(header.querySelector('.pf2e-leveler-plan-btn')).not.toBeNull();
     } finally {
       restoreJQuery();
+      game.user.isGM = true;
     }
   });
 

@@ -1286,4 +1286,26 @@ describe('ItemPicker', () => {
     expect(picker.selectedItemUuids.has('item-b')).toBe(false);
     expect(picker.selectedItemUuids.has('hidden-item')).toBe(true);
   });
+
+  test('tags weapons with their group and, for ammo-using groups, an ammo hint', () => {
+    const picker = new ItemPicker({ name: 'Actor' }, jest.fn());
+
+    const bow = picker._toTemplateItem({
+      uuid: 'Item.bow',
+      name: 'Longbow',
+      type: 'weapon',
+      system: { traits: { rarity: 'common' }, category: 'martial', group: { value: 'bow' } },
+    });
+    expect(bow.equipmentTags).toEqual(expect.arrayContaining(['Martial Weapon', 'Bow']));
+    expect(bow.ammoHint).toBe('Ammo: Arrows');
+
+    const sword = picker._toTemplateItem({
+      uuid: 'Item.sword',
+      name: 'Longsword',
+      type: 'weapon',
+      system: { traits: { rarity: 'common' }, category: 'martial', group: { value: 'sword' } },
+    });
+    expect(sword.equipmentTags).toEqual(expect.arrayContaining(['Martial Weapon', 'Sword']));
+    expect(sword.ammoHint).toBeNull();
+  });
 });

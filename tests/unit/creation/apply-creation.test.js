@@ -2875,6 +2875,7 @@ describe('applyCreation starting currency', () => {
     });
     actor.createEmbeddedDocuments = jest.fn(async (_type, docs) => docs.map((doc, index) => ({ ...doc, id: `created-${index}` })));
     actor.update = jest.fn(async () => {});
+    actor.inventory = { addCurrency: jest.fn(async () => {}) };
     actor.testUserPermission = jest.fn(() => true);
     game.users = [{ isGM: true, id: 'gm-user' }];
     ChatMessage.create = jest.fn(async () => {});
@@ -2894,11 +2895,7 @@ describe('applyCreation starting currency', () => {
       equipment: [{ uuid: 'unused', name: 'Dagger', quantity: 1, price: { gp: 12, sp: 5, cp: 0 } }],
     });
 
-    expect(actor.update).toHaveBeenCalledWith({
-      'system.currency.gp': 2,
-      'system.currency.sp': 5,
-      'system.currency.cp': 0,
-    });
+    expect(actor.inventory.addCurrency).toHaveBeenCalledWith({ gp: 2, sp: 5, cp: 0 });
   });
 
   it('does not grant currency when starting wealth is disabled', async () => {
@@ -2910,7 +2907,7 @@ describe('applyCreation starting currency', () => {
 
     await applyCreation(actor, { ...baseData, equipment: [] });
 
-    expect(actor.update).not.toHaveBeenCalled();
+    expect(actor.inventory.addCurrency).not.toHaveBeenCalled();
   });
 
   it('does not grant currency once the whole budget has been spent', async () => {
@@ -2925,6 +2922,77 @@ describe('applyCreation starting currency', () => {
       equipment: [{ uuid: 'unused', name: 'Armor', quantity: 1, price: { gp: 20, sp: 0, cp: 0 } }],
     });
 
-    expect(actor.update).not.toHaveBeenCalled();
+    expect(actor.inventory.addCurrency).not.toHaveBeenCalled();
+  });
+});
+
+describe('applyCreation clears existing items before reapplying', () => {
+  const baseData = {
+    ancestry: null,
+    heritage: null,
+    background: null,
+    class: null,
+    subclass: null,
+    boosts: { free: [] },
+    languages: [],
+    skills: [],
+    lores: [],
+    ancestryFeat: null,
+    ancestryParagonFeat: null,
+    classFeat: null,
+    dualClassFeat: null,
+    skillFeat: null,
+    grantedFeatSections: [],
+    grantedFeatChoices: {},
+    featGrants: [],
+    permanentItems: [],
+    equipment: [],
+    spells: { cantrips: [], rank1: [] },
+  };
+
+  it('deletes every pre-existing item before applying new creation data, so redoing the wizard cannot stack duplicates', async () => {
+    const actor = createMockActor({
+      items: [{ id: 'old-ancestry' }, { id: 'old-dagger' }],
+      system: {
+        details: { level: { value: 1 } },
+        traits: { size: { value: 'med' } },
+      },
+    });
+    actor.createEmbeddedDocuments = jest.fn(async (_type, docs) => docs.map((doc, index) => ({ ...doc, id: `created-${index}` })));
+    actor.deleteEmbeddedDocuments = jest.fn(async () => []);
+    actor.update = jest.fn(async () => {});
+    actor.inventory = { addCurrency: jest.fn(async () => {}) };
+    actor.testUserPermission = jest.fn(() => true);
+    game.users = [{ isGM: true, id: 'gm-user' }];
+    game.settings.get = jest.fn(() => false);
+    ChatMessage.create = jest.fn(async () => {});
+    global.fromUuid = jest.fn(async () => null);
+
+    await applyCreation(actor, baseData);
+
+    expect(actor.deleteEmbeddedDocuments).toHaveBeenCalledWith('Item', ['old-ancestry', 'old-dagger']);
+  });
+
+  it('does not call deleteEmbeddedDocuments when the actor already has no items', async () => {
+    const actor = createMockActor({
+      items: [],
+      system: {
+        details: { level: { value: 1 } },
+        traits: { size: { value: 'med' } },
+      },
+    });
+    actor.createEmbeddedDocuments = jest.fn(async (_type, docs) => docs.map((doc, index) => ({ ...doc, id: `created-${index}` })));
+    actor.deleteEmbeddedDocuments = jest.fn(async () => []);
+    actor.update = jest.fn(async () => {});
+    actor.inventory = { addCurrency: jest.fn(async () => {}) };
+    actor.testUserPermission = jest.fn(() => true);
+    game.users = [{ isGM: true, id: 'gm-user' }];
+    game.settings.get = jest.fn(() => false);
+    ChatMessage.create = jest.fn(async () => {});
+    global.fromUuid = jest.fn(async () => null);
+
+    await applyCreation(actor, baseData);
+
+    expect(actor.deleteEmbeddedDocuments).not.toHaveBeenCalled();
   });
 });

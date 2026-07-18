@@ -96,7 +96,11 @@ function canUseLevelerForActor(actor) {
 }
 
 function canOpenCreationWizard(actor) {
-  return actor?.type === 'character' && canUseLevelerForActor(actor) && !shouldRedirectCreationWizardToPlanner(actor);
+  if (actor?.type !== 'character' || !canUseLevelerForActor(actor)) return false;
+  if (game.user?.isGM === true) return true;
+  if (game.settings.get(MODULE_ID, 'lockCharacterWizard') === true) return false;
+  const actorLevel = Number(actor?.system?.details?.level?.value ?? 1);
+  return actorLevel <= 1;
 }
 
 function shouldRedirectCreationWizardToPlanner(actor) {
@@ -312,6 +316,10 @@ async function openPlanner(actor, openerElement = null) {
 
 async function openWizard(actor, openerElement = null) {
   if (!canUseLevelerForActor(actor)) return;
+  if (game.user?.isGM !== true && !canOpenCreationWizard(actor)) {
+    ui.notifications?.warn(localize('CREATION.WIZARD_LOCKED'));
+    return;
+  }
 
   await ensureLevelerTemplatesLoaded();
   const lowerSelectors = getActorSheetSelectors(actor);

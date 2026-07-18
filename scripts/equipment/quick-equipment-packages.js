@@ -8,6 +8,8 @@ const COIN_VALUES = { gp: 100, sp: 10, cp: 1 };
 const ALLOWED_RARITIES = new Set(['common', 'uncommon', 'rare', 'unique']);
 export const QUICK_EQUIPMENT_CATEGORIES = ['starter', 'classLoadout', 'adventuringGear', 'specialist', 'other'];
 const DEFAULT_QUICK_EQUIPMENT_CATEGORY = 'starter';
+export const QUICK_EQUIPMENT_PRICE_MODES = ['calculated', 'custom', 'discount'];
+const DEFAULT_QUICK_EQUIPMENT_PRICE_MODE = 'calculated';
 
 export function createQuickEquipmentPackage(overrides = {}) {
   return normalizeQuickEquipmentPackage({
@@ -44,14 +46,19 @@ export function normalizeQuickEquipmentPackage(rawPackage = {}) {
   const rawSystem = isObject(rawPackage.system) ? rawPackage.system : {};
   const rawTraits = isObject(rawSystem.traits) ? rawSystem.traits : {};
   const items = normalizePackageItems(rawPackage.items ?? rawSystem.items);
-  const priceCp = equipmentEntriesTotalCopper(items);
+  const calculatedPriceCp = equipmentEntriesTotalCopper(items);
   const bulkUnits = equipmentEntriesTotalBulkUnits(items);
-  const price = copperToCoins(priceCp);
   const bulkValue = bulkUnits / 10;
   const rarity = normalizeRarity(rawPackage.rarity ?? rawTraits.rarity);
   const traits = normalizeStringList(rawPackage.traits ?? rawTraits.value);
   const description = normalizeDescription(rawPackage.description ?? rawSystem.description);
   const level = normalizeNonNegativeInteger(rawPackage.level ?? rawSystem.level?.value);
+
+  const priceMode = normalizeQuickEquipmentPriceMode(rawPackage.priceMode);
+  const discountPercent = normalizeDiscountPercent(rawPackage.discountPercent);
+  const customPrice = normalizeCoins(rawPackage.customPrice);
+  const priceCp = resolveQuickEquipmentPriceCp(priceMode, calculatedPriceCp, discountPercent, customPrice);
+  const price = copperToCoins(priceCp);
 
   return {
     id: normalizeString(rawPackage.id) || createPackageId(),
@@ -62,6 +69,11 @@ export function normalizeQuickEquipmentPackage(rawPackage = {}) {
     classSlugs: normalizeSlugList(rawPackage.classSlugs ?? rawPackage.classSlug),
     category: normalizeQuickEquipmentCategory(rawPackage.category),
     items,
+    priceMode,
+    discountPercent,
+    customPrice,
+    calculatedPriceCp,
+    calculatedPrice: copperToCoins(calculatedPriceCp),
     priceCp,
     priceLabel: formatCoins(price),
     bulkUnits,
@@ -74,6 +86,23 @@ export function normalizeQuickEquipmentPackage(rawPackage = {}) {
       traits: { rarity, value: traits },
     },
   };
+}
+
+function normalizeQuickEquipmentPriceMode(value) {
+  const normalized = normalizeString(value);
+  return QUICK_EQUIPMENT_PRICE_MODES.includes(normalized) ? normalized : DEFAULT_QUICK_EQUIPMENT_PRICE_MODE;
+}
+
+function normalizeDiscountPercent(value) {
+  const number = Math.round(Number(value));
+  if (!Number.isFinite(number)) return 0;
+  return Math.min(100, Math.max(0, number));
+}
+
+function resolveQuickEquipmentPriceCp(priceMode, calculatedPriceCp, discountPercent, customPrice) {
+  if (priceMode === 'custom') return coinsToCopper(customPrice);
+  if (priceMode === 'discount') return Math.max(0, Math.round(calculatedPriceCp * (1 - discountPercent / 100)));
+  return calculatedPriceCp;
 }
 
 export function packageItemFromDocument(item, quantity = 1) {
@@ -103,8 +132,15 @@ export function mergePackageItems(items, additions) {
   const merged = normalizePackageItems(items);
   for (const addition of normalizePackageItems(additions)) {
     const existing = merged.find((entry) => entry.uuid === addition.uuid);
-    if (existing) existing.quantity += addition.quantity;
-    else merged.push(addition);
+    if (existing) {
+      existing.quantity += addition.quantity;
+      existing.price = addition.price;
+      existing.pricePer = addition.pricePer;
+      existing.bulk = addition.bulk;
+      existing.bulkPer = addition.bulkPer;
+    } else {
+      merged.push(addition);
+    }
   }
   return merged;
 }

@@ -978,6 +978,13 @@ export function addEquipmentEntry(data, item) {
   const existing = data.equipment.find((e) => e.uuid === item.uuid);
   if (existing) {
     existing.quantity = (existing.quantity ?? 1) + (item.quantity ?? 1);
+    // Refresh pricing/bulk metadata too, so a stack merged from two sources
+    // (e.g. browsed directly, then again via a quick-equipment package)
+    // never keeps stale per-batch data from whichever add happened first.
+    existing.price = item.price ?? existing.price;
+    existing.pricePer = Number(item.pricePer ?? existing.pricePer ?? 1) || 1;
+    existing.bulk = item.bulk ?? existing.bulk;
+    existing.bulkPer = Number(item.bulkPer ?? existing.bulkPer ?? 1) || 1;
   } else {
     data.equipment.push({
       uuid: item.uuid,

@@ -95,6 +95,15 @@ export function registerSettings() {
     default: false,
   });
 
+  game.settings.register(MODULE_ID, 'lockCharacterWizard', {
+    name: game.i18n.localize('PF2E_LEVELER.SETTINGS.LOCK_CHARACTER_WIZARD.NAME'),
+    hint: game.i18n.localize('PF2E_LEVELER.SETTINGS.LOCK_CHARACTER_WIZARD.HINT'),
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: false,
+  });
+
   game.settings.register(MODULE_ID, 'showPrerequisites', {
     name: game.i18n.localize('PF2E_LEVELER.SETTINGS.SHOW_PREREQUISITES.NAME'),
     hint: game.i18n.localize('PF2E_LEVELER.SETTINGS.SHOW_PREREQUISITES.HINT'),

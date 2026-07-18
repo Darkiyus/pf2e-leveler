@@ -2,6 +2,7 @@ import { MODULE_ID } from '../constants.js';
 import {
   QUICK_EQUIPMENT_CATEGORIES,
   QUICK_EQUIPMENT_PACKAGES_SETTING,
+  QUICK_EQUIPMENT_PRICE_MODES,
   bulkValueToUnits,
   createQuickEquipmentPackage,
   formatBulkUnits,
@@ -23,6 +24,12 @@ const QUICK_EQUIPMENT_CATEGORY_LABEL_KEYS = {
   adventuringGear: 'PF2E_LEVELER.QUICK_EQUIPMENT.CATEGORY_ADVENTURING_GEAR',
   specialist: 'PF2E_LEVELER.QUICK_EQUIPMENT.CATEGORY_SPECIALIST',
   other: 'PF2E_LEVELER.QUICK_EQUIPMENT.CATEGORY_OTHER',
+};
+
+const QUICK_EQUIPMENT_PRICE_MODE_LABEL_KEYS = {
+  calculated: 'PF2E_LEVELER.QUICK_EQUIPMENT.PRICE_MODE_CALCULATED',
+  custom: 'PF2E_LEVELER.QUICK_EQUIPMENT.PRICE_MODE_CUSTOM',
+  discount: 'PF2E_LEVELER.QUICK_EQUIPMENT.PRICE_MODE_DISCOUNT',
 };
 
 export class QuickEquipmentPackagesMenu extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -60,7 +67,7 @@ export class QuickEquipmentPackagesMenu extends HandlebarsApplicationMixin(Appli
         active: quickPackage.id === this.activePackageId,
         displayName: quickPackage.name || game.i18n.localize('PF2E_LEVELER.QUICK_EQUIPMENT.NEW_PACKAGE'),
       })),
-      activePackage: activePackage ? this._toTemplatePackage(activePackage) : null,
+      activePackage: activePackage ? await this._toTemplatePackage(activePackage) : null,
     };
   }
 
@@ -153,6 +160,11 @@ export class QuickEquipmentPackagesMenu extends HandlebarsApplicationMixin(Appli
     else if (field === 'rarity') activePackage.system.traits.rarity = value;
     else if (field === 'traits') activePackage.system.traits.value = value.split(',');
     else if (field === 'category') activePackage.category = value;
+    else if (field === 'priceMode') activePackage.priceMode = value;
+    else if (field === 'discountPercent') activePackage.discountPercent = value;
+    else if (field === 'customPriceGp') activePackage.customPrice = { ...activePackage.customPrice, gp: value };
+    else if (field === 'customPriceSp') activePackage.customPrice = { ...activePackage.customPrice, sp: value };
+    else if (field === 'customPriceCp') activePackage.customPrice = { ...activePackage.customPrice, cp: value };
     else if (field === 'name' || field === 'img') activePackage[field] = value;
 
     this._replaceActivePackage(normalizeQuickEquipmentPackage(activePackage));
@@ -173,11 +185,12 @@ export class QuickEquipmentPackagesMenu extends HandlebarsApplicationMixin(Appli
     this.render(true);
   }
 
-  _changeItemQuantity(uuid, delta) {
+  _changeItemQuantity(uuid, direction) {
     const activePackage = this._getActivePackage();
     const item = activePackage?.items.find((entry) => entry.uuid === uuid);
     if (!item) return;
-    item.quantity = Math.max(1, item.quantity + delta);
+    const step = item.pricePer > 1 ? item.pricePer : 1;
+    item.quantity = Math.max(step, item.quantity + direction * step);
     this._replaceActivePackage(normalizeQuickEquipmentPackage(activePackage));
     this.render(true);
   }
@@ -237,7 +250,7 @@ export class QuickEquipmentPackagesMenu extends HandlebarsApplicationMixin(Appli
     if (index >= 0) this._draftPackages[index] = quickPackage;
   }
 
-  _toTemplatePackage(quickPackage) {
+  async _toTemplatePackage(quickPackage) {
     return {
       ...quickPackage,
       description: quickPackage.system.description.value,
@@ -247,7 +260,16 @@ export class QuickEquipmentPackagesMenu extends HandlebarsApplicationMixin(Appli
       rarityUncommon: quickPackage.system.traits.rarity === 'uncommon',
       rarityRare: quickPackage.system.traits.rarity === 'rare',
       rarityUnique: quickPackage.system.traits.rarity === 'unique',
-      classOptions: this._getClassOptions(quickPackage),
+      priceModeCalculated: quickPackage.priceMode === 'calculated',
+      priceModeCustom: quickPackage.priceMode === 'custom',
+      priceModeDiscount: quickPackage.priceMode === 'discount',
+      calculatedPriceLabel: formatCoins(quickPackage.calculatedPrice),
+      priceModeOptions: QUICK_EQUIPMENT_PRICE_MODES.map((mode) => ({
+        value: mode,
+        label: game.i18n.localize(QUICK_EQUIPMENT_PRICE_MODE_LABEL_KEYS[mode]),
+        selected: quickPackage.priceMode === mode,
+      })),
+      classOptions: await this._getClassOptions(quickPackage),
       categoryOptions: QUICK_EQUIPMENT_CATEGORIES.map((category) => ({
         value: category,
         label: game.i18n.localize(QUICK_EQUIPMENT_CATEGORY_LABEL_KEYS[category]),
@@ -261,16 +283,30 @@ export class QuickEquipmentPackagesMenu extends HandlebarsApplicationMixin(Appli
     };
   }
 
-  _getClassOptions(quickPackage) {
+  async _getClassOptions(quickPackage) {
     ensureClassRegistry();
     const selected = new Set(quickPackage.classSlugs ?? []);
-    return ClassRegistry.getAll()
-      .map((classDef) => ({
+    const classDefs = ClassRegistry.getAll();
+    const icons = await Promise.all(classDefs.map((classDef) => this._getClassIcon(classDef)));
+    return classDefs
+      .map((classDef, index) => ({
         slug: classDef.slug,
         name: game.i18n.localize(classDef.nameKey),
+        icon: icons[index],
         selected: selected.has(classDef.slug),
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async _getClassIcon(classDef) {
+    this._classIconCache ??= new Map();
+    if (this._classIconCache.has(classDef.slug)) return this._classIconCache.get(classDef.slug);
+    const fallback = 'icons/svg/mystery-man.svg';
+    const icon = classDef.compendiumUuid
+      ? await fromUuid(classDef.compendiumUuid).then((doc) => doc?.img ?? fallback).catch(() => fallback)
+      : fallback;
+    this._classIconCache.set(classDef.slug, icon);
+    return icon;
   }
 
   async _save() {
