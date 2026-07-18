@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.12.1 – Class Name Consistency, Layout Fix, Auto-Advance
+
+### Fixed
+
+- The quick-equipment package editor's class list showed class names from this module's own translation instead of the same compendium-sourced names shown while actually picking a class in the wizard, which could disagree (e.g. Gunslinger showing as "Revolverheld" here but "Schütze" during class selection). Both now read the name from the same compendium document.
+- Coin icons in the quick-equipment sidebar list and the wizard's quick-equipment cards could render outside the card's visible bounds instead of being clipped or wrapping cleanly, because a plain text-truncation rule doesn't reliably contain a nested flex element (the coin icon markup). Both lines are now flex rows with their own overflow handling.
+
+### Added
+
+- The character-creation wizard now automatically advances to the next step the moment the current step becomes complete, instead of requiring a manual click on "Next" every time.
+
 ## 3.12.0 – Currency Fix, Wizard Access Control, Quick-Equipment Pricing
 
 ### Fixed

@@ -181,6 +181,8 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
     this.data = storedCreationData ? normalizeCreationData(storedCreationData) : createCreationData();
     this.currentStep = 0;
     this._visitedSteps = new Set();
+    this._stepCompleteFlags = new Map();
+    this._pendingAutoAdvance = false;
     this.featSubStep = 'ancestry';
     this.spellSubStep = 'cantrips';
     this.classHandler = getClassHandler(this.data.class?.slug);
@@ -488,6 +490,7 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
       complete: this._isStepComplete(id),
       index: STEPS.indexOf(id),
     }));
+    this._trackStepCompletionForAutoAdvance(steps);
 
     const allComplete = this.visibleSteps.filter((s) => s !== 'summary').every((s) => this._isStepComplete(s));
     const canApplyCreation = allComplete || game.settings.get(MODULE_ID, 'allowIncompleteCreation');
@@ -1892,6 +1895,26 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
     this._invalidateDerivedState();
     await saveCreationData(this.actor, this.data);
     await this.render({ force: true, parts: ['wizard'] });
+    if (this._pendingAutoAdvance) {
+      this._pendingAutoAdvance = false;
+      this._nextStep();
+    }
+  }
+
+  // Detects the moment the active step's own completion flag flips from
+  // incomplete to complete (not just "is complete", which would also be true
+  // when simply navigating back into an already-finished step) and queues an
+  // auto-advance to the next step, applied once the pending render settles.
+  _trackStepCompletionForAutoAdvance(steps) {
+    const currentStepId = this.stepId;
+    const isNowComplete = steps.find((step) => step.id === currentStepId)?.complete ?? false;
+    const wasComplete = this._stepCompleteFlags.has(currentStepId)
+      ? this._stepCompleteFlags.get(currentStepId)
+      : isNowComplete;
+    if (isNowComplete && !wasComplete && !this.isApplying) {
+      this._pendingAutoAdvance = true;
+    }
+    this._stepCompleteFlags.set(currentStepId, isNowComplete);
   }
 
   _togglePublicationFilter(publication, allPublications = []) {

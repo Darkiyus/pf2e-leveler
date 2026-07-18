@@ -75,17 +75,34 @@
 }
 
 .quick-equipment-packages__entry strong,
-.quick-equipment-packages__entry small,
-.quick-equipment-packages__item-name strong,
-.quick-equipment-packages__item-name small {
+.quick-equipment-packages__item-name strong {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/*
+ * These lines mix inline-flex coin-icon markup (from the coinIcons helper)
+ * with plain text. A plain white-space:nowrap + text-overflow:ellipsis
+ * (correct for pure text) does not reliably clip a nested flex element in
+ * every browser, which let the coin icons spill out of the button below
+ * its visible border instead of being clipped or wrapping cleanly. Making
+ * the line itself a flex row with hard overflow clipping avoids that.
+ */
 .quick-equipment-packages__entry small,
 .quick-equipment-packages__item-name small {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  white-space: nowrap;
   color: var(--leveler-text-muted);
+}
+
+.quick-equipment-packages__entry small .coin-amounts,
+.quick-equipment-packages__item-name small .coin-amounts {
+  flex-shrink: 0;
+  overflow: hidden;
 }
 
 .quick-equipment-packages__editor {
