@@ -1425,11 +1425,18 @@
 }
 
 .pf2e-leveler .wizard-quick-equipment__meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   overflow: hidden;
   color: var(--leveler-text-muted);
   font-size: var(--leveler-font-xs);
-  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.pf2e-leveler .wizard-quick-equipment__meta .coin-amounts {
+  flex-shrink: 0;
+  overflow: hidden;
 }
 
 .pf2e-leveler .wizard-quick-equipment__contents {

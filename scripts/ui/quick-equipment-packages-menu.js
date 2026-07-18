@@ -287,26 +287,35 @@ export class QuickEquipmentPackagesMenu extends HandlebarsApplicationMixin(Appli
     ensureClassRegistry();
     const selected = new Set(quickPackage.classSlugs ?? []);
     const classDefs = ClassRegistry.getAll();
-    const icons = await Promise.all(classDefs.map((classDef) => this._getClassIcon(classDef)));
+    const displays = await Promise.all(classDefs.map((classDef) => this._getClassDisplay(classDef)));
     return classDefs
       .map((classDef, index) => ({
         slug: classDef.slug,
-        name: game.i18n.localize(classDef.nameKey),
-        icon: icons[index],
+        name: displays[index].name,
+        icon: displays[index].icon,
         selected: selected.has(classDef.slug),
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  async _getClassIcon(classDef) {
-    this._classIconCache ??= new Map();
-    if (this._classIconCache.has(classDef.slug)) return this._classIconCache.get(classDef.slug);
-    const fallback = 'icons/svg/mystery-man.svg';
-    const icon = classDef.compendiumUuid
-      ? await fromUuid(classDef.compendiumUuid).then((doc) => doc?.img ?? fallback).catch(() => fallback)
-      : fallback;
-    this._classIconCache.set(classDef.slug, icon);
-    return icon;
+  // Class names shown here must match what players see while picking a class
+  // in the wizard itself, which reads names straight off the compendium item
+  // (and can differ from our own static nameKey translation, e.g. a German
+  // translation pack naming Gunslinger "Schütze" while our own localization
+  // says "Revolverheld"). Source both the icon and the name from the same
+  // compendium document so the two lists can't disagree.
+  async _getClassDisplay(classDef) {
+    this._classDisplayCache ??= new Map();
+    if (this._classDisplayCache.has(classDef.slug)) return this._classDisplayCache.get(classDef.slug);
+    const fallbackIcon = 'icons/svg/mystery-man.svg';
+    const fallbackName = game.i18n.localize(classDef.nameKey);
+    const display = classDef.compendiumUuid
+      ? await fromUuid(classDef.compendiumUuid)
+        .then((doc) => ({ icon: doc?.img ?? fallbackIcon, name: doc?.name ?? fallbackName }))
+        .catch(() => ({ icon: fallbackIcon, name: fallbackName }))
+      : { icon: fallbackIcon, name: fallbackName };
+    this._classDisplayCache.set(classDef.slug, display);
+    return display;
   }
 
   async _save() {
