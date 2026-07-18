@@ -1810,6 +1810,7 @@
             <div class="wizard-equipment-row">
               <img class="wizard-equipment-row__img" src="{{this.img}}" alt="">
               <span class="wizard-equipment-row__name" data-action="viewItem" data-uuid="{{this.uuid}}">{{this.name}}</span>
+              <span class="wizard-equipment-row__cost">{{coinIcons this.rowCostCoins}}</span>
               <div class="wizard-equipment-row__qty">
                 <button type="button" class="wizard-equipment-row__qty-btn" data-action="decrementEquipment" data-uuid="{{this.uuid}}">−</button>
                 <span>{{this.quantity}}</span>
@@ -2143,6 +2144,9 @@
       </button>
       {{/unless}}
       <div class="wizard-nav__spacer"></div>
+      <button type="button" class="wizard-nav__btn wizard-nav__btn--secondary" data-action="resetCreationData" {{#if isApplying}}disabled{{/if}}>
+        <i class="fa-solid fa-eraser"></i> {{localize "PF2E_LEVELER.CREATION.RESET"}}
+      </button>
       <button type="button" class="wizard-nav__btn wizard-nav__btn--secondary" data-action="importCreationData" {{#if isApplying}}disabled{{/if}}>
         <i class="fa-solid fa-file-import"></i> {{localize "PF2E_LEVELER.CREATION.IMPORT"}}
       </button>

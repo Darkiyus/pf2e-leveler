@@ -85,16 +85,55 @@
         {{#each activePackage.classOptions}}
         <label class="quick-equipment-packages__class-option">
           <input type="checkbox" data-action="toggleQuickEquipmentClass" data-class-slug="{{this.slug}}" {{#if this.selected}}checked{{/if}}>
+          <img class="quick-equipment-packages__class-icon" src="{{this.icon}}" alt="">
           <span>{{this.name}}</span>
         </label>
         {{/each}}
       </div>
     </div>
 
+    <div class="quick-equipment-packages__fields quick-equipment-packages__fields--even">
+      <label>
+        <span>{{localize "PF2E_LEVELER.QUICK_EQUIPMENT.PRICE_MODE"}}</span>
+        <select data-package-field="priceMode">
+          {{#each activePackage.priceModeOptions}}
+          <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+          {{/each}}
+        </select>
+      </label>
+      {{#if activePackage.priceModeDiscount}}
+      <label>
+        <span>{{localize "PF2E_LEVELER.QUICK_EQUIPMENT.DISCOUNT_PERCENT"}}</span>
+        <input type="number" min="0" max="100" step="1" value="{{activePackage.discountPercent}}" data-package-field="discountPercent">
+      </label>
+      {{/if}}
+    </div>
+
+    {{#if activePackage.priceModeCustom}}
+    <div class="quick-equipment-packages__fields quick-equipment-packages__fields--even">
+      <label>
+        <span>{{localize "PF2E_LEVELER.QUICK_EQUIPMENT.CUSTOM_PRICE_GP"}}</span>
+        <input type="number" min="0" step="1" value="{{activePackage.customPrice.gp}}" data-package-field="customPriceGp">
+      </label>
+      <label>
+        <span>{{localize "PF2E_LEVELER.QUICK_EQUIPMENT.CUSTOM_PRICE_SP"}}</span>
+        <input type="number" min="0" step="1" value="{{activePackage.customPrice.sp}}" data-package-field="customPriceSp">
+      </label>
+      <label>
+        <span>{{localize "PF2E_LEVELER.QUICK_EQUIPMENT.CUSTOM_PRICE_CP"}}</span>
+        <input type="number" min="0" step="1" value="{{activePackage.customPrice.cp}}" data-package-field="customPriceCp">
+      </label>
+    </div>
+    {{/if}}
+
     <div class="quick-equipment-packages__totals">
       <span><strong>{{localize "PF2E_LEVELER.QUICK_EQUIPMENT.PRICE"}}:</strong> {{coinIcons activePackage.system.price.value}}</span>
       <span><strong>{{localize "PF2E_LEVELER.QUICK_EQUIPMENT.BULK"}}:</strong> {{activePackage.bulkLabel}}</span>
+      {{#if activePackage.priceModeCalculated}}
       <small>{{localize "PF2E_LEVELER.QUICK_EQUIPMENT.AUTO_CALCULATED"}}</small>
+      {{else}}
+      <small>{{format "PF2E_LEVELER.QUICK_EQUIPMENT.CALCULATED_FROM_ITEMS" price=activePackage.calculatedPriceLabel}}</small>
+      {{/if}}
     </div>
 
     <div class="quick-equipment-packages__items-heading">

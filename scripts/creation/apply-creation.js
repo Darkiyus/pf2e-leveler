@@ -24,6 +24,9 @@ export async function applyCreation(actor, data, onProgress = null) {
     if (typeof onProgress === 'function') onProgress({ progress, message });
   };
 
+  reportProgress(0.02, 'Clearing any existing character items...');
+  await clearActorItemsForCreation(actor);
+
   reportProgress(0.05, 'Applying ancestry, background, and class...');
   if (data.ancestry) await applyItem(actor, data.ancestry, 'ancestry', getStoredChoiceSelections(data, data.ancestry.uuid));
   if (data.heritage) await applyItem(actor, data.heritage, 'heritage', getStoredChoiceSelections(data, data.heritage.uuid));
@@ -84,6 +87,16 @@ export async function applyCreation(actor, data, onProgress = null) {
   reportProgress(1, 'Character creation complete.');
 
   info(`Character creation complete for ${actor.name}`);
+}
+
+// Re-running the wizard on the same actor (e.g. a player redoing a mistake)
+// only ever adds items on top of whatever is already there, since every step
+// below uses createEmbeddedDocuments. Clearing all items first keeps a redo
+// from stacking duplicate ancestry/background/class/feat/equipment items.
+async function clearActorItemsForCreation(actor) {
+  const ids = getActorItems(actor).map((item) => item.id).filter(Boolean);
+  if (ids.length === 0) return;
+  await actor.deleteEmbeddedDocuments('Item', ids);
 }
 
 async function applyCreationFeatGrants(actor, data) {
@@ -391,12 +404,10 @@ async function grantRemainingStartingCurrency(actor, data) {
   if (remainingCp <= 0) return;
 
   const remaining = copperToCoins(remainingCp);
-  const currentCurrency = actor.system?.currency ?? {};
-  await actor.update({
-    'system.currency.gp': (currentCurrency.gp ?? 0) + remaining.gp,
-    'system.currency.sp': (currentCurrency.sp ?? 0) + remaining.sp,
-    'system.currency.cp': (currentCurrency.cp ?? 0) + remaining.cp,
-  });
+  // PF2e stores coins as "treasure" items (actor.inventory.currency is a derived
+  // getter computed from them); there is no writable system.currency field on the
+  // actor, so actor.update({'system.currency.*': ...}) is silently a no-op.
+  await actor.inventory.addCurrency(remaining);
 }
 
 async function applySelectedSkillChoices(actor, data) {
@@ -843,7 +854,7 @@ function getStoredChoiceSelections(data, uuid) {
 }
 
 function actorHasItemSource(actor, uuid) {
-  const items = Array.isArray(actor?.items) ? actor.items : Array.isArray(actor?.items?.contents) ? actor.items.contents : [];
+  const items = getActorItems(actor);
 
   return items.some((item) => {
     const sourceId = item?.sourceId ?? item?.flags?.core?.sourceId ?? item?._stats?.compendiumSource ?? null;

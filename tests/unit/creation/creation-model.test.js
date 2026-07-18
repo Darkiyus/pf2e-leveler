@@ -79,4 +79,35 @@ describe('addEquipmentPackage', () => {
       bulk: 1,
     }));
   });
+
+  test('refreshes pricePer on merge instead of keeping the first add stale', () => {
+    const data = createCreationData();
+    data.equipment = [{
+      uuid: 'Item.arrows',
+      name: 'Arrows',
+      img: 'arrows.webp',
+      quantity: 10,
+      price: { sp: 1 },
+      pricePer: 10,
+      bulk: 0.1,
+      bulkPer: 10,
+    }];
+
+    addEquipmentPackage(data, {
+      items: [{
+        uuid: 'Item.arrows',
+        name: 'Arrows',
+        img: 'arrows.webp',
+        quantity: 10,
+        price: { sp: 1 },
+        pricePer: 10,
+        bulk: 0.1,
+        bulkPer: 10,
+      }],
+    });
+
+    const merged = data.equipment.find((item) => item.uuid === 'Item.arrows');
+    expect(merged.quantity).toBe(20);
+    expect(merged.pricePer).toBe(10);
+  });
 });

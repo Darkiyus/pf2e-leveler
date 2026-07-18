@@ -85,7 +85,7 @@ const COIN_DENOMINATIONS = [
   { code: 'cp', key: 'cp' },
 ];
 
-function buildCoinIconsHtml(coins) {
+export function buildCoinIconsHtml(coins) {
   if (!coins || typeof coins !== 'object') return '';
   const parts = COIN_DENOMINATIONS
     .map(({ code, key }) => ({ code, value: Number(coins[key]) || 0 }))

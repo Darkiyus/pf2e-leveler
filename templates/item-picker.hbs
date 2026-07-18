@@ -286,6 +286,9 @@
               {{#each this.equipmentTags}}
               <span class="tag tag--info">{{this}}</span>
               {{/each}}
+              {{#if this.ammoHint}}
+              <span class="tag tag--muted"><i class="fa-solid fa-shapes"></i> {{this.ammoHint}}</span>
+              {{/if}}
               {{#each this.traits}}
               <span class="tag tag--muted">{{this}}</span>
               {{/each}}

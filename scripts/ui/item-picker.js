@@ -24,7 +24,7 @@ import {
   normalizeSearchQuery,
   SEARCH_DEBOUNCE_MS,
 } from './shared/search-utils.js';
-import { localizeOr } from '../utils/i18n-fallback.js';
+import { localizeOr, formatOr } from '../utils/i18n-fallback.js';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const renderHandlebarsTemplate = foundry.applications?.handlebars?.renderTemplate ?? globalThis.renderTemplate;
@@ -70,6 +70,35 @@ const WEAPON_FILTER_CATEGORY_LABELS = {
   martial: ['ITEM_PICKER.WEAPON_MARTIAL', 'Martial Weapon'],
   advanced: ['ITEM_PICKER.WEAPON_ADVANCED', 'Advanced Weapon'],
   unarmed: ['ITEM_PICKER.WEAPON_UNARMED', 'Unarmed Attack'],
+};
+
+const WEAPON_GROUP_LABELS = {
+  axe: ['ITEM_PICKER.WEAPON_GROUP_AXE', 'Axe'],
+  bomb: ['ITEM_PICKER.WEAPON_GROUP_BOMB', 'Bomb'],
+  bow: ['ITEM_PICKER.WEAPON_GROUP_BOW', 'Bow'],
+  brawling: ['ITEM_PICKER.WEAPON_GROUP_BRAWLING', 'Brawling'],
+  club: ['ITEM_PICKER.WEAPON_GROUP_CLUB', 'Club'],
+  crossbow: ['ITEM_PICKER.WEAPON_GROUP_CROSSBOW', 'Crossbow'],
+  dart: ['ITEM_PICKER.WEAPON_GROUP_DART', 'Dart'],
+  firearm: ['ITEM_PICKER.WEAPON_GROUP_FIREARM', 'Firearm'],
+  flail: ['ITEM_PICKER.WEAPON_GROUP_FLAIL', 'Flail'],
+  hammer: ['ITEM_PICKER.WEAPON_GROUP_HAMMER', 'Hammer'],
+  knife: ['ITEM_PICKER.WEAPON_GROUP_KNIFE', 'Knife'],
+  pick: ['ITEM_PICKER.WEAPON_GROUP_PICK', 'Pick'],
+  polearm: ['ITEM_PICKER.WEAPON_GROUP_POLEARM', 'Polearm'],
+  shield: ['ITEM_PICKER.WEAPON_GROUP_SHIELD', 'Shield'],
+  sling: ['ITEM_PICKER.WEAPON_GROUP_SLING', 'Sling'],
+  spear: ['ITEM_PICKER.WEAPON_GROUP_SPEAR', 'Spear'],
+  sword: ['ITEM_PICKER.WEAPON_GROUP_SWORD', 'Sword'],
+};
+
+// Weapon groups that use a separate, reloadable ammunition item; used to
+// surface a "requires ammo: X" hint tag on the weapon's card.
+const WEAPON_GROUP_AMMO_LABELS = {
+  bow: ['ITEM_PICKER.AMMO_HINT_BOW', 'Arrows'],
+  crossbow: ['ITEM_PICKER.AMMO_HINT_CROSSBOW', 'Bolts'],
+  firearm: ['ITEM_PICKER.AMMO_HINT_FIREARM', 'Firearm Ammunition'],
+  sling: ['ITEM_PICKER.AMMO_HINT_SLING', 'Sling Bullets'],
 };
 
 export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -235,6 +264,7 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       category: normalizeItemCategory(item),
       traits: [...new Set(item.system?.traits?.value ?? [])].filter((t) => t !== normalizeItemCategory(item)),
       equipmentTags: getEquipmentItemTags(item),
+      ammoHint: getWeaponAmmoHint(item),
       isRecommended: item.isRecommended ?? false,
       isDisallowed: item.isDisallowed ?? false,
       guidanceSelectionBlocked: item.guidanceSelectionBlocked === true,
@@ -1289,7 +1319,17 @@ function getEquipmentFilterLabel(value, kind) {
   if (!raw) return value;
   if (type === 'category' && kind === 'armor') return localizeLabelEntry(ARMOR_FILTER_CATEGORY_LABELS[raw], humanizeEquipmentFilterValue(raw));
   if (type === 'category' && kind === 'weapon') return localizeLabelEntry(WEAPON_FILTER_CATEGORY_LABELS[raw], humanizeEquipmentFilterValue(raw));
+  if (type === 'group' && kind === 'weapon') return localizeLabelEntry(WEAPON_GROUP_LABELS[raw], humanizeEquipmentFilterValue(raw));
   return humanizeEquipmentFilterValue(raw);
+}
+
+function getWeaponAmmoHint(item) {
+  if (String(item?.type ?? '').toLowerCase() !== 'weapon') return null;
+  const group = normalizeEquipmentProperty(item?.system?.group?.value ?? item?.system?.group ?? '');
+  const entry = WEAPON_GROUP_AMMO_LABELS[group];
+  if (!entry) return null;
+  const ammoName = localizeOr(entry[0], entry[1]);
+  return formatOr('ITEM_PICKER.AMMO_HINT', { ammo: ammoName }, `Ammo: ${ammoName}`);
 }
 
 function getLocalizedLabelMap(entries) {

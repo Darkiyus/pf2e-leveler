@@ -9,7 +9,7 @@ import { localize } from '../../utils/i18n.js';
 import { localizeOr } from '../../utils/i18n-fallback.js';
 import { evaluatePredicate } from '../../utils/predicate.js';
 import { getBuildStateAncestryFeatTraits } from '../../utils/ancestry-feat-traits.js';
-import { registerHandlebarsHelpers } from '../../hooks/lifecycle.js';
+import { registerHandlebarsHelpers, buildCoinIconsHtml } from '../../hooks/lifecycle.js';
 import { getClassHandler } from '../../creation/class-handlers/registry.js';
 import { isAncestralParagonEnabled, isDualClassEnabled, slugify } from '../../utils/pf2e-api.js';
 import { normalizeSkillSlug } from '../../utils/skill-slugs.js';
@@ -31,7 +31,7 @@ import { renderApplicationInFront, scheduleBringApplicationToFront } from '../sh
 import { getActiveSearchQuery } from '../shared/search-utils.js';
 import { resolveSpellcastingTradition } from '../../data/subclass-spells.js';
 import { mountPlanComments, collectWizardCommentAnchors } from '../plan-comments-ui.js';
-import { copperToCoins, equipmentEntriesTotalCopper, formatCoins, getQuickEquipmentPackages } from '../../equipment/quick-equipment-packages.js';
+import { copperToCoins, equipmentEntriesTotalCopper, getQuickEquipmentPackages } from '../../equipment/quick-equipment-packages.js';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 registerHandlebarsHelpers();
@@ -97,6 +97,19 @@ const STEPS = ['ancestry', 'heritage', 'mixedAncestry', 'background', 'class', '
 
 function equipmentTotalCp(equipment) {
   return equipmentEntriesTotalCopper(equipment);
+}
+
+function stripHtmlForTooltip(html) {
+  return String(html ?? '').replace(/<[^>]*>/gu, ' ').replace(/\s+/gu, ' ').trim();
+}
+
+function escapeAttribute(value) {
+  return String(value ?? '')
+    .replace(/&/gu, '&amp;')
+    .replace(/</gu, '&lt;')
+    .replace(/>/gu, '&gt;')
+    .replace(/"/gu, '&quot;')
+    .replace(/'/gu, '&#39;');
 }
 
 function normalizeCp(totalCp) {
@@ -1482,7 +1495,7 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!quickPackage) return;
 
     const itemsHtml = quickPackage.items.map((item) => `
-      <div class="quick-equipment-preview__item">
+      <div class="quick-equipment-preview__item" data-tooltip="${escapeAttribute(stripHtmlForTooltip(item.description) || item.name)}">
         <img src="${item.img}" alt="">
         <span class="quick-equipment-preview__item-name">${item.name}</span>
         <span class="quick-equipment-preview__item-qty">×${item.quantity}</span>
@@ -1496,7 +1509,7 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
           <div>
             <h3>${quickPackage.name}</h3>
             <div class="quick-equipment-preview__meta">
-              ${formatCoins(quickPackage.system.price.value)} · ${game.i18n.localize('PF2E_LEVELER.QUICK_EQUIPMENT.BULK')} ${quickPackage.bulkLabel}
+              ${buildCoinIconsHtml(quickPackage.system.price.value)} · ${game.i18n.localize('PF2E_LEVELER.QUICK_EQUIPMENT.BULK')} ${quickPackage.bulkLabel}
             </div>
           </div>
         </div>
@@ -1636,7 +1649,7 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
     return {
       wealthMode: mode,
       characterLevel: level,
-      equipment: equipment.map((entry) => ({ ...entry })),
+      equipment: equipment.map((entry) => ({ ...entry, rowCostCoins: normalizeCp(equipmentTotalCp([entry])) })),
       equipmentTotal: totalParts.join(', ') || null,
       equipmentTotalCoins: totals,
       goldLimit,
@@ -1944,6 +1957,26 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
       }
     });
     input.click();
+  }
+
+  async _resetCreationData() {
+    const confirmed = await foundry.applications.api.DialogV2.confirm({
+      window: { title: localize('CREATION.RESET_CONFIRM_TITLE') },
+      content: `<p>${localize('CREATION.RESET_CONFIRM_BODY')}</p>`,
+      modal: true,
+    });
+    if (!confirmed) return;
+
+    this.data = createCreationData();
+    this.currentStep = 0;
+    this._visitedSteps = new Set();
+    this.classHandler = getClassHandler(this.data.class?.slug);
+    this._featChoiceDataDirty = true;
+    this._applyPromptRowsCache = null;
+    this._invalidateDerivedState();
+    await saveCreationData(this.actor, this.data);
+    ui.notifications.info(localize('NOTIFICATIONS.CREATION_RESET'));
+    this.render(true);
   }
 
   async _requestReview() {
